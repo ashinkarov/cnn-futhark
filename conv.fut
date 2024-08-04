@@ -78,7 +78,7 @@ module nn (F: real) = {
     --let (c1 : [6][24][24]real) = logistics3 (mconv2d inp k1 b1)
     let c1 = logistics3 (mconv2d inp k1 b1)
     --let s1 : [6][12][12]real = map avgp2 c1
-    let s1 = map avgp2 c1
+    let s1 = map avgp2 (c1 :> [6][12*2][12*2]F.t)
     in zero
 
   def main (n: i32) : real =
