@@ -22,6 +22,20 @@ module nn (F: real) = {
                       -> [bn][In - kn + 1]real =
     \ I k b -> map (\i -> map (F.+ b[i]) (conv1 I k[i])) (iota bn)
 
+  -- Back convolution
+  def backmconv1 [In][kn][bn] :  (dout : [bn][In-kn+1]real) -> (w : [bn][kn]real)
+                              -> (I : [In]real) -> (b : [bn]real) 
+                              -> ([In]real, [bn][kn]real, [bn]real) = -- ∂I ∂k ∂b
+    \dout w I b ->
+    -- Reverse convolution
+    -- FIXME: this doesn't work
+    let dI = loop r = map (\_-> zero) (iota In) for i < kn do
+               loop r' = r for j < In-kn+1 do
+                  r' with [i+j] = r'[i+j] F.+ sum (map (\k -> dout[k][j] F.* w[k][i]) (iota bn))
+    
+    let dw = map (\i -> conv1 I dout[i]) (iota bn)
+    let db = map (\i -> sum dout[i]) (iota bn)
+    in (I, w, b)
 
   ----- 2d cases -----
   def sum2d (a: [][]real) : real = 
@@ -93,7 +107,7 @@ module nn (F: real) = {
     in map (\j -> add3d_c (conv3d I (weights[j])) b[j]) (iota kbn)
 
  
-
+  -- Logistics
   def logistics1 [n] : (a : [n]real) -> [n]real =
      map (\e -> one F./ (one F.+ F.exp (F.neg e)))
 
@@ -106,6 +120,20 @@ module nn (F: real) = {
   def logistics4 [m][n][k][p] : (a : [m][n][k][p]real) -> [m][n][k][p]real =
     map logistics3
 
+  -- Back logistics
+  def backlog1 [n] : (dout : [n]real) -> (out : [n]real) -> [n]real =
+     map2 (\d o -> d F.* o F.* (one F.- o))
+
+  def backlog2 [m][n] : (dout : [m][n]real) -> (out : [m][n]real) -> [m][n]real =
+     map2 backlog1
+
+  def backlog3 [m][n][k] : (dout : [m][n][k]real) -> (out : [m][n][k]real) -> [m][n][k]real =
+     map2 backlog2
+
+  def backlog4 [m][n][k][p] : (dout : [m][n][k][p]real) -> (out : [m][n][k][p]real) -> [m][n][k][p]real =
+     map2 backlog3
+
+  -- Average pooling 2d
   def avgp2 [m][n] : (a : [m*2][n*2]real) -> [m][n]real =
     \ a ->
     map (\i ->
@@ -117,6 +145,14 @@ module nn (F: real) = {
               F./ (fromi64 4))
              (iota n))
         (iota m)
+
+  def backavgp2 [m][n] : (dout : [m][n]real) -> [m*2][n*2]real =
+    \ dout ->
+    map (\i ->
+         map (\j -> dout[i/2][j/2] F./ (fromi64 4))
+             (iota (n*2)))     
+        (iota (m*2))
+
 
   def forward :  (inp : [28][28]real) -> (k1 : [6][5][5]real)
               -> (b1 : [6]real) -> (k2 : [12][6][5][5]real)
@@ -133,14 +169,16 @@ module nn (F: real) = {
     -- FIXME: how do I properly get rid of the second dimension in c2'?
     --        obviously it is stupid to copy the entire array
     --        as boty arrays have identical flattening...
-    let c2 = map (\i -> map (\j -> map (\k -> c2'[i][0][j][k]) (iota 8)) (iota 8)) (iota 12)
+    let c2 = (flatten c2' :> [12][8][8]real)
+    --let c2 = map (\i -> map (\j -> map (\k -> c2'[i][0][j][k]) (iota 8)) (iota 8)) (iota 12)
     --let s2 : [12][4][4]real
     let s2 = map avgp2 (c2 :> [12][4*2][4*2]real)
     --lte r : [10][1][1][1]
     let r = logistics4 (mconv3d s2 fc b)
     -- FIXME: Again, how do you reshape the array `r` into the new shape
     --        so we get rid of dimensions of length 1?
-    in map (\i -> r[i][0][0][0]) (iota 10)
+    --in map (\i -> r[i][0][0][0]) (iota 10)
+    in (flatten (flatten (flatten r)) :> [10]real)
 
   def main (n: i32) : real =
     fromi64 42
