@@ -22,22 +22,21 @@ module nn (F: real) = {
                       -> [bn][In - kn + 1]real =
     \ I k b -> map (\i -> map (F.+ b[i]) (conv1 I k[i])) (iota bn)
 
-  -- Back convolution
+  -- Back multi convolution 1d
   def backmconv1 [In][kn][bn] :  (dout : [bn][In-kn+1]real) -> (w : [bn][kn]real)
                               -> (I : [In]real) -> (b : [bn]real) 
-                              -> ([In]real, [bn][kn]real, [bn]real) = -- ∂I ∂k ∂b
+                              -> ([In]real, [bn][kn]real, [bn]real) = -- ∂I ∂w ∂b
     \dout w I b ->
     -- Reverse convolution
-    -- FIXME: this doesn't work
     let dI = loop r = map (\_-> zero) (iota In) for i < kn do
                loop r' = r for j < In-kn+1 do
-                  r' with [i+j] = r'[i+j] F.+ sum (map (\k -> dout[k][j] F.* w[k][i]) (iota bn))
+                  r' with [i+j] = copy r'[i+j] F.+ sum (map (\k -> dout[k][j] F.* w[k][i]) (iota bn))
     
     let dw = map (\i -> conv1 I dout[i]) (iota bn)
     let db = map (\i -> sum dout[i]) (iota bn)
-    in (I, w, b)
+    in (dI, w, b)
 
-  ----- 2d cases -----
+  --==== 2d cases ====--
   def sum2d (a: [][]real) : real = 
     sum (map sum a)
 
@@ -66,6 +65,33 @@ module nn (F: real) = {
               -> (b : [kbn]real) -> [kbn][Im - km + 1][In - kn + 1]real =
     \ I k b ->
     map (\j -> add2d_c (conv2d I (k[j])) b[j]) (iota kbn)
+
+  -- Back multi convolution 2d
+
+  def backmconv2 [Im][In][km][kn][kbn] 
+                 :  (dout :  [kbn][Im - km + 1][In - kn + 1]real) 
+                 -> (w : [kbn][km][kn]real)
+                 -> (I : [Im][In]real)
+                 -> (b : [kbn]real) 
+                 -> ([Im][In]real, [kbn][km][kn]real, [kbn]real) = -- ∂I ∂w ∂b
+    \dout w I b ->
+    -- Reverse convolution
+    let dI = 
+      loop r0 = map (\_-> map (\_ -> zero) (iota Im)) (iota In) for i0 < km do
+      loop r1 = r0 for i1 < kn do
+      loop r2 = r1 for j0 < Im-km+1 do
+      loop r3 = r2 for j1 < In-kn+1 do
+        --r3 with [i0+j0][i1+j1] = copy r3[i0+j0][i1+j1]
+        --     F.+ sum (map (\k -> dout[k][j0][j1] F.* w[k][i0][i1]) (iota kbn))
+        r3 with [i0+j0] =
+          (r3[i1+j1] with [i1+j1] 
+             = copy r3[i0+j0][i1+j1]
+               F.+ sum (map (\k -> dout[k][j0][j1] F.* w[k][i0][i1]) (iota kbn)))
+ 
+    
+    let dw = map (\i -> conv2d I dout[i]) (iota kbn)
+    let db = map (\i -> sum2d dout[i]) (iota kbn)
+    in (dI, w, b)
 
   ----- 3d cases -----
   def sum3d (a: [][][]real) : real = 
