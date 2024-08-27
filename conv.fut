@@ -33,6 +33,7 @@ def zipWith [n] 'a 'b 'c : (a -> b -> c) -> ([n]a) -> ([n]b) -> [n]c =
   \ f a b ->
   map (uncurry f) (zip a b)
 
+--==== Convolution Module ====--
 module nn (F: real) = {
   type real = F.t
 
@@ -45,16 +46,14 @@ module nn (F: real) = {
 
   def conv1 [In][kn]: (I : [In]real) -> (k: [kn]real) -> [In - kn + 1]real =
     \ I k ->
-    let sr = In - kn + 1
-    let sum_k i = sum (map (\j -> I[i+j] F.* k[j]) (iota kn))
-    let r = map sum_k (iota sr)
-    in r
+    let sum_k i = sum (imap kn (\j -> I[i+j] F.* k[j]))
+    in imap (In-kn+1) sum_k
 
 
   -- convolution with biases `b` which is a 1-d array.
   def mconv1 [In][kn][bn] : (I : [In]real) -> (k : [bn][kn]real) -> (b : [bn]real) 
                       -> [bn][In - kn + 1]real =
-    \ I k b -> map (\i -> map (F.+ b[i]) (conv1 I k[i])) (iota bn)
+    \ I k b -> imap bn (\i -> map (F.+ b[i]) (conv1 I k[i]))
 
   -- Back multi convolution 1d
   def backmconv1 [In][kn][bn] :  (dout : [bn][In-kn+1]real) -> (w : [bn][kn]real)
@@ -62,12 +61,12 @@ module nn (F: real) = {
                               -> ([In]real, [bn][kn]real, [bn]real) = -- ∂I ∂w ∂b
     \dout w I b ->
     -- Reverse convolution
-    let dI = loop r = map (\_-> zero) (iota In) for i < kn do
+    let dI = loop r = imap In (\_-> zero) for i < kn do
                loop r' = r for j < In-kn+1 do
                   r' with [i+j] = copy r'[i+j] F.+ sum (map (\k -> dout[k][j] F.* w[k][i]) (iota bn))
     
-    let dw = map (\i -> conv1 I dout[i]) (iota bn)
-    let db = map (\i -> sum dout[i]) (iota bn)
+    let dw = imap bn (\i -> conv1 I dout[i])
+    let db = imap bn (\i -> sum dout[i])
     in (dI, (dw :> [bn][kn]real), db)
 
   --==== 2d cases ====--
@@ -77,17 +76,9 @@ module nn (F: real) = {
   def conv2d [Im][In][km][kn]: 
     (I : [Im][In]real) -> (k: [km][kn]real) -> [Im - km + 1][In - kn + 1]real =
     \ I k ->
-    --let rm = Im - km + 1
-    --let rn = In - kn + 1
     let sum_k i j =
-      sum2d
-        (map (\i' ->
-                  map (\j' ->
-                           I[i+i'][j+j']F.*k[i'][j'])
-                      (iota kn))
-             (iota km))
-    let r = map (\i -> map (\j -> sum_k i j) (iota (In - kn + 1))) (iota (Im - km + 1))
-    in r
+      sum2d (imap2 km kn (\i' j' -> I[i+i'][j+j']F.*k[i'][j']))
+    in imap2 (Im-km+1) (In-kn+1) sum_k
 
 
   def add2d_c [m][n] :  (a : [m][n]real)
@@ -98,7 +89,7 @@ module nn (F: real) = {
               :  (I : [Im][In]real) -> (k : [kbn][km][kn]real)
               -> (b : [kbn]real) -> [kbn][Im - km + 1][In - kn + 1]real =
     \ I k b ->
-    map (\j -> add2d_c (conv2d I (k[j])) b[j]) (iota kbn)
+    imap kbn (\j -> add2d_c (conv2d I (k[j])) b[j])
 
   -- Back multi convolution 2d
   def backmconv2 [Im][In][km][kn][kbn] 
@@ -110,16 +101,16 @@ module nn (F: real) = {
     \dout w I b ->
     -- Reverse convolution
     let dI = 
-      loop r0 = map (\_-> map (\_ -> zero) (iota Im)) (iota In) for i0 < km do
+      --loop r0 = map (\_-> map (\_ -> zero) (iota Im)) (iota In) for i0 < km do
+      loop r0 = imap2 Im In (\_ _ -> zero) for i0 < km do
       loop r1 = r0 for i1 < kn do
       loop r2 = r1 for j0 < Im-km+1 do
       loop r3 = r2 for j1 < In-kn+1 do
         r3 with [i0+j0,i1+j1] = copy r3[i0+j0][i1+j1]
              F.+ sum (map (\k -> dout[k][j0][j1] F.* w[k][i0][i1]) (iota kbn))
  
-    
-    let dw = map (\i -> conv2d I dout[i]) (iota kbn)
-    let db = map (\i -> sum2d dout[i]) (iota kbn)
+    let dw = imap kbn (\i -> conv2d I dout[i])
+    let db = imap kbn (\i -> sum2d dout[i])
     in ((dI :> [Im][In]real), (dw :> [kbn][km][kn]real), db)
 
   --==== 3d cases ====--
@@ -130,25 +121,11 @@ module nn (F: real) = {
     (I : [Im][In][Ik]real) -> (k: [km][kn][kk]real) 
     -> [Im - km + 1][In - kn + 1][Ik - kk + 1]real =
     \ I weights ->
-    let rm = Im - km + 1
-    let rn = In - kn + 1
-    let rk = Ik - kk + 1
     let sum_k i j k =
       sum3d
-        (map (\i' -> 
-                  map (\j' ->
-                           map (\k' -> I[i+i'][j+j'][k+k']
-                                       F.* weights[i'][j'][k'])
-                               (iota kk)) 
-                      (iota kn)) 
-             (iota km))
-    let r = map (\i -> 
-                    map (\j ->
-                            map (\k -> sum_k i j k) 
-                                (iota rk)) 
-                        (iota rn)) 
-                (iota rm)
-    in r
+        (imap3 km kn kk (\i' j' k' -> I[i+i'][j+j'][k+k']
+                                      F.* weights[i'][j'][k']))
+    in imap3 (Im-km+1) (In-kn+1) (Ik-kk+1) sum_k
     
   def add3d_c [m][n][k] :  (a : [m][n][k]real)
                      -> (b : real) -> [m][n][k]real =
@@ -158,9 +135,7 @@ module nn (F: real) = {
               :  (I : [Im][In][Ik]real) -> (weights : [kbn][km][kn][kk]real)
               -> (b : [kbn]real) -> [kbn][Im - km + 1][In - kn + 1][Ik -kk +1]real =
     \ I weights b ->
-    --let add3d a b = map (\s2d -> map (\s1d -> map (\s0d -> s0d + b) s1d) s2d) a
-    let _ = ()
-    in map (\j -> add3d_c (conv3d I (weights[j])) b[j]) (iota kbn)
+    imap kbn (\j -> add3d_c (conv3d I (weights[j])) b[j])
 
   def backmconv3 [Im][In][Ik][km][kn][kk][kbn] 
                  :  (dout :  [kbn][Im-km+1][In-kn+1][Ik-kk+1]real) 
@@ -171,7 +146,7 @@ module nn (F: real) = {
     \dout w I b ->
     -- Reverse convolution
     let dI = 
-      loop r0 = map (\_-> map (\_ -> map (\_ -> zero) (iota Ik)) (iota In)) (iota Im) for i0 < km do
+      loop r0 = imap3 Im In Ik (\_ _ _ -> zero) for i0 < km do
       loop r1 = r0 for i1 < kn do
       loop r2 = r1 for i2 < kk do
 
@@ -181,9 +156,9 @@ module nn (F: real) = {
         r5 with [i0+j0,i1+j1,i2+j2] = copy r5[i0+j0][i1+j1][i2+j2]
              F.+ sum (map (\k -> dout[k][j0][j1][j2] F.* w[k][i0][i1][i2]) (iota kbn))
 
-    let dw = map (\i -> conv3d I dout[i]) (iota kbn)
-    let db = map (\i -> sum3d dout[i]) (iota kbn)
-    in (trace(dI :> [Im][In][Ik]real), (dw :> [kbn][km][kn][kk]real), db)
+    let dw = imap kbn (\i -> conv3d I dout[i])
+    let db = imap kbn (\i -> sum3d dout[i])
+    in ((dI :> [Im][In][Ik]real), (dw :> [kbn][km][kn][kk]real), db)
  
   --==== Logistics ====--
   def logistics1 [n] : (a : [n]real) -> [n]real =
@@ -214,22 +189,11 @@ module nn (F: real) = {
   -- Average pooling 2d
   def avgp2 [m][n] : (a : [m*2][n*2]real) -> [m][n]real =
     \ a ->
-    map (\i ->
-         map (\j ->
-              sum2d
-              (map (\i' ->
-                    map (\j' -> a[2*i+i'][2*j+j']) (iota 2))
-                   (iota 2))
-              F./ (fromi64 4))
-             (iota n))
-        (iota m)
+    imap2 m n (\i j -> sum2d (imap2 2 2 (\i' j' -> a[2*i+i'][2*j+j'])) F./ fromi64 4)
 
   def backavgp2 [m][n] : (dout : [m][n]real) -> [m*2][n*2]real =
     \ dout ->
-    map (\i ->
-         map (\j -> dout[i/2][j/2] F./ (fromi64 4))
-             (iota (n*2)))     
-        (iota (m*2))
+    imap2 (m*2) (n*2) (\i j -> dout[i/2][j/2] F./ fromi64 4)
 
 
   def forward :  (inp : [28][28]real) -> (k1 : [6][5][5]real)
@@ -284,19 +248,13 @@ module nn (F: real) = {
     let err = sum (zipWith (\x y -> let d = x F.- y in d F.* d F./ fromi64 2) out target) 
     let dout = zipWith (F.-) out target
 
-
-    -- Thes conversions are fucked-up
     let (ds2, dfc, db) = backmconv3 (unflatten_4d(backlog1 dout out :> [10*(12-12+1)*(4-4+1)*(4-4+1)]real)) fc s2 b
     let dc2 = map backavgp2 ds2 :> [12][8][8]real
     let (ds1, dk2, db2) = backmconv3 (unflatten (backlog3 dc2 c2 :> [12*1][8][8]real) :> [12][6-6+1][12-5+1][12-5+1]real) k2 s1 b2
     let dc1 = map backavgp2 ds1 :> [6][24][24]real
     let (_, dk1, db1) = backmconv2 (backlog3 dc1 (c1 :> [6][24][24]real) :> [6][28-5+1][28-5+1]real) k1 inp b1
 
-    --in (dk1, db1, dk2, db2, dfc, db, err)
     in (dk1, db1, dk2, db2, dfc, db, err)
-
-  --def main (n: i32) : real =
-  --  fromi64 42
 }
 
 open nn (f32)
@@ -348,31 +306,31 @@ entry run (imgs_bytes : []u8) (lbls_bytes : []u8) =
 
   let avg (a : []f32) = sum a / f32.i64 (length a)
 
-  let m = loop (k1, b1, k2, b2, fc, b)
+  let m = loop (k11, b11, k21, b21, fc1, b1)
        = (k1, b1, k2, b2, fc, b) for epoch < epochs do
-    let t = loop (k1, b1, k2, b2, fc, b, err)
-         = (k1, b1, k2, b2, fc, b, 0.0) for i < trainings / batchsize do
+    let t = loop (k12, b12, k22, b22, fc2, b2, err)
+         = (k11, b11, k21, b21, fc1, b1, 0.0) for i < trainings / batchsize do
       -- This is where we call trainings in parallel!
-      let t = imap batchsize 
+      let r = imap batchsize 
                    (\j -> 
                       let img = imgs[i*batchsize+j] :> [28][28]f32
                       let lbl = gen_target (i64.i8 lbls[i*batchsize+j])
-                      in train img k1 b1 k2 b2 fc b lbl)
-      let (bdk1, bdb1, bdk2, bdb2, bdfc, bdb, berr) = unzip7 t
+                      in train img k12 b12 k22 b22 fc2 b2 lbl)
+      let (bdk1, bdb1, bdk2, bdb2, bdfc, bdb, berr) = unzip7 r
       -- TODO: these should happen in-place, but hopefully this is not
       --       a hotspot, the arrays are rather small.
       let k1' = imap3 6 5 5 (\i j k -> 
-                   k1[i][j][k] - rate * (avg (imap batchsize (\t -> bdk1[t][i][j][k]))))
+                   k12[i][j][k] - rate * (avg (imap batchsize (\t -> bdk1[t][i][j][k]))))
       let b1' = imap1 6 (\i -> 
-                   b1[i] - rate * (avg (imap batchsize (\t -> bdb1[t][i]))))
+                   b12[i] - rate * (avg (imap batchsize (\t -> bdb1[t][i]))))
       let k2' = imap4 12 6 5 5 (\i j k l -> 
-                   k2[i][j][k][l] - rate * (avg (imap batchsize (\t -> bdk2[t][i][j][k][l]))))
+                   k22[i][j][k][l] - rate * (avg (imap batchsize (\t -> bdk2[t][i][j][k][l]))))
       let b2' = imap1 12 (\i -> 
-                   b2[i] - rate * (avg (imap batchsize (\t -> bdb2[t][i]))))
+                   b22[i] - rate * (avg (imap batchsize (\t -> bdb2[t][i]))))
       let fc' = imap4 10 12 4 4 (\i j k l -> 
-                   fc[i][j][k][l] - rate * (avg (imap batchsize (\t -> bdfc[t][i][j][k][l]))))
+                   fc2[i][j][k][l] - rate * (avg (imap batchsize (\t -> bdfc[t][i][j][k][l]))))
       let b'  = imap1 10 (\i -> 
-                   b[i] - rate * (avg (imap batchsize (\t -> bdb[t][i]))))
+                   b2[i] - rate * (avg (imap batchsize (\t -> bdb[t][i]))))
 
       in (k1', b1', k2', b2', fc', b', err + sum berr)
     in (t.0, t.1, t.2, t.3, t.4, t.5)
