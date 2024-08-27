@@ -12,6 +12,7 @@
 
         devShell = pkgs.mkShell { 
           buildInputs = with pkgs; [ 
+            darwin.apple_sdk.frameworks.OpenCL
             futhark
           ]; };
       });
