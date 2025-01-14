@@ -1,5 +1,10 @@
+-- XXX I don't know how to pass two files via `script input`
+-- ==
+-- "training-phase"
+-- script input { ($loadbytes "input/train-images-idx3-ubyte") } { ($loadbytes "input/train-labels-idx1-ubyte") }
 
---==== Generic Combinators ====--
+
+--------- Generic Combinators ---------
 
 def imap 'a : (n : i64) -> (i64 -> a) -> [n]a =
   \ n f -> map f (iota n)
@@ -42,7 +47,7 @@ module nn (F: real) = {
   def one = fromi64 1
 
   def sum (a : []real) : real =
-    foldl (F.+) zero a
+    reduce (F.+) zero a
 
   def conv1 [In][kn]: (I : [In]real) -> (k: [kn]real) -> [In - kn + 1]real =
     \ I k ->
@@ -235,8 +240,12 @@ module nn (F: real) = {
                   real)                -- error
               =
     \ inp k1 b1 k2 b2 fc b target ->
-    let c1  --: [6][24][24]real
-        = logistics3 (mconv2d inp k1 b1)
+    --let c1  --: [6][24][24]real
+    --    = logistics3 (mconv2d inp k1 b1)
+
+    let x0 = (imap1 6 (\ x1_0 -> (imap2 24 24 (\ x8_0 x8_1 -> ((imap2 24 24 (\ x3_0 x3_1 -> (sum2d (imap2 5 5 (\ x2_0 x2_1 -> (imap2 24 24 (\ x6_0 x6_1 -> ((imap2 24 24 (\ x4_0 x4_1 -> inp[(x2_0 + x4_0)][(x2_1 + x4_1)]))[x6_0][x6_1] * (imap2 24 24 (\ x5_0 x5_1 -> k1[x1_0][x2_0][x2_1]))[x6_0][x6_1])))[x3_0][x3_1]) ))))[x8_0][x8_1] + (imap2 24 24 (\ x7_0 x7_1 -> b1[x1_0]))[x8_0][x8_1])))))
+    let c1 = (imap3 6 24 24 (\ x10_0 x10_1 x10_2 -> (logistics1 x0[x10_0][x10_1][x10_2])))
+
     let s1  --: [6][12][12]real
         = map avgp2 (c1 :> [6][12*2][12*2]real)
     let c2' --: [12][1][8][8]real
@@ -284,8 +293,7 @@ def decode_image_file (s: []u8) =
   in assert (magic==2051) (tabulate n get_img)
 
 
-
-entry run (imgs_bytes : []u8) (lbls_bytes : []u8) =
+entry run (imgs_bytes : []u8) (lbls_bytes : []u8) = #[unsafe]
   let imgs = decode_image_file imgs_bytes
   let lbls = decode_label_file lbls_bytes
 
