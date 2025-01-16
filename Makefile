@@ -12,9 +12,9 @@ run : conv.fut $(TRAIN_IMG) $(TRAIN_LBL)
 	futhark script $< \
 		'run ($$loadbytes "$(TRAIN_IMG)") ($$loadbytes "$(TRAIN_LBL)")'
 
-run-milti : conv.fut $(TRAIN_IMG) $(TRAIN_LBL) 
+run-multi : conv.fut $(TRAIN_IMG) $(TRAIN_LBL) 
 	CFLAGS=$(CFLAGS) futhark script --backend=multicore $< \
-		'run ($$loadbytes "$(TRAIN_IMG)") ($$loadbytes "$(TRAIN_LBL)")'
+		'run (($$loadbytes "$(TRAIN_IMG)") , ($$loadbytes "$(TRAIN_LBL)"))'
 
 test : conv.fut $(TRAIN_IMG) $(TRAIN_LBL) 
 	futhark script  $< 'test_conv'
