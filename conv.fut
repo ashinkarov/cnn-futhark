@@ -238,25 +238,8 @@ module nn (F: real) = {
                   real)                -- error
               =
     \ inp k1 b1 k2 b2 fc b target ->
-    --let c1  --: [6][24][24]real
-    --    = logistics3 (mconv2d inp k1 b1)
-    
-    -- No optimisations on the DSL side (really slow)
-    --let x0 = (imap1 6 (\ x1_0 -> (imap2 24 24 (\ x8_0 x8_1 -> ((imap2 24 24 (\ x3_0 x3_1 -> (sum2d (imap2 5 5 (\ x2_0 x2_1 -> (imap2 24 24 (\ x6_0 x6_1 -> ((imap2 24 24 (\ x4_0 x4_1 -> inp[(x2_0 + x4_0)][(x2_1 + x4_1)]))[x6_0][x6_1] F.* (imap2 24 24 (\ x5_0 x5_1 -> k1[x1_0][x2_0][x2_1]))[x6_0][x6_1])))[x3_0][x3_1])))))[x8_0][x8_1] F.+ (imap2 24 24 (\ x7_0 x7_1 -> b1[x1_0]))[x8_0][x8_1])))))
-    --in let c1 = (imap3 6 24 24 (\ x10_0 x10_1 x10_2 -> (logistics x0[x10_0][x10_1][x10_2])))
-
-    -- Optimised within DSL (really slow)
-    --let x0 = (imap1 6 (\ x1_0 -> (imap2 24 24 (\ x2_0 x2_1 -> ((sum2d (imap2 5 5 (\ x3_0 x3_1 -> ((imap2 24 24 (\ x5_0 x5_1 -> inp[(x3_0 + x5_0)][(x3_1 + x5_1)]))[x2_0][x2_1] F.* k1[x1_0][x3_0][x3_1])))) F.+ b1[x1_0])))))
-    --in let c1 = (imap3 6 24 24 (\ x9_0 x9_1 x9_2 -> (logistics x0[x9_0][x9_1][x9_2])))
-
-    -- Optimised within DSL + hand-optimised (fast) 
-    let x0 = (imap1 6 (\ x1_0 -> (imap2 24 24 (\ x2_0 x2_1 -> ((sum2d (imap2 5 5 (\ x3_0 x3_1 -> ((inp[(x3_0 + x2_0)][(x3_1 + x2_1)]) F.* k1[x1_0][x3_0][x3_1])))) F.+ b1[x1_0])))))
-    in let c1 = (imap3 6 24 24 (\ x9_0 x9_1 x9_2 -> (logistics x0[x9_0][x9_1][x9_2])))
-
-    -- The above line is the optimised DSL with the following manual rewrite:
-    --(imap2 24 24 (\ x5_0 x5_1 -> inp[(x3_0 + x5_0)][(x3_1 + x5_1)]))[x2_0][x2_1]
-    --(inp[(x3_0 + x2_0)][(x3_1 + x2_1)])
-
+    let c1  --: [6][24][24]real
+        = logistics3 (mconv2d inp k1 b1)
     let s1  --: [6][12][12]real
         = map avgp2 (c1 :> [6][12*2][12*2]real)
     let c2' --: [12][1][8][8]real
