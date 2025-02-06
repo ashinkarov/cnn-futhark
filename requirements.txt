@@ -1,0 +1,5 @@
+numpy
+python-mnist
+tensorflow
+torch
+torchvision
