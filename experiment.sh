@@ -6,7 +6,7 @@
 
 set -e
 
-module load python cuda
+module load python cuda/11.4
 
 python -m venv ve
 source ve/bin/activate
@@ -17,3 +17,5 @@ set -x
 pytorch/main.py input
 
 tensorflow/main.py input
+
+futhark bench --backend=cuda conv.fut
