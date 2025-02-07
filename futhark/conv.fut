@@ -471,134 +471,60 @@ type~ str_pair = ([]u8, []u8)
 entry convert (imgs_bytes: []u8) (lbls_bytes: []u8) : str_pair =
   (imgs_bytes, lbls_bytes)
 
-entry run (imgs_lbls: str_pair) =
-  --[n] (imgs_lbls : ([n]u8 , [n]u8)) = #[unsafe] --((imgs_bytes : []u8) (lbls_bytes : []u8) = #[unsafe]
-  let (imgs_bytes, lbls_bytes) = imgs_lbls
-  let imgs = decode_image_file imgs_bytes
-  let lbls = decode_label_file lbls_bytes
-  let imgs_num = length imgs
-  let _ = assert (length lbls == imgs_num) ()
-  -- Fixed initial weights as we use in SaC
+type state =
+  { k1: [6][5][5]f32
+  , b1: [6]f32
+  , k2: [12][6][5][5]f32
+  , b2: [12]f32
+  , fc: [10][12][4][4]f32
+  , b: [10]f32
+  }
+
+entry iteration [n] (trainings: i64) (batchsize: i64) (rate: f32) (imgs: [n][28][28]f32) (lbls: [n]i8) (s: state) : (state, f32) =
+  let gen_target i = imap 10 (\j -> if j == i then 1.0 else 0.0)
+  let avg (a: []f32) = sum a / f32.i64 (length a)
+  let (s, err) =
+    loop (s, err) = (s, 0.0)
+    for i < trainings / batchsize do
+      let {k1, b1, k2, b2, fc, b} = s
+      -- This is where we call trainings in parallel!
+      let r =
+        imap batchsize (\j ->
+                          let img = imgs[i * batchsize + j]
+                          let lbl = gen_target (i64.i8 lbls[i * batchsize + j])
+                          in train_gen img k1 b1 k2 b2 fc b lbl)
+      let (bdk1, bdb1, bdk2, bdb2, bdfc, bdb, berr) = unzip7 r
+      -- TODO: these should happen in-place, but hopefully this is not
+      --       a hotspot, the arrays are rather small.
+      let k1' =
+        imap3 6 5 5 (\i j k ->
+                       k1[i][j][k] - rate * (avg (imap batchsize (\t -> bdk1[t][i][j][k]))))
+      let b1' =
+        imap1 6 (\i ->
+                   b1[i] - rate * (avg (imap batchsize (\t -> bdb1[t][i]))))
+      let k2' =
+        imap4 12 6 5 5 (\i j k l ->
+                          k2[i][j][k][l] - rate * (avg (imap batchsize (\t -> bdk2[t][i][j][k][l]))))
+      let b2' =
+        imap1 12 (\i ->
+                    b2[i] - rate * (avg (imap batchsize (\t -> bdb2[t][i]))))
+      let fc' =
+        imap4 10 12 4 4 (\i j k l ->
+                           fc[i][j][k][l] - rate * (avg (imap batchsize (\t -> bdfc[t][i][j][k][l]))))
+      let b' =
+        imap1 10 (\i ->
+                    b[i] - rate * (avg (imap batchsize (\t -> bdb[t][i]))))
+      let err' = err + sum berr
+      in ( {k1 = k1', b1 = b1', k2 = k2', b2 = b2', fc = fc', b = b'}
+         , err'
+         )
+  in (s, err / 10.0 / f32.i64 trainings)
+
+entry initial_state : state =
   let k1 = imap3 6 5 5 (\_ _ _ -> 1.0 / 25.0)
   let b1 = imap1 6 (\_ -> 1.0 / 6.0)
   let k2 = imap4 12 6 5 5 (\_ _ _ _ -> 1.0 / 150.0)
   let b2 = imap1 12 (\_ -> 1.0 / 12.0)
   let fc = imap4 10 12 4 4 (\_ _ _ _ -> 1.0 / 192.0)
   let b = imap1 10 (\_ -> 1.0 / 10.0)
-  --let epochs    = 1
-  --let batchsize = 1
-  --let trainings = 1
-  --let tests     = 1
-  --let rate      = 0.05
-
-  let epochs = 10
-  let batchsize = 100
-  let trainings = 10000
-  let tests = 10000
-  let rate = 0.05
-  let gen_target i = imap 10 (\j -> if j == i then 1.0 else 0.0)
-  let avg (a: []f32) = sum a / f32.i64 (length a)
-  let m =
-    loop (k11, b11, k21, b21, fc1, b1, errs) =
-           (k1, b1, k2, b2, fc, b, imap epochs (\_ -> 0.0))
-    for epoch < epochs do
-      let t =
-        loop (k12, b12, k22, b22, fc2, b2, err) =
-               (k11, b11, k21, b21, fc1, b1, 0.0)
-        for i < trainings / batchsize do
-          -- This is where we call trainings in parallel!
-          let r =
-            imap batchsize
-                 (\j ->
-                    let img = imgs[i * batchsize + j] :> [28][28]f32
-                    let lbl = gen_target (i64.i8 lbls[i * batchsize + j])
-                    in train_gen img k12 b12 k22 b22 fc2 b2 lbl)
-          let (bdk1, bdb1, bdk2, bdb2, bdfc, bdb, berr) = unzip7 r
-          -- TODO: these should happen in-place, but hopefully this is not
-          --       a hotspot, the arrays are rather small.
-          let k1' =
-            imap3 6 5 5 (\i j k ->
-                           k12[i][j][k] - rate * (avg (imap batchsize (\t -> bdk1[t][i][j][k]))))
-          let b1' =
-            imap1 6 (\i ->
-                       b12[i] - rate * (avg (imap batchsize (\t -> bdb1[t][i]))))
-          let k2' =
-            imap4 12 6 5 5 (\i j k l ->
-                              k22[i][j][k][l] - rate * (avg (imap batchsize (\t -> bdk2[t][i][j][k][l]))))
-          let b2' =
-            imap1 12 (\i ->
-                        b22[i] - rate * (avg (imap batchsize (\t -> bdb2[t][i]))))
-          let fc' =
-            imap4 10 12 4 4 (\i j k l ->
-                               fc2[i][j][k][l] - rate * (avg (imap batchsize (\t -> bdfc[t][i][j][k][l]))))
-          let b' =
-            imap1 10 (\i ->
-                        b2[i] - rate * (avg (imap batchsize (\t -> bdb[t][i]))))
-          let err' = #[trace(err_per_epoch)] (err + sum berr)
-          in (k1', b1', k2', b2', fc', b', err')
-      let errs' = errs with [epoch] = t.6 / 10.0 / f32.i64 trainings
-      in (t.0, t.1, t.2, t.3, t.4, t.5, errs')
-  in ( imap2 10 10 (\i j -> imgs[0][i][j])
-     , lbls[0]
-     , m.0[0]
-     , m.1
-     , m.2[0][0]
-     , m.3
-     , m.4[0][0]
-     , m.5
-     , m.6[0]
-     )
-
---m.0[0][0][0] + m.1[0] + m.2[0][0][0][0] + m.3[0] + m.4[0][0][0][0] + m.5[0]
-
--- XXX I don't know how to pass two files via `script input`
--- ==
--- entry: run
--- "training-phase"
--- script input { convert ($loadbytes "input/train-images-idx3-ubyte")  ($loadbytes "input/train-labels-idx1-ubyte") }
-
---==== Tests ====---
-
-def img = imap2 5 5 (\i j -> f32.i64 (5 * i + j))
-def k1 = imap2 2 2 (\i j -> f32.i64 (2 * i + j))
-def k3 = imap3 3 2 2 (\i j k -> f32.i64 (2 * 2 * i + 2 * j + k))
-def b = imap 3 (\i -> f32.i64 (10 * i + 1))
-
-entry test_conv =
-  conv2d img k1
-
-entry test_convg =
-  -- Generated
-  (imap2 4
-         4
-         (\x1_0 x1_1 ->
-            (sum2d (imap2 2
-                          2
-                          (\x0_0 x0_1 ->
-                             (imap2 4
-                                    4
-                                    (\x4_0 x4_1 ->
-                                       ((imap2 4
-                                               4
-                                               (\x2_0 x2_1 ->
-                                                  img[(x0_0 + x2_0)][(x0_1 + x2_1)]))[x4_0][x4_1]
-                                        * (imap2 4 4 (\x3_0 x3_1 -> k1[x0_0][x0_1]))[x4_0][x4_1])))[x1_0][x1_1])))))
-
-entry test_mconv =
-  mconv2d img k3 b
-
-entry test_bmconv =
-  let dout = mconv2d img k3 b
-  in backmconv2 dout k3 img b
-
-entry test_meansqerr =
-  let out = imap 10 (\_ -> 6.95731997489929199218750000000e-01)
-  let lbl = imap 10 (\i -> if i == 5 then 1.0 else 0.0)
-  in mean_sq_err out lbl
-
-entry test_log =
-  logistics1 (imap 1 (\_ -> 0.66445645368))
-
-entry test_sum (x: f32) =
-  --sum3d (imap3 3 2 2 (\i j k -> k3[i][j][k] / 150.0))
-  sum3d (imap3 3 4 5 (\_ _ _ -> x + 1.0 / 60.0))
+  in {k1, b1, k2, b2, fc, b}

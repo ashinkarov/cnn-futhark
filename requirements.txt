@@ -3,3 +3,5 @@ python-mnist
 tensorflow
 torch
 torchvision
+futhark-server
+futhark-data

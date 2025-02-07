@@ -6,6 +6,7 @@
 
 set -e
 
+module purge
 module load python cuda/11.4
 
 python -m venv ve
@@ -18,4 +19,5 @@ pytorch/main.py input
 
 tensorflow/main.py input
 
-futhark bench --backend=cuda conv.fut
+futhark cuda --server futhark/conv.fut
+(cd futhark && ./main.py ../input)
