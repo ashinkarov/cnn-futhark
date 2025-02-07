@@ -9,7 +9,7 @@ import logging
 
 if __name__ == "__main__":
     logging.basicConfig()
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger('futhark')
     logger.setLevel(logging.INFO)
 
     parser = argparse.ArgumentParser(description='Futhark implementation')
@@ -35,8 +35,7 @@ if __name__ == "__main__":
     train_images = train_images_raw.astype(np.float32, copy=False).reshape(train_images_raw.shape[0], 28, 28)
     train_labels = train_labels_raw.astype(np.int8, copy=False)
 
-    logger.info('Training with Futhark')
-    logger.info('Parameters: epoch({}), batch-size({}), training-rate({:f}), training-size({})'.format(args.epoch, args.batch_size, args.training_rate, args.training_size))
+    logger.info(f'Parameters: epoch({args.epoch}), batch-size({args.batch_size}), training-rate({args.training_rate}), training-size({args.training_size})')
     with futhark_server.Server('./conv') as server:
         server.put_value('batchsize', np.int64(args.batch_size))
         server.put_value('rate', np.float32(args.training_rate))
