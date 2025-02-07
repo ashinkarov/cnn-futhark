@@ -7,7 +7,7 @@
 set -e
 
 module purge
-module load python cuda/11.4
+module load python/3.9.9 cuda/11.8 cudnn/8.6.0
 
 python -m venv ve
 source ve/bin/activate
@@ -17,7 +17,7 @@ set -x
 
 pytorch/main.py input
 
-tensorflow/main.py input
+tensorflow/main.py input --gpu
 
 futhark cuda --server futhark/conv.fut
 (cd futhark && ./main.py ../input)
