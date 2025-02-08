@@ -17,6 +17,7 @@ set -x
 
 pytorch/main.py input
 
+export LD_LIBRARY_PATH=/opt/software/cudnn/8.6.0/lib/:$LD_LIBRARY_PATH # Hack
 tensorflow/main.py input --gpu
 
 futhark cuda --server futhark/conv.fut
