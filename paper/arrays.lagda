@@ -15,7 +15,7 @@ module Array where
   open import Data.Fin.Properties using (suc-injective; toℕ<n; splitAt-inject+)
   --open import Fin2 using (Fin; #_; combine; remQuot; zerof; sucf; _⊕_; _⊝_)
   open import Data.Sum using (_⊎_; inj₁; inj₂)
-  open import Data.Product using (∃; _,_)
+  open import Data.Product as Prod using (∃; _,_; _×_; uncurry)
 \end{code}
 
 The central data structures of our case study are multi-dimensional
@@ -37,12 +37,13 @@ This enables us to represent arrays as functions from indices to values.
 
 An absence of out-of-bound errors requires that all array indices fall within
 the shapes of the arrays that they are selecting from.
-The shape of an array describes the extent of each of its axes.  We represent shapes
-as binary trees of natural numbers using the data type \AD{S}.
-Leaves of the shape tree are constructed with \AC{ι} which takes one
-argument.  The \AC{\_⊗\_} constructor makes a tree of two sub-trees.
-Note that underscores in \AC{\_⊗\_} specify the position where arguments
-go, therefore \AC{⊗} is an infix binary operation.
+The shape of an array describes the extent of each of its axes.  We represent
+shapes lists of natural numbers using the data type \AD{S}.
+Empty shapes \AC{[]} correspond to singleton arrays (often called
+scalars in array langauges).  The cons operation \AC{\_∷\_} prepends
+the axis to the left of the shape.
+Note that underscores in \AC{\_∷\_} specify the position where arguments
+go, therefore \AC{∷} is an infix binary operation.
 
 Array positions (indices) are given by the dependent type \AD{P} which
 is indexed by shapes.  A position within an array of shape \AB{s} has exactly the
@@ -55,8 +56,8 @@ as follows:
 \begin{mathpar}
 \codeblock{\begin{code}
   data S : Set where
-    ι    : ℕ → S
-    _⊗_  : S → S → S
+    []   : S
+    _∷_  : ℕ → S → S
 \end{code}
 \begin{code}[hide]
   variable
@@ -67,8 +68,8 @@ as follows:
 \and
 \codeblock{\begin{code}
   data P : S → Set where
-    ι    : Fin n → P (ι n)
-    _⊗_  : P s → P p → P (s ⊗ p)
+    []   : P []
+    _∷_  : Fin n → P s → P (n ∷ s)
 \end{code}}
 \and
 \codeblock{\begin{code}
@@ -103,6 +104,37 @@ to apply \AB{f} to all the elements of \AB{a}; and \AF{zipWith}\ \AB{f}
 \end{code}}
 \end{mathpar}
 
+Array shapes can be concatenated as lists.  We call this operation
+\emph{shape product} and we denote it with \AF{\_⊗\_} (because this
+correspond to the shape of tensor product).  Positions of sub-shapes
+can be joined into a position of a product shape using the \AF{\_⊗ₚ\_}
+operation.  Dually, positions of a product shape can be split into
+positions of the corresponding subshapes using \AF{split}.  Here are
+the types of these three operations:
+\begin{mathpar}
+\codeblock{\begin{code}
+  _⊗_ : S → S → S
+\end{code}}
+\and
+\codeblock{\begin{code}
+  _⊗ₚ_ : P s → P p → P (s ⊗ p)
+\end{code}}
+\and
+\codeblock{\begin{code}
+  split : P (s ⊗ p) → P s × P p
+\end{code}}
+\end{mathpar}
+\begin{code}[hide]
+  [] ⊗ p = p
+  (n ∷ s) ⊗ p = n ∷ (s ⊗ p)
+
+  [] ⊗ₚ jv = jv
+  (i ∷ iv) ⊗ₚ jv = i ∷ (iv ⊗ₚ jv)
+
+  split {s = []}    is = [] , is
+  split {s = x ∷ s} (i ∷ is) = Prod.map₁ (i ∷_) (split is)
+\end{code}
+
 Arrays are homogeneously nested, \ie{} the shapes of all the sub-arrays
 have to be the same.  Therefore, we can switch between the array of a product
 shape and the nested array (array of arrays).  This operation is very similar
@@ -111,12 +143,12 @@ achieve this are named \AF{nest} and \AF{unnest} and their definitions are:
 \begin{mathpar}
 \codeblock{\begin{code}
   nest : Ar (s ⊗ p) X → Ar s (Ar p X)
-  nest a i j = a (i ⊗ j)
+  nest a i j = a (i ⊗ₚ j)
 \end{code}}
 \and
 \codeblock{\begin{code} 
   unnest : Ar s (Ar p X) → Ar (s ⊗ p) X
-  unnest a (i ⊗ j) = a i j
+  unnest a i = uncurry a (split i)
 \end{code}}
 \end{mathpar}
 
@@ -128,6 +160,8 @@ The arrays of higher ranks iterate \AF{sum₁} bottom-up.  The definition
 of the primitives are as follows:
 \begin{mathpar}
 \codeblock{\begin{code}
+  pattern ι n = n ∷ []
+
   ιsuc : P (ι n) → P (ι (suc n))
   ιsuc (ι i) = ι (suc i)
 \end{code}}
@@ -140,8 +174,8 @@ of the primitives are as follows:
 \and
 \codeblock{\begin{code}
   sum : (X → X → X) → X → Ar s X → X
-  sum {s = ι n}    f ε a = sum₁ f ε a
-  sum {s = s ⊗ p}  f ε a = sum f ε $ map (sum f ε) (nest a)
+  sum {s = []}     f ε a = f ε (a [])
+  sum {s = x ∷ s}  f ε a = sum₁ f ε $ map (sum f ε) (nest a)
 \end{code}}
 \end{mathpar}
 
@@ -156,86 +190,86 @@ We recover regular fold behaviour by running \AD{sum} over function composition:
 \end{code}
 } through reduction of function composition.
 
-\paragraph{Reshaping}
-One common operation on arrays is element-preserving change of shape.  We call
-such an operation \AF{reshape}.  It is clear that array elements can be preserved only in
-cases when the number of elements in the original array and the reshaped one
-is the same.  We define an inductive relation \AF{Reshape} that relates
-only those shapes that preserve the number of array elements.  
-\begin{code}[hide]
-  infixr 5 _∙_
-  --infixl 10 _,_
-\end{code}
-\begin{mathpar}
-\codeblock{\begin{code}
-  data Reshape : S → S → Set where
-    eq      : Reshape s s
-    _∙_     : Reshape p q → Reshape s p → Reshape s q
-    _,_     : Reshape s p → Reshape q r → Reshape (s ⊗ q) (p ⊗ r)
-    split   : Reshape (ι (m * n)) (ι m ⊗ ι n)
-    flat    : Reshape (ι m ⊗ ι n) (ι (m * n))
-    swap    : Reshape (s ⊗ p) (p ⊗ s)
-    assocl  : Reshape (s ⊗ (p ⊗ q)) ((s ⊗ p) ⊗ q)
-    assocr  : Reshape ((s ⊗ p) ⊗ q) (s ⊗ (p ⊗ q))
-\end{code}}
-\end{mathpar}
-Any expression $r$ of
-the type (\AF{Reshape} \AB{s} \AB{p}) comes with a straight-forward action on
-indices that we denote \AF{\_⟨\_⟩} (its definition is omitted).
-Such a (contravariant) action translates
-the index within the shape \AB{p} into the index within the shape \AB{s}.
-Given this translation, we can easily define \AF{reshape} as shown below.
-\AF{Reshape} is constructed such that if $s$ and $p$ are related, then 
-$p$ and $s$ are related too.  This fact is given by the function \AF{rev}
-(its definition is omitted) and it immediately implies that all the
-actions on indices as well as array \AF{reshape}s are invertible.
+% \paragraph{Reshaping}
+% One common operation on arrays is element-preserving change of shape.  We call
+% such an operation \AF{reshape}.  It is clear that array elements can be preserved only in
+% cases when the number of elements in the original array and the reshaped one
+% is the same.  We define an inductive relation \AF{Reshape} that relates
+% only those shapes that preserve the number of array elements.  
+% \begin{code}[hide]
+%   infixr 5 _∙_
+%   --infixl 10 _,_
+% \end{code}
+% \begin{mathpar}
+% \codeblock{\begin{code}
+%   data Reshape : S → S → Set where
+%     eq      : Reshape s s
+%     _∙_     : Reshape p q → Reshape s p → Reshape s q
+%     _,_     : Reshape s p → Reshape q r → Reshape (s ⊗ q) (p ⊗ r)
+%     split   : Reshape (ι (m * n)) (ι m ⊗ ι n)
+%     flat    : Reshape (ι m ⊗ ι n) (ι (m * n))
+%     swap    : Reshape (s ⊗ p) (p ⊗ s)
+%     assocl  : Reshape (s ⊗ (p ⊗ q)) ((s ⊗ p) ⊗ q)
+%     assocr  : Reshape ((s ⊗ p) ⊗ q) (s ⊗ (p ⊗ q))
+% \end{code}}
+% \end{mathpar}
+% Any expression $r$ of
+% the type (\AF{Reshape} \AB{s} \AB{p}) comes with a straight-forward action on
+% indices that we denote \AF{\_⟨\_⟩} (its definition is omitted).
+% Such a (contravariant) action translates
+% the index within the shape \AB{p} into the index within the shape \AB{s}.
+% Given this translation, we can easily define \AF{reshape} as shown below.
+% \AF{Reshape} is constructed such that if $s$ and $p$ are related, then 
+% $p$ and $s$ are related too.  This fact is given by the function \AF{rev}
+% (its definition is omitted) and it immediately implies that all the
+% actions on indices as well as array \AF{reshape}s are invertible.
+% 
+% Note that two shapes can be related by \AF{Reshape} in more than
+% one way, which results in different array reshapes.  
+% For example, consider \AF{Reshape} (\AC{ι} 5 \AC{⊗} \AC{ι} 4) (\AC{ι} 5 \AC{⊗} \AC{ι} 4)
+% given by \AC{swap} or through (\AC{split} \AC{∙} \AC{flat}).  While the former transposes 
+% the array elements, the latter does not.
+% \begin{mathpar}
+% \codeblock{\begin{code}
+%   _⟨_⟩ : P p → Reshape s p → P s
+% \end{code}}
+% \and
+% \codeblock{\begin{code}
+%   reshape : Reshape s p → Ar s X → Ar p X
+%   reshape r a = λ ix → a (ix ⟨ r ⟩)
+% \end{code}}
+% \and
+% \codeblock{\begin{code}
+%   rev : Reshape s p → Reshape p s
+% \end{code}}
+% \end{mathpar}
+% From the perspective of category theory, if \AF{S} is an object then \AF{Reshape}
+% is a Hom set, where \AC{eq} is identity and \AC{\_∙\_} is a composition with
+% the expected properties.  In the language of containers~\cite{containers}, \AF{Ar} is
+% a container and \AF{Reshape} is an inductive subset of cartesian container morphisms.
+% 
 
-Note that two shapes can be related by \AF{Reshape} in more than
-one way, which results in different array reshapes.  
-For example, consider \AF{Reshape} (\AC{ι} 5 \AC{⊗} \AC{ι} 4) (\AC{ι} 5 \AC{⊗} \AC{ι} 4)
-given by \AC{swap} or through (\AC{split} \AC{∙} \AC{flat}).  While the former transposes 
-the array elements, the latter does not.
-\begin{mathpar}
-\codeblock{\begin{code}
-  _⟨_⟩ : P p → Reshape s p → P s
-\end{code}}
-\and
-\codeblock{\begin{code}
-  reshape : Reshape s p → Ar s X → Ar p X
-  reshape r a = λ ix → a (ix ⟨ r ⟩)
-\end{code}}
-\and
-\codeblock{\begin{code}
-  rev : Reshape s p → Reshape p s
-\end{code}}
-\end{mathpar}
-From the perspective of category theory, if \AF{S} is an object then \AF{Reshape}
-is a Hom set, where \AC{eq} is identity and \AC{\_∙\_} is a composition with
-the expected properties.  In the language of containers~\cite{containers}, \AF{Ar} is
-a container and \AF{Reshape} is an inductive subset of cartesian container morphisms.
 
-
-
-\begin{code}[hide]
-  i ⟨ eq ⟩ = i
-  (i ⊗ j) ⟨ r , r₁ ⟩ = (i ⟨ r ⟩) ⊗ (j ⟨ r₁ ⟩)
-  i ⟨ r ∙ r₁ ⟩ = i ⟨ r ⟩ ⟨ r₁ ⟩
-  (ι i ⊗ ι j) ⟨ split ⟩ = ι (combine i j)
-  ι i ⟨ flat ⟩ = let a , b = remQuot _ i in ι a ⊗ ι b
-  (i ⊗ j) ⟨ swap ⟩ = j ⊗ i
-  ((i ⊗ j) ⊗ k) ⟨ assocl ⟩ = i ⊗ (j ⊗ k)
-  (i ⊗ (j ⊗ k)) ⟨ assocr ⟩ = (i ⊗ j) ⊗ k
-  
-  
-  rev eq = eq
-  rev (r , r₁) = rev r , rev r₁
-  rev (r ∙ r₁) = rev r₁ ∙ rev r
-  rev split = flat
-  rev flat = split
-  rev swap = swap
-  rev assocl = assocr
-  rev assocr = assocl
-\end{code}
+% \begin{code}[hide]
+%   i ⟨ eq ⟩ = i
+%   (i ⊗ j) ⟨ r , r₁ ⟩ = (i ⟨ r ⟩) ⊗ (j ⟨ r₁ ⟩)
+%   i ⟨ r ∙ r₁ ⟩ = i ⟨ r ⟩ ⟨ r₁ ⟩
+%   (ι i ⊗ ι j) ⟨ split ⟩ = ι (combine i j)
+%   ι i ⟨ flat ⟩ = let a , b = remQuot _ i in ι a ⊗ ι b
+%   (i ⊗ j) ⟨ swap ⟩ = j ⊗ i
+%   ((i ⊗ j) ⊗ k) ⟨ assocl ⟩ = i ⊗ (j ⊗ k)
+%   (i ⊗ (j ⊗ k)) ⟨ assocr ⟩ = (i ⊗ j) ⊗ k
+%   
+%   
+%   rev eq = eq
+%   rev (r , r₁) = rev r , rev r₁
+%   rev (r ∙ r₁) = rev r₁ ∙ rev r
+%   rev split = flat
+%   rev flat = split
+%   rev swap = swap
+%   rev assocl = assocr
+%   rev assocr = assocl
+% \end{code}
 
 
 \section{CNN Building Blocks\label{sec:cnn}}
@@ -360,7 +394,7 @@ and then sum it up.
 \codeblock{\begin{code}
   slide₁ : Ix m → Vec (m + n) X → Vec (1 + n) X
   slide₁ (ι i) v (ι j) = v (ι (i ⊕ j))
-  
+
   conv₁ : Vec (m + n) ℕ → Vec m ℕ → Vec (1 + n) ℕ
   conv₁ a w = sum (zipWith _+_) (K 0) (λ i → map (w i *_) (slide₁ i a))
 \end{code}}
@@ -369,49 +403,57 @@ and then sum it up.
 \subsection{Generalisation\label{sec:general-ix-ops}}
 We want to define convolution for arrays of higher ranks.  The first thing
 to do is to express $m + n$ and $1 + n$ where $m$ and $n$ become arbitrary
-shape trees.  In case of addition, we need a witness that both arguments
-have the same tree structure.  If they do, we can simply add their nodes point-wise.
+shapes.  In case of addition, we need a witness that both shapes
+have the same length.  If they do, we can simply add their nodes point-wise.
 We define the three-way relation \AF{\_+\_≈\_} that combines the witness and
 the action.  That is, the type \AB{p} \AF{+} \AB{q} \AF{≈} \AB{r} says that
-$p$ and $q$ have the same tree structure and that $q$ is a point-wise addition
+$p$ and $q$ have the same length and that $q$ is a point-wise addition
 of $p$ and $q$.  We introduce a similar relation \AF{suc\_≈\_} for $1 + n$
 case, and we introduce the relation \AF{\_*\_≈\_} that witnesses point-wise
-multiplication that will be needed for blocking.
+multiplication that will be needed for blocking.  We define these relation
+in two steps.  Firstly, we give a generalised pointwise-relation for binary
+and trenary relations on natural numbers:
+\begin{code}
+  data Pointw₂ (R : (a b : ℕ) → Set) : (a b : S) → Set where
+    instance
+      []    : Pointw₂ R [] []
+      cons  : ⦃ R m n ⦄ → ⦃ Pointw₂ R s p ⦄ → Pointw₂ R (m ∷ s) (n ∷ p) 
+\end{code}
+\begin{code}
+  data Pointw₃ (R : (a b c : ℕ) → Set) : (a b c : S) → Set where
+    instance
+      []    : Pointw₃ R [] [] []
+      cons  : ⦃ R m n k ⦄ → ⦃ Pointw₃ R s p q ⦄ → Pointw₃ R (m ∷ s) (n ∷ p) (k ∷ q)
+\end{code}
+While the definition is straight-forward, note that we mark constructors
+with the keyword \AK{instance} and we turn the arguments of \AC{cons}
+into instance arguments\footnote{See \url{https://agda.readthedocs.io/en/v2.7.0.1/language/instance-arguments.html} for more details.}.  These arguments
+behave like the hidden arguments, except Agda will apply an instance
+search when solving them.  This allows us to ommit these proofs in
+a larger number of cases when compared to hidden arguments.
+
 \begin{code}[hide]
   infix 5 _+_≈_
   infix 5 suc_≈_
   infix 5 _*_≈_
   infixl 8 _⊝ₚ_
-  
-  ι-injective : {i j : Fin n} → _≡_ {A = P (ι n)} (ι i) (ι j) → i ≡ j
-  ι-injective refl = refl
-  
-  ⊗-fst-≡ : {i i′ : P s}{j j′ : P p} → _≡_ {A = P (s ⊗ p)} (i ⊗ j) (i′ ⊗ j′) → i ≡ i′
-  ⊗-fst-≡ refl = refl
-  
-  ⊗-snd-≡ : {i i′ : P s}{j j′ : P p} → _≡_ {A = P (s ⊗ p)} (i ⊗ j) (i′ ⊗ j′) → j ≡ j′
-  ⊗-snd-≡ refl = refl
-  
 \end{code}
+
+Definition of the actual relations are:
 \begin{mathpar}
 \codeblock{\begin{code}
-  data _+_≈_ : S → S → S → Set where
-    ι    : ι m + ι n ≈ ι (m + n)
-    _⊗_  : s + q ≈ u → p + r ≈ w 
-         → s ⊗ p + q ⊗ r ≈ u ⊗ w
+  _+_≈_ : (s p q : S) → Set
+  s + p ≈ q = Pointw₃ (λ x y z → x + y ≡ z) s p q
 \end{code}}
 \and
 \codeblock{\begin{code}
-  data suc_≈_ : S → S → Set where
-    ι    : suc (ι n) ≈ ι (suc n)
-    _⊗_  : suc s ≈ u → suc p ≈ w 
-         → suc (s ⊗ p) ≈ u ⊗ w
+  _*_≈_ : (s p q : S) → Set
+  s * p ≈ q = Pointw₃ (λ x y z → x * y ≡ z) s p q
 \end{code}}
 \and
 \codeblock{\begin{code}
-  data _*_≈_ : S → S → S → Set where
-    ι    : ι m * ι n ≈ ι (m * n)
-    _⊗_  : s * q ≈ u → p * r ≈ w → (s ⊗ p) * (q ⊗ r) ≈ u ⊗ w
+  suc_≈_ : (s p : S) → Set
+  suc s ≈ p = Pointw₂ (λ x y → suc x ≡ y) s p
 \end{code}}
 \end{mathpar}
 
@@ -423,50 +465,13 @@ in~\cite{cnn-array} that we can shift the shape recursion into index computation
 Therefore we define \AF{\_⊕ₚ\_} and \AF{\_⊝ₚ\_} which generalise \AF{\_⊕\_} and
 \AF{\_⊝\_} for higher ranks.  Once again, \AD{Dec} type forces \AF{⊝ₚ} to justify
 the cases when the inverse does not exist.
-\begin{code}[hide]
---   XXX this implementation is needed if we switch to irrelevant Fin from the code.
---   data _≈ₚ_ : P s → P s → Set where
---     ι : ∀ {i j : Fin n} → Fin.index i ≡ Fin.index j → ι i ≈ₚ ι j
---     _⊗_ : ∀ {i k : P s}{j l : P p} → i ≈ₚ k → j ≈ₚ l → (i ⊗ j) ≈ₚ (k ⊗ l) 
-
---   _⊝ₚ_ : (i : P r) (j : P s) (su : suc p ≈ u) (sp : s + p ≈ r) 
---        → Dec (∃ λ k → (j ⊕ₚ k) su sp ≈ₚ i)
---   (ι i ⊝ₚ ι j) ι ι with i ⊝ j
---   ... | yes  (k , p)   = yes (ι k , ι p)
---   ... | no   ¬p        = no λ { (ι k , ι p) → ¬p (k , p) }
---   ((i ⊗ i′) ⊝ₚ (j ⊗ j′)) (su ⊗ su′) (sp ⊗ sp′) with (i ⊝ₚ j) su sp
---   ... | no   ¬p        = no λ { (k ⊗ k′ , p ⊗ p′) → ¬p (k , p)}
---   ... | yes  (k ,  p)  with (i′ ⊝ₚ j′) su′ sp′
---   ... | no   ¬p        = no λ { (k ⊗ k′ , p ⊗ p′) → ¬p (k′ , p′)}
---   ... | yes  (k′ , p′) = yes (k ⊗ k′ , p ⊗ p′)
-
-
-  -- data _≈ₚ_ : P s → P s → Set where
-  --   ι : {i j : Fin n} → i ≡ j → ι i ≈ₚ ι j
-  --   _⊗_ : {i k : P s}{j l : P p} → i ≈ₚ k → j ≈ₚ l → (i ⊗ j) ≈ₚ (k ⊗ l) 
-
-  p-eq-proj₁ : ∀ {i j k l} → _≡_ {A = P (s ⊗ p)} (i ⊗ j) (k ⊗ l) → i ≡ k
-  p-eq-proj₁ refl = refl
-  
-  p-eq-proj₂ : ∀ {i j k l} → _≡_ {A = P (s ⊗ p)} (i ⊗ j) (k ⊗ l) → j ≡ l
-  p-eq-proj₂ refl = refl
-
-  _≟ₚ_ : (i j : P s) → Dec (i ≡ j)
-  ι i ≟ₚ ι j with i Data.Fin.≟ j
-  ... | yes p = yes (cong ι p)
-  ... | no ¬p = no λ p → ¬p (ι-injective p)
-  (i ⊗ j) ≟ₚ (i′ ⊗ j′) with i ≟ₚ i′ | j ≟ₚ j′
-  ... | yes p | yes q = yes (cong₂ _⊗_ p q)
-  ... | yes p | no ¬q = no λ r → ¬q (p-eq-proj₂ r)
-  ... | no ¬p | _     = no λ r → ¬p (p-eq-proj₁ r)
-
-\end{code}
 \begin{mathpar}
 \codeblock{\begin{code}
   _⊕ₚ_ : P s → P u → suc p ≈ u → s + p ≈ r → P r
-  (ι i       ⊕ₚ ι j)       ι         ι         = ι (i ⊕ j)
-  ((a ⊗ a₁)  ⊕ₚ (b ⊗ b₁))  (s ⊗ s₁)  (p ⊗ p₁)  = (a ⊕ₚ b) s p ⊗ (a₁ ⊕ₚ b₁) s₁ p₁
-  
+  (i ⊕ₚ j) [] [] = j
+  ((i ∷ is) ⊕ₚ (j ∷ js)) (cons ⦃ refl ⦄ ⦃ sp ⦄) (cons ⦃ refl ⦄ ⦃ s+p ⦄)
+    = (i ⊕ j) ∷ (is ⊕ₚ js) sp s+p
+
   _⊝ₚ_ : (i : P r) (j : P s) (su : suc p ≈ u) (sp : s + p ≈ r) → Dec (∃ λ k → (j ⊕ₚ k) su sp ≡ i)
 \end{code}}
 \end{mathpar}
@@ -475,14 +480,13 @@ structure of \AF{⊕ₚ}: we apply \AF{⊝} on the leaves and we recurse on the 
 shape with a little bit plumbing to construct the proof of (non-)existence of the
 inverse.
 \begin{code}[hide]
-  (ι i ⊝ₚ ι j) ι ι with i ⊝ j
-  ... | yes  (k , p)   = yes (ι k , cong ι p)
-  ... | no   ¬p        = no λ { (ι k , p) → ¬p (k , ι-injective p) }
-  ((i ⊗ i′) ⊝ₚ (j ⊗ j′)) (su ⊗ su′) (sp ⊗ sp′) with (i ⊝ₚ j) su sp
-  ... | no   ¬p        = no λ { (k ⊗ k′ , p) → ¬p (k , ⊗-fst-≡ p)}
-  ... | yes  (k ,  p)  with (i′ ⊝ₚ j′) su′ sp′
-  ... | no   ¬p        = no λ { (k ⊗ k′ , p) → ¬p (k′ , ⊗-snd-≡ p)}
-  ... | yes  (k′ , p′) = yes (k ⊗ k′ , cong₂ _⊗_ p p′)
+  ([] ⊝ₚ j) [] [] = yes ([] , refl)
+  ((i ∷ is) ⊝ₚ (j ∷ js)) (cons ⦃ refl ⦄ ⦃ sp ⦄) (cons ⦃ refl ⦄ ⦃ s+p ⦄) 
+        with i ⊝ j
+  ... | no ¬p = no λ { ((k ∷ _) , refl) → ¬p (k , refl) }
+  ... | yes (k , p) with (is ⊝ₚ js) sp s+p
+  ... | no ¬q = no λ { ((_ ∷ xs) , refl) → ¬q (xs , refl) }
+  ... | yes (ks , q) = yes (k ∷ ks , cong₂ _∷_ p q)
 \end{code}
 
 Our generalised \AF{slide} looks very much the same as its 1-dimensional
@@ -494,7 +498,7 @@ using some the provided default element \AB{def}.
 \codeblock{\begin{code}
   slide : P s → s + p ≈ r → Ar r X → suc p ≈ u → Ar u X
   slide i pl a su j = a ((i ⊕ₚ j) su pl)
-  
+
   backslide : P s → Ar u X → suc p ≈ u → (def : X) → s + p ≈ r → Ar r X
   backslide i a su def pl j with ((j ⊝ₚ i) su pl)
   ... | yes (k , _)  = a k
@@ -516,20 +520,18 @@ The \AF{mconv} runs $u$ \AF{conv}s adds biases to each of them from the array $b
 module CNN where
   open import Data.Nat as ℕ using (ℕ)
   open import Data.Float as F using (_+_; _*_; _÷_; e^_; -_; fromℕ) renaming (Float to ℝ)
+  open import Data.Product as Prod using ()
+  open import Data.Fin as F using (zero; suc; Fin; combine; remQuot; fromℕ<; inject+; splitAt)
   open Array
 \end{code}
-\begin{mathpar}
-\codeblock{\begin{code}
+
+\begin{code}
   conv : s + p ≈ r → Ar r ℝ → Ar s ℝ → suc p ≈ u → Ar u ℝ
   conv sp a w su = sum (zipWith _+_) (K 0.0) λ i → map (w i *_) (slide i sp a su)
-\end{code}}
-\and
-\codeblock{\begin{code}
-  mconv : s + p ≈ r → (inp : Ar r ℝ) (w : Ar (u ⊗ s) ℝ) (b : Ar u ℝ)
-        → suc p ≈ q → Ar (u ⊗ q) ℝ
-  mconv sp inp w b su = unnest λ i → map (b i +_) (conv sp inp (nest w i) su)
-\end{code}}
-\end{mathpar}
+
+  mconv : ⦃ s + p ≈ r ⦄ → Ar r ℝ → Ar (u ⊗ s) ℝ → Ar u ℝ → ⦃ suc p ≈ q ⦄ → Ar (u ⊗ q) ℝ
+  mconv ⦃ sp ⦄ inp w b ⦃ su ⦄ = unnest λ i → map (b i +_) (conv sp inp (nest w i) su)
+\end{code}
 The logistic function computes ${1}/(1 + e^{-x})$ for every element in the array.
 \begin{mathpar}
 \codeblock{\begin{code}
@@ -541,55 +543,62 @@ The logistic function computes ${1}/(1 + e^{-x})$ for every element in the array
 \paragraph{Average Pooling}
 One of the steps of the machine learning algorithm is average pooling which
 splits an array into sub-blocks and computes the average for every such
-block.  While this sounds almost trivial, implementing this generally is
-quite tricky.  In the proposed framework it is
-not straight-forward to block an array of shape (\AC{ι} 12 \AC{⊗} \AC{ι} 12)
-into an array of shape  ((\AC{ι} 6 \AC{⊗} \AC{ι} 6) \AC{⊗} (\AC{ι} 2 \AC{⊗} \AC{ι} 2)).
-The difficulty is in preserving local neighbourhood within the blocks (for example
-it would be wrong to flatten the array and then reshape it into the desired shape
-as the local neighbourhood will be lost).  At the same time, it would be inconvenient
-to block arrays beforehand as this does not go well with \AF{slides}.  Therefore
-we introduce the mechanism to \AF{block} and \AF{unblock} arrays of shape $(s * p)$
-and ($s$ \AF{⊗} $p$).
-
-The key to array blocking is a reshaping operation that turns arrays
-of shape (($s$ \AC{⊗} $p$) \AC{⊗} ($q$ \AC{⊗} $r$)) into arrays of shape 
-(($s$ \AC{⊗} $q$) \AC{⊗} ($p$ \AC{⊗} $r$)), by swapping $p$ and $q$.
-We express a \AF{Reshape} relation, and as it follows from the type
-this reshape is a self inverse, as can be also seen from the theorem below:
+block.  Implementing this pattern generally is tricky as we have to
+preserve local neighbourhood within the blocks.  Working with a
+pre-blocked array woudl be inconvenient as the blocked shaped
+does not go well with \AF{slides}.  We solvet this by introducing
+blocked selections into arrays of shape $(s * p)$ as well
+and blocked array constructor \AF{imapb} that builds an array of
+shape $(s * p)$ out of $s$ blocks of shape $p$.  Defining these
+operations we require pairing and projections of the blocked indices:
 \begin{mathpar}
 \codeblock{\begin{code}
-  rblock : Reshape ((s ⊗ p) ⊗ (q ⊗ r)) ((s ⊗ q) ⊗ (p ⊗ r))
-  rblock = assocl ∙ eq , (assocr ∙ swap , eq ∙ assocl) ∙ assocr
-
-  rblock-selfinv : ∀ i → i ⟨ rev (rblock {s} {p} {q} {r}) ⟩ ≡ i ⟨ rblock ⟩
-  rblock-selfinv ((i ⊗ j) ⊗ (k ⊗ l)) = refl
+  ix-div : P q → s * p ≈ q → P s
 \end{code}}
-\end{mathpar}
-
-With this primitive we define \AF{block} and \AF{unblock} as follow:
-\begin{mathpar}
+\and
 \codeblock{\begin{code}
-  block : s * p ≈ q → Ar q X → Ar (s ⊗ p) X
-  block ι          = reshape split
-  block (l ⊗ r)    = reshape rblock ∘ unnest ∘ block l ∘ map (block r) ∘ nest
- 
-  unblock : s * p ≈ q → Ar (s ⊗ p) X → Ar q X
-  unblock ι        = reshape flat
-  unblock (l ⊗ r)  = unnest ∘ unblock l ∘ map (unblock r) ∘ nest ∘ reshape rblock
+  ix-mod : P q → s * p ≈ q → P p
+\end{code}}
+\and
+\codeblock{\begin{code}
+  ix-combine : P s → P p → s * p ≈ q → P q
 \end{code}}
 \end{mathpar}
-\begin{code}[hide]  
-  block₂ : ∀ {X} → (m n : ℕ) → Ar (ι (m ℕ.* 2) ⊗ (ι (n ℕ.* 2))) X
-         → Ar ((ι m ⊗ ι n) ⊗ (ι 2 ⊗ ι 2)) X
-  block₂ m n = reshape (rblock ∙ (split {m} , split {n}))
+\begin{code}[hide]
+  ix-div is [] = is
+  ix-div (i ∷ is) (cons ⦃ refl ⦄ ⦃ pf ⦄) 
+    = Prod.proj₁ (F.remQuot _ i) ∷ ix-div is pf
+
+  ix-mod is [] = is
+  ix-mod (i ∷ is) (cons {m = m} ⦃ refl ⦄ ⦃ pf ⦄)
+    = Prod.proj₂ (F.remQuot {m} _ i) ∷ ix-mod is pf
+
+  ix-combine i j [] = j
+  ix-combine (i ∷ is) (j ∷ js) (cons ⦃ refl ⦄ ⦃ ps ⦄) 
+    = F.combine i j ∷ ix-combine is js ps
 \end{code}
-We specialise average pooling to the 2-dimensional case, that is needed in
-our running example.
+With these operations, definitions of \AF{selb} and \AF{imapb}
+are:
+
 \begin{mathpar}
 \codeblock{\begin{code}
-  avgp₂ : (m n : ℕ) → Ar (ι (m ℕ.* 2) ⊗ (ι (n ℕ.* 2))) ℝ → Ar (ι m ⊗ ι n) ℝ
-  avgp₂ m n a = map ((_÷ fromℕ 4) ∘ sum _+_ 0.0) (nest $ block (ι ⊗ ι) a)
+  selb : Ar q X → p * s ≈ q → P p → Ar s X
+  selb a p i j = a (ix-combine i j p)
+\end{code}}
+\and
+\codeblock{\begin{code}
+  imapb : Ar s (Ar p X) → s * p ≈ q → Ar q X
+  imapb a p i = a (ix-div i p) (ix-mod i p)
+\end{code}}
+\end{mathpar}
+
+
+Finally we define an average pooling that is specialised to the
+2-dimensional case, that is needed in our running example.
+\begin{mathpar}
+\codeblock{\begin{code}
+  avgp₂ : (m n : ℕ) → Ar (m ℕ.* 2 ∷ n ℕ.* 2 ∷ []) ℝ → Ar (m ∷ n ∷ []) ℝ
+  avgp₂ m n a = map ((_÷ fromℕ 4) ∘ sum _+_ 0.0) (selb a it)
 \end{code}}
 \end{mathpar}
 
@@ -599,106 +608,25 @@ the other arguments are weights, and the function returns the 10-element vector
 with probabilities which digit that is.
 \begin{mathpar}
 \codeblock{\begin{code}
-  forward : (inp  :  Ar (ι 28 ⊗ ι 28) ℝ)         → (k₁   :  Ar (ι 6 ⊗ (ι 5 ⊗ ι 5)) ℝ)
-          → (b₁   :  Ar (ι 6) ℝ)                 → (k₂   :  Ar (ι 12 ⊗ (ι 6 ⊗ (ι 5 ⊗ ι 5))) ℝ)
-          → (b₂   :  Ar (ι 12) ℝ)                → (fc   :  Ar (ι 10 ⊗ (ι 12 ⊗ (ι 1 ⊗ (ι 4 ⊗ ι 4)))) ℝ)
-          → (b    :  Ar (ι 10) ℝ)                → Ar (ι 10 ⊗ (ι 1 ⊗ (ι 1 ⊗ (ι 1 ⊗ ι 1)))) ℝ
+  forward : (inp  :  Ar (28 ∷ 28 ∷ []) ℝ) → (k₁ : Ar (6 ∷ 5 ∷ 5 ∷ []) ℝ)
+          → (b₁   :  Ar (6  ∷ []) ℝ)      → (k₂ : Ar (12 ∷ 6 ∷ 5 ∷ 5 ∷ []) ℝ)
+          → (b₂   :  Ar (12 ∷ []) ℝ)      → (fc : Ar (10 ∷ 12 ∷ 1 ∷ 4 ∷ 4 ∷ []) ℝ)
+          → (b    :  Ar (10 ∷ []) ℝ)      → Ar (10 ∷ 1 ∷ 1 ∷ 1 ∷ 1 ∷ []) ℝ
   forward inp k₁ b₁ k₂ b₂ fc b = let
-      c₁ : Ar (ι 6 ⊗ (ι 24 ⊗ ι 24)) ℝ
-      c₁ = logistic $ mconv (ι ⊗ ι) inp k₁ b₁ (ι ⊗ ι)
+      c₁ : Ar (6 ∷ 24 ∷ 24 ∷ []) ℝ
+      c₁ = logistic $ mconv inp k₁ b₁ 
 
-      s₁ : Ar (ι 6 ⊗ (ι 12 ⊗ ι 12)) ℝ
-      s₁ = unnest $ map (avgp₂ 12 12) (nest c₁)
+      s₁ : Ar (6 ∷ 12 ∷ 12 ∷ []) ℝ
+      s₁ = unnest {s = 6 ∷ []} $ map (avgp₂ 12 12) (nest c₁)
 
-      c₂ : Ar (ι 12 ⊗ (ι 1 ⊗ (ι 8 ⊗ ι 8))) ℝ
-      c₂ = logistic $ mconv (ι ⊗ (ι ⊗ ι)) s₁ k₂ b₂ (ι ⊗ (ι ⊗ ι))
+      c₂ : Ar (12 ∷ 1 ∷ 8 ∷ 8 ∷ []) ℝ
+      c₂ = logistic $ mconv  s₁ k₂ b₂ 
 
-      s₂ : Ar (ι 12 ⊗ (ι 1 ⊗ (ι 4 ⊗ ι 4))) ℝ
-      s₂ = unnest $ map (unnest ∘ map (avgp₂ 4 4) ∘ nest) (nest c₂)
+      s₂ : Ar (12 ∷ 1 ∷ 4 ∷ 4 ∷ []) ℝ
+      s₂ = unnest {s = 12 ∷ 1 ∷ []} $ map (avgp₂ 4 4) (nest c₂)
 
-      r = logistic $ mconv (ι ⊗ (ι ⊗ (ι ⊗ ι))) s₂ fc b (ι ⊗ (ι ⊗ (ι ⊗ ι)))
+      r = logistic $ mconv s₂ fc b 
     in r
 \end{code}}
 \end{mathpar}
-
-
-\begin{code}[hide]
-module Tests where
-  open import Data.String
-  open import Data.Nat.Show renaming (show to shownat)
-  open import Data.Nat using (ℕ; zero; suc; _+_; _*_)
-  open import Data.Fin using (Fin; zero; suc; toℕ; #_)
-  --open import Fin2 using (Fin; #_; combine; remQuot; zerof; sucf; _⊕_; _⊝_)
-  open import Data.Product using (Σ; _,_; proj₁)
-  open Array
-
-  tab : ∀ {X} → Vec m X → List X
-  tab {m = zero}  f = []
-  tab {m = suc m} f = f (ι (# 0)) ∷ tab (f ∘ ιsuc)
-
-  ListNest : S → Set → Set
-  ListNest (ι _) = List
-  ListNest (s ⊗ p) = ListNest s ∘ ListNest p
-
-  atab : Ar s X → ListNest s X
-  atab {ι _} a = tab a
-  atab {s ⊗ p} a = atab (Array.map atab $ nest a)
-
-  viota : (n : ℕ) → Vec n ℕ
-  viota n (ι i) = toℕ i
-
-  size : S → ℕ
-  size (ι n) = n
-  size (s ⊗ p) = size s * size p
-
-  iota : Ar s ℕ
-  iota {s = ι n} = viota n
-  iota {s = s ⊗ p} = unnest (Array.map (λ i → Array.map (λ j → i * size p + j) iota) iota)
-
-  test-block : _
-  test-block = atab $ CNN.block₂ 2 2 iota
-
-  _ : test-block 
-      ≡ (((0 ∷ 1 ∷ []) ∷ (4 ∷ 5 ∷ []) ∷ []) ∷
-         ((2 ∷ 3 ∷ []) ∷ (6 ∷ 7 ∷ []) ∷ []) ∷ [])
-        ∷
-        (((8 ∷ 9 ∷ []) ∷ (12 ∷ 13 ∷ []) ∷ []) ∷
-         ((10 ∷ 11 ∷ []) ∷ (14 ∷ 15 ∷ []) ∷ []) ∷ [])
-        ∷ []
-  _ = refl
-
-  _ : tab (slide₁ {m = 1}{n = 0} (ι (# 0)) iota) ≡ 0 ∷ []
-  _ = refl
-  
-  _ : tab (slide₁ {m = 2}{n = 0} (ι (# 1)) iota) ≡ 1 ∷ []
-  _ = refl
-
-  
-  backslide₁ : Ix m → Vec (suc n) X → X → Vec (m + n) X
-  backslide₁ (ι i) v e (ι j) with j ⊝ i
-  ... | yes (k , _) = v (ι k)
-  ... | no _ = e
-
-  test-⊕ = _⊕_ {m = 3} {n = 4} (# 1) (# 2)
-  test-⊝ = _⊝_ {m = 3} {n = 4} (# 3) (# 1)
-
-  _ : test-⊕ ≡ # 3
-  _ = refl
-
-  _ : test-⊝ ≡ yes (# 2 , refl)
-  _ = refl
-
-  test-backslide = tab $ backslide₁ {m = 3} {n = 4} (ι (# 2)) (viota 5) 121
-
-  _ : test-backslide ≡ 121 ∷ 121 ∷ 0 ∷ 1 ∷ 2 ∷ 3 ∷ 4 ∷ []
-  _ = refl
-
-\end{code}
-
-
-
-
-
-
-
 
