@@ -1,0 +1,240 @@
+\documentclass[acmsmall,screen,anonymous,review]{acmart}
+\usepackage{listings}
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+\usepackage{microtype}
+\usepackage{mathtools} % needed for \doublecolon symbol
+
+\usepackage{todonotes}
+
+% Add definitions for abbreviations like e.g.; i.e; etc. with
+% correct spacing depending on the parameters.  In this case
+% `all' exposes all the definitions of the package, and `british'
+% makes sure that there is no comma after e.g. or i.e.
+\usepackage[all,british]{foreign}
+
+\lstdefinelanguage{SaC}[]{}{%
+    language=C,
+    morekeywords={inline,return,for,shape,dim,with,fold,modarray,genarray},
+    otherkeywords={?,:,->},
+    comment=[l][\color{green!50!brown}]{//},
+    morecomment=[s][\color{blue!70!gray}]{int[}{]},
+    morecomment=[s][\color{blue!70!gray}]{double[}{]}
+}
+\lstset{%
+    basicstyle=\fontsize{8}{8}\selectfont\ttfamily,
+    language=SaC,
+    keywordstyle=\color{blue!70!gray},
+    commentstyle=\color{green!50!brown},
+    stringstyle=\color{violet!40!magenta},
+    %showstringspaces=false,
+}
+
+% https://tex.stackexchange.com/questions/318142/typeseeting-a-multiset-with-double-curly-braces
+\newcommand*{\xlbrace}{[\mskip-5mu[}
+\newcommand*{\xrbrace}{]\mskip-5mu]}
+
+\newcommand*{\ldblbrace}{\{\mskip-5mu\{}
+\newcommand*{\rdblbrace}{\}\mskip-5mu\}}
+
+
+\usepackage{bm}
+\usepackage{agda}
+\usepackage{newunicodechar}
+
+\usepackage{mathpartir}
+\usepackage{varwidth}
+% Do we need this?
+\usepackage{microtype} 
+
+\newcommand\codeblock[1]{%
+  %{\fbox{\begin{varwidth}{0.9\textwidth}#1\end{varwidth}}}
+  {\begin{varwidth}{0.9\textwidth}#1\end{varwidth}}
+} 
+
+
+\newunicodechar{₀}{\ensuremath{_0}}
+\newunicodechar{₁}{\ensuremath{_1}}
+\newunicodechar{₂}{\ensuremath{_2}}
+\newunicodechar{₃}{\ensuremath{_3}}
+\newunicodechar{₄}{\ensuremath{_4}}
+\newunicodechar{₅}{\ensuremath{_5}}
+\newunicodechar{₆}{\ensuremath{_6}}
+\newunicodechar{₇}{\ensuremath{_7}}
+\newunicodechar{₈}{\ensuremath{_8}}
+\newunicodechar{₉}{\ensuremath{_9}}
+\newunicodechar{ι}{\ensuremath{\iota}}
+\newunicodechar{ₗ}{\ensuremath{_l}}
+\newunicodechar{ₐ}{\ensuremath{_a}}
+\newunicodechar{ₖ}{\ensuremath{_k}}
+\newunicodechar{ᵢ}{\ensuremath{_i}}
+\newunicodechar{ⱼ}{\ensuremath{_j}}
+\newunicodechar{ᵥ}{\ensuremath{_v}}
+\newunicodechar{ₕ}{\ensuremath{_h}}
+\newunicodechar{ₚ}{\ensuremath{_p}}
+\newunicodechar{ₛ}{\ensuremath{_s}}
+\newunicodechar{ₒ}{\ensuremath{_o}}
+
+\newunicodechar{ᵣ}{\ensuremath{_r}}
+\newunicodechar{ʳ}{\ensuremath{^r}}
+\newunicodechar{ˡ}{\ensuremath{^l}}
+\newunicodechar{ℕ}{\ensuremath{\mathbb{N}}}
+\newunicodechar{ℝ}{\ensuremath{\mathbb{R}}}
+\newunicodechar{∀}{\ensuremath{\forall}}
+\newunicodechar{∃}{\ensuremath{\exists}}
+\newunicodechar{≡}{\ensuremath{\equiv}}
+\newunicodechar{≈}{\ensuremath{\approx}}
+\newunicodechar{≟}{\ensuremath{\stackrel{?}{=}}}
+\newunicodechar{∎}{\ensuremath{\blacksquare}}
+\newunicodechar{⊛}{\ensuremath{\circledast}}
+\newunicodechar{⊗}{\ensuremath{\otimes}}
+\newunicodechar{⊕}{\ensuremath{\oplus}}
+\newunicodechar{⊝}{\ensuremath{\ominus}}
+\newunicodechar{≤}{\ensuremath{\le}}
+\newunicodechar{φ}{\ensuremath{\phi}}
+\newunicodechar{ψ}{\ensuremath{\psi}}
+\newunicodechar{ε}{\ensuremath{\epsilon}}
+\newunicodechar{δ}{\ensuremath{\delta}}
+\newunicodechar{λ}{\ensuremath{\lambda}}
+\newunicodechar{σ}{\ensuremath{\sigma}}
+\newunicodechar{ρ}{\ensuremath{\rho}}
+\newunicodechar{∂}{\ensuremath{\partial}}
+
+\newunicodechar{Γ}{\ensuremath{\Gamma}}
+\newunicodechar{Δ}{\ensuremath{\Delta}}
+\newunicodechar{Ψ}{\ensuremath{\Phi}}
+\newunicodechar{Ξ}{\ensuremath{\Xi}}
+
+\newunicodechar{′}{{'}}
+\newunicodechar{∷}{\ensuremath{\dblcolon}}
+\newunicodechar{↔}{\ensuremath{\leftrightarrow}}
+\newunicodechar{↦}{\ensuremath{\mapsto}}
+\newunicodechar{∘}{\ensuremath{\circ}}
+\newunicodechar{⁻}{\ensuremath{^{-}}}
+\newunicodechar{∙}{\ensuremath{\boldsymbol{\cdot}}}
+\newunicodechar{▹}{\ensuremath{\triangleright}}
+\newunicodechar{⋯}{\ensuremath{\cdots}}
+\newunicodechar{∇}{\ensuremath{\nabla}}
+\newunicodechar{Σ}{\ensuremath{\Sigma}}
+\newunicodechar{∈}{\ensuremath{\in}}
+\newunicodechar{⟦}{\ensuremath{\llbracket}}
+\newunicodechar{⟧}{\ensuremath{\rrbracket}}
+\newunicodechar{⦃}{\ensuremath{\ldblbrace}}
+\newunicodechar{⦄}{\ensuremath{\rdblbrace}}
+\newunicodechar{⌊}{\ensuremath{\lfloor}}
+\newunicodechar{⌋}{\ensuremath{\rfloor}}
+  
+
+\newunicodechar{⇒}{\ensuremath{\Rightarrow}}
+\newunicodechar{⟪}{\ensuremath{\xlbrace}}
+\newunicodechar{⟫}{\ensuremath{\xrbrace}}
+\newunicodechar{⊠}{\ensuremath{\boxtimes}}
+\newunicodechar{⊞}{\ensuremath{\boxplus}}
+\newunicodechar{∋}{\ensuremath{\ni}}
+\newunicodechar{∶}{\ensuremath{\bm{:}}}
+\newunicodechar{↦}{\ensuremath{\mapsto}}
+\newunicodechar{⊤}{\ensuremath{\top}}
+
+
+
+% Some shortcut commands for agda symbols
+\newcommand{\AD}[1]{\AgdaDatatype{#1}}
+\newcommand{\AC}[1]{\AgdaInductiveConstructor{#1}}
+\newcommand{\AF}[1]{\AgdaFunction{#1}}
+\newcommand{\AB}[1]{\AgdaBound{#1}}
+\newcommand{\AK}[1]{\AgdaKeyword{#1}}
+\newcommand{\AR}[1]{\AgdaField{#1}}
+\newcommand{\AM}[1]{\AgdaModule{#1}}
+\newcommand{\AN}[1]{\AgdaNumber{#1}}
+\newcommand{\AS}[1]{\AgdaString{#1}}
+
+\renewcommand{\AgdaCommentFontStyle}[1]{\textrm{#1}}
+\renewcommand{\AgdaFontStyle}[1]{\textrm{#1}}
+\renewcommand{\AgdaKeywordFontStyle}[1]{\textrm{#1}}
+
+\pgfplotstableset{col sep=comma}
+
+\title{Correctness is Demanding, Performance is Frustrating}
+
+\author{Artjoms {\v{S}}inkarovs}
+\email{A.Sinkarovs@hw.ac.uk}
+\orcid{0000-0003-3292-2985}
+\affiliation{%
+  \institution{Heriot-Watt University}
+  \streetaddress{Heriot-Watt University, Edinburgh Campus}
+  \city{Edinburgh}
+  \country{Scotland}
+  \postcode{EH14 4AS}
+}
+\author{Thomas Koopman}
+\email{Thomas.Koopman@ru.nl}
+\orcid{0009-0001-1031-7226}
+\affiliation{%
+  \institution{Radboud University}
+  \streetaddress{Houtlaan 4}
+  \city{Nijmegen}
+  \country{Netherlands}
+  \postcode{6525 XZ}
+}
+\author{Sven-Bodo Scholz}
+\email{SvenBodo.Scholz@ru.nl}
+\orcid{0000-0002-8663-1043}
+\affiliation{%
+  \institution{Radboud University}
+  \streetaddress{Houtlaan 4}
+  \city{Nijmegen}
+  \country{Netherlands}
+  \postcode{6525 XZ}
+}
+
+%\renewcommand{\shortauthors}%
+%  {A.~{\v{S}}inkarovs, T.~Koopman, and S.~Scholz}
+
+
+\pgfkeys{/pgf/number format/.cd,fixed,precision=0}
+
+
+\keywords{Dependent Types, Agda, Array Programming, Automatic Differentiation, SaC}
+
+% TODO: Insert CCSXML and CCSdesc later.
+%\begin{CCSXML}
+%\end{CCSXML}
+%
+% \ccsdesc[500]{Theory of computation~Data structures design and analysis}
+% \ccsdesc[500]{Theory of computation~Algorithm design techniques}
+% \ccsdesc[500]{Software and its engineering~Source code generation}
+% \ccsdesc[300]{Software and its engineering~Functional languages}
+% \ccsdesc[500]{Software and its engineering~Data types and structures}
+
+
+\begin{document}
+
+\begin{abstract}
+In this paper we demonstrate a technique for developing high performance applications
+with strong correctness guarantees.  We use a theorem prover to derive a high-level
+specification of the application that includes correctness invariants of our choice.
+After that, within the same theorem prover, we implement an extraction of the
+specified application into a high-performance language of our choice.  Concretely,
+we are using Agda to specify a framework for automatic differentiation (reverse mode)
+that is focused on index-safe tensors.  This framework comes
+with an optimiser for tensor expressions and the ability to translate these
+expressions into SaC and C.  We specify a canonical convolutional neural network
+within the proposed framework, compute the derivatives needed for the training
+phase and then demonstrate that the generated code matches the performance of hand-written
+code when running on a multi-core machine.
+\end{abstract}
+
+\maketitle
+
+\input{intro}
+\input{background}
+\input{latex/arrays}
+\input{latex/lang}
+\input{latex/ad}
+\input{latex/performance}
+\input{conclusions}
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{paper}
+
+\end{document}

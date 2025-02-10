@@ -30,20 +30,60 @@ module _ where
     _∷_ : String → Ix s → Ix (n ∷ s)
 
   Sem : IS → Set
-  -- We have a context and a selectable part.
-  -- For example, consider
-  --   let x = 5 in imap λ i → x
+  Sem (ar s) = (Ix s → State ℕ ((String → String) × String))
+  Sem (ix s) = Ix s
+
+  -- Here is a detailed explanation why the type for semantic
+  -- arrays look so complicated.
+  -- 
+  -- A first approximation is to use semantic type for arrays
+  -- as `Sem (ar s) = Ix s → State ℕ String`.  That is, we have
+  -- something indexable but after indexing it might need to
+  -- generate some fresh variables.  The problem is that this
+  -- prevents us from compiling lets in the right way.
+  -- Consider an example:
+  --    Let z := zero in Imaps λ i → z
+  -- 
+  -- The output of this function is an array, so the body
+  -- of the let will have a type `Ix s → State ℕ String`,
+  -- and it will look something like:
+  --    f i = "let z = 0 in " ++ (λ j → "z") i.
   --
-  -- for each i it returns "x", and the context (λ s → "let x = 5 in {s}")
-  -- so we can tabulate arrays, yet select them as needed.
+  -- If we are selecting into such an array, it is fine, as
+  -- `f j` evaluates into "let z := 0 in z".  However, how
+  -- do we turn this into an imap expression now?  Given that
+  -- we cannot look inside `f`, the only function is to generate
+  -- somethihg like:
+  --    "imap λ i → " ++ f "i"
+  --
+  -- which results in:
+  --    "imap λ i → let z = 0 in z"
+  --
+  -- while this is correct semantically, this inlines let
+  -- computations which results in very inefficient code.
+  -- Just imagine that instead of zero we are precomputing
+  -- an expensive array:
+  --    Let z := (Imap expensive) in Imaps λ i → f (sels z i)
+  -- 
+  -- by inlining this computation inside the Imaps we are going
+  -- to repeat it for each iteration just to select one element.
+  --
+  -- We avoid this, by giving the body of `f` a little more
+  -- structure.  In particular, we introduce a function that
+  -- remembers where the selectable expression goes, and the
+  -- expression itself.  In the above case, the function
+  -- will look like `λ s → "let z = 0 in " ++ s`, and the
+  -- selectable expression is the same `(λ j → "z") i`.
+  -- Which make it possible to produce:
+  --    "let z := 0 in imap λ i → z"
+  --
   -- Note, that for general selections into lets, such as
   --   sel (let x = e in e₁) i
   -- it is safe to translate this into (let x = e in sel e₁ i).
   -- While it is tempting to pre-select only those parts of e
   -- that are needed to compute (sel e₁ i), there is no easy
   -- way to do this for all cases.
-  Sem (ar s) = (Ix s → State ℕ ((String → String) × String))
-  Sem (ix s) = Ix s
+
 
   FEnv : Ctx → Set
   FEnv ε = ⊤

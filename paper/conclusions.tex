@@ -1,0 +1,40 @@
+\section{Conclusions\label{sec:conclusions}}
+
+The paper demonstrates a technique of developing high performance applications with
+strong correctness guarantees.  The key insight lies in using a proof assistant
+in cooperation with a high-performance language of choice.  This gives a clear
+separation of concerns that is very difficult to achieve within a single
+language.  The proof assistant is used to design a specification, prove
+all the correctness invariants of interest and performs an extraction
+into a high-performance language of choice.  This may take a non-trivial
+effort, but correctness \emph{is} demanding!
+
+Having a trusted specification as well as entire code-generation pipeline
+within a single dependently-typed framework is incredibly powerful.
+As we have demonstrated at the example of the neural network, we can introduce domain-specific
+optimisations and even swap the backend in case its performance is unsatisfying.
+For our example, the entire framework that includes array theory, DSL,
+optimisations and extraction is about 2000 lines of Agda code.  We managed
+to introduce a new backend in about two days and match performance of
+the hand-written code.
+
+A lot of pieces that we have developed in this
+paper can be reused in other numerical applications.  We used dependent
+types to guarantee the absence of out-of-bound indexing, certain function being
+inverses as well as well-scopedness and well-typedness of our DSL.
+However, there are many more opportunities that we did not explore.
+For example, one can prove the correctness of optimisations, relating
+evaluation of optimised an non-optimised expressions.  We can provide
+more guarantees when we run extraction, \eg{} we can formalise some
+aspects of the backend language and relate them to our DSL.
+As for the DSL itself, we can try extending it with internal let
+constructions which should improve our C code generation as well as
+facilitate optimisations of the derivatives.
+
+There are indeed plenty of opportunities, but the key point is this.
+Correctness and performance are competing requirements when it
+comes to application design.  Therefore, such a cooperation between
+correctness-oriented and performance-oriented tools is likely to
+persist.  With this work we demonstrate that such cooperation
+is feasible in practice.
+
