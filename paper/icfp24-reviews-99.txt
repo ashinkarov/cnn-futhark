@@ -1,0 +1,434 @@
+ICFP 2024 Paper #99 Reviews and Comments
+===========================================================================
+Paper #99 Correctness is Demanding, Performance is Frustrating
+
+
+Review #99A
+===========================================================================
+
+Overall merit
+-------------
+C. Weak paper, though I will not fight strongly against it
+
+Reviewer Expertise
+------------------
+X. I am an expert in this area
+
+Reviewer Confidence
+-------------------
+3. Good: I am reasonably sure of my assessment
+
+Paper summary
+-------------
+The authors describe a frustration: we would like high confidence in our
+programs but verifying correctness is hard (and hence needs specialised
+tools/languages), and simultaneously we would like our programs to be fast, but
+this is also hard (and hence etc.). Thus the two-language approach: formulate
+and reason about the program in a proof language (Agda), and compile that to a
+fast implementation language from inside Agda.
+
+The authors:
+- formulate a simple array language (using dependent types for a by-construction
+  partial correctness proof, namely of index-correctness)
+- implement a program in that formalism
+- implement a simple differentiation code transformation
+- implement a simplifier for their array language
+- extend their language with some support for avoidance of recomputation in the
+  original program using some sort of local variables (`Chain`)
+- write two extraction procedures, one to SaC and one to C
+- and briefly measure the performance of the result.
+
+Assessment of the paper
+-----------------------
+I share the authors' plight for a combination of correctness and performance, as
+well as their complaint that this combination is hard in practice. The
+implementation (going from the description in the paper -- I have not looked at
+the supplementary material) is impressively compact for the results they get,
+as is the development of a second backend in a short time period. I like the
+general two-language approach in the paper.
+
+However, I feel that the ideas and methods could use a bit more time in the
+cooking pot. In particular the treatment of local variables (section 6.3) and
+compilation (section 7) sound under-explored; some polishing of the methods
+applied should result in a clearer and more generally applicable story. (The
+interesting parts of a paper are typically the ones that generalise.)
+
+This means that the lead question of the paper (how to get correctness _and_
+performance) does not really feel answered: since the programs are written in
+Agda, doing correctness verification on them is surely possible, but it seems
+performance _is_ still frustrating. SaC apparently cannot efficiently handle the
+patterns that occur in even simple examples of the E language, and the C
+extraction is partial in ways that seem (to me -- granted, without actually
+trying) unpredictable to the user. Perhaps the partiality even means that some
+classes of programs cannot reasonably be written even if the syntax of E seems
+to permit them.
+
+Independently I feel that to call something "reverse AD", one should pay some
+attention to its computational complexity. After all, forward AD is not that
+difficult, and the only advantage that reverse AD offers over forward AD is its
+efficiency, imparted by its superior computational complexity in computing
+gradients. You claim (760-770) that despite the fact that $\nabla$ produces
+inefficient results, you can get something with the correct complexity (a
+constant-factor overhead in execution time over the original program) by
+optimisation. Can you make a good argument that this works not only for this
+example program, but actually in general? That is to say, that
+$\text{opt} \circ \nabla$ implements reverse AD with the correct complexity?
+
+Earlier attempts like [this one][shaikhha] also claim to optimise something
+inefficient (vectorised forward AD, in their case) to something resembling
+reverse AD, but in practice this turned out to not cover all cases. For that
+paper, the prime troublemaker was dynamic control flow, I think. Can you say
+something better?
+
+[shaikhha]: https://dl.acm.org/doi/pdf/10.1145/3341701
+
+In summary, while I am excited about where this work is going, I feel that the
+details still need some work. (And it's not like the tension between correctness
+and performance will cease to be an interesting research area any time soon.)
+
+Questions for authors’ response
+-------------------------------
+1. Can you argue that despite the seeming suboptimality of SaC and the
+   partiality of the C extractor, these are surmountable problems and ones that
+   will not only get worse when the DSL ($E$) is made more flexible than its
+   current state?
+
+2. Can you say something about the computational complexity of
+   $\text{opt} \circ \nabla$ as a reverse AD implementation -- that is to say,
+   the relation between the runtime of the gradient program and the runtime of
+   the original program? Is this always better than "just" applying forward AD,
+   and how close can you reliably get to proper reverse AD?
+
+Comments for authors
+--------------------
+General note: the editor will require inline citations to be in author-year style, which takes up more space than [number] style. (Sidenote: with author-year style it's nice to write e.g. "there is a good point made in [26]" (l. 277) as "by \citeN{...}".)
+
+81: JAX was created with AD from the beginning; I suggest citing either [the git repo](https://github.com/google/jax#citing-jax) or [more recent efforts](https://arxiv.org/pdf/2204.10923.pdf) in understanding what it is doing.
+
+82: redundant "both,"?
+
+180: This `Reshape` describes a somewhat more general operation than is common in functional array libraries, which would support only a composition of iterated `split` after iterated `flat`. Simultaneously, `Reshape` cannot represent _all_ shapes that preserve the number of array elements: arbitrary shufflings of elements also preserve the shape, but (rightly) cannot be represented by `Reshape`. There's nothing wrong with `Reshape` per se, but given its naming, the choice of level of expressivity is potentially worth mentioning.
+
+288: "of the": redundant "the"
+
+308: R instead of $\mathbb R$ ("abstracted out" of what?)
+
+311: "adds" -> "and adds"
+
+333: Different `*`?
+
+344: "as follow" -> "as follows"
+
+359: Perhaps mention the word "MNIST" if it is relevant, and if not, why not?
+
+416: missing space after '.'
+
+433-440: If you can fit in a little more explanation or an example of how exactly imap_s/sel_s, imap/sel and imapb/selb differ, that would make for easier reading.
+
+442: Is there a reason your `sum` is essentially "array sum of imap_s", instead of just "array sum"? When one is not actively aware of this nonstandard (?) type, things like `map-sum` (656) are hard to read.
+
+550: "As our context do" -> "... does"
+
+601: "revers mode" -> "reverse mode"
+
+601: computing _the_ recursive relation
+
+627: obtain _the_ expected results
+
+653: from that _that_ updates
+
+657: Is it inefficient to have to create many `env-zero`s? These zero values can be large.
+
+680: The expression `e` is used twice in $\nabla\ (\text{logistic})$; this seems to result in duplicate computation (that may be expensive if `e` is large).
+
+695: of _a_ conditional; lives <s>is</s> in
+
+708: "a+nd" -> and
+
+739-742: odd grammar?
+
+745-746: I don't see this case in the code
+
+780: "Assuming...": what does this mean? Do you mean that E can be extracted but some extension of E cannot, or that not all of E can be extracted but in principle that could be fixed? "Assuming" sounds like the latter, but then to-sac is non-total?
+
+889: this should have a reference to e.g. the page number where `forward` is defined
+
+892-922: This explanation is hard to follow (e.g. where does "xx" come from?). Why are there Strings? (If that has to do with the SaC translation, why is the translation intermingled with differentiation here?)
+  Also, why not support local variables in E using some kind of let binding in the syntax? I suspect that would produce more readable code than the example on 936-944, left column. It may also prevent by construction the kind of bogus terms described on 955.
+
+1093-1096: It sounds like for the C target, (extraction $\circ$ optimisation) is a partial function, even with the additional optimisation rules in 7.1.1, and that this is not easily fixed by just adding a few more. Is there a deeper reason for this?
+
+1135-1142, 1146-1151: Why is it possible to get a bare scalar? The selection operations in E remove components from a product shape but still produce an array. (I also don't understand what `a (var v_0)` means -- what is the type of `a`, and what is the actual E syntax? This may be the reason why I also don't understand the occurrence of a bare scalar.)
+
+1171: What do you mean with "factor of 3 running time"? Factor between which things?
+
+1173-1184: If the roughly 20% difference is from compiler flags, what do you mean with "the main performance difference"?
+
+
+
+Review #99B
+===========================================================================
+
+Overall merit
+-------------
+C. Weak paper, though I will not fight strongly against it
+
+Reviewer Expertise
+------------------
+Y. I am knowledgeable in this area, but not an expert
+
+Reviewer Confidence
+-------------------
+3. Good: I am reasonably sure of my assessment
+
+Paper summary
+-------------
+This paper presents work on implementing reverse mode automatic differentiation in Agda. To do so, the paper tackles two issues: statically ensuring that array bounds are respected (correctness); generating efficient code via compilation to SaC and C (performance).
+
+Assessment of the paper
+-----------------------
+The paper takes an interesting approach towards automatic differentiation that offers both high performance and (static) safety guarantees. The research direction is promising, but I feel the paper is not quite ready for publication at ICFP. Consider the main contributions that the paper lists:
+
++ "a rank polymorphic array theory in Agda" -- this is not particularly novel. The usage of dependent types to enforce array bounds dates back at least as far as Xi's work on DML. More recently, Gibbons' paper on "APLicative programming with Napierian Functors' shows how this (and more) can be done in modern Haskell suffices using GADTs and type families. I even expect that many of the safety guarantees from the paper can be achieved in Haskell, rather than Agda, as they make use of indexed types -- but few correctness proofs.
+
++ "an implementation of the CNN (convolutional neural network) in Agda" - implementing an existing CNN in another language is not a novel research contribution in itself. It does serve as important evidence that the arrays support sufficient operations to express interesting programs.
+
++ "an embedded DSL in Agda which supports AD (automatic differentiation)" - this is the main contribution of the paper. The DSL puts numerous ideas from the literature on dependent types to good use including: well-typed variable binding, including weakening and substitution; intrinsically typed syntax enforcing shape and size guarantees; and writing a tagless type safe evaluator. The embedded DSL rules out a wide range of common errors using Agda's type system.
+
++ "an extraction mechanism for generating SaC or C code" - generating code from an embedded DSL is not a particularly novel idea. For example, Thiemann and Chakravarty's "Agda meets Accelerate", for example, explores a similar direction -- even also using Agda as the DSL's host language.
+
++ "experimental evaluation of the generated code" - the first results are encouraging, but the results seem very preliminary. The authors themselves admit that preparing the results were rushed for the ICFP deadline.
+
+The presentation is not as polished as what I expect of an ICFP paper. There are quite a few typos; the paper sometimes reads like a literate Agda file rather than a well thought out exposition. I have tried to list suggestions for improving the paper below. Certain key design decisions for the DSL were not clear to me and deserve a better presentation. 
+
+All in all, I feel that the paper explores a promising direction for generating high performance code from Agda, but the current submission is not quite ready for publication at ICFP.
+
+Comments for authors
+--------------------
+Here are a few more minor suggestions for improving the phrasing and presentation.
+
+* line 20 - 'formidable choice' -- I would describe a problem as formidable, but a choice as difficult perhaps?
+* line25 - 'arbitrary invariants within the given program' - how do you describe invariants within a program? I would suggest rephrasing this as 'invariants within the types of a program' or something along these lines.
+* line 58 - 'for the times of dialectic of correctness and performance' - I struggled to parse/understand this sentence -- can this be phrased more simply?
+* line 133 - the choice to represent shapes as binary operations is understandable. Have you consider using a canonical representation (say, lists) to avoid issues with associativity?
+* line 154 - to define the applicative interface typically requires a <*> rather than zipWith function -- although the two are interchangeable.
+* line 160 - there is an interesting pattern here of defining an operation on 'scalar arrays' (sum_1) and then lifting this to arbitrary nesting (sum) that appears a few times in the paper. Is it worth teasing out to its own higher order function?
+* line 184 - the reshaping is -- if I understand correctly -- a sound (but not complete?) collection of isomorphisms between arrays and positions in arrays. Is there a way to formulate it in such a way? Or put differently, what are the 'good' properties of the functions such as reshape? Presumably, that they do not discard or duplicate elements -- but can this be made precise? And can all functions between differently shaped arrays with these properties be represented using the Reshape data type?
+* Line 222 - The 'bounded addition' and subtraction operations seemed odd to me. Usually, functions involving Fin (n + m) invoke the isomorphism between this type and Either (Fin n) (Fin m). The paper seems to be leaving out the subtraction invocations, leading to a Dec type that requires extra pattern matching. Could this be expressed more elegantly as a view? (See Chapter 3 of Ulf Norell's Dependently programming in Agda for examples of this technique).
+* line 255 - around this point, I start to struggle with some of the code examples. The definition of 'conv' is a bit different to what I was expecting (presumably related to the weights being flipped or not) - but at this point I would appreciate a bit more specification or description, going beyond mentioning the citation [26].
+* Section 4.2 introduces various bits of index manipulation. I can't help but wonder if there is no simpler definition of operations such as slide and backslide that don't rely on such heavy manipulation of individual indices (and the proofs that guarantee things remain in bounds). Richard Bird coined the phrase 'wholemeal programming' -- where the definitions tend to avoid index manipulation in favour of manipulating entire arrays at once, claiming that the functional wholemeal style is easier to reason about and verify.
+* line 430 - The DSL has three separate operations for mapping scalars, arrays, and nested arrays. It does make me wonder why there is no single, shape polymorphic definition. Isn't the point of working in a richly typed language like Agda that you can capture patterns and avoid duplication?
+* Line 425 - what does the 'logistic' function do? There is no explanation and the semantics defer calls to CNN.logistic.
+* line 550 - 'context do not' -> 'context does not'
+* The swapAt function is never used; is there no more convincing example of where the renaming/substitution machinery is put to good use? The paper suggests it is used in optimizations, but these are not covered in much detail in the paper unfortunately.
+* line 566 - the functions such as Imap do not work once nested, correct? That is, after going under a binder the context may change and (var v0) refers to the wrong thing.
+* line 601 - 'revers' -> 'reverse'
+* line 695 - 'out of conditional' -> 'out of the conditional'
+* I struggled with section 6.3. I understand that the generation of efficient code requires careful treatment of sharing, but I really did not understand the proposed solution from the given description. For example, 'assigned to y (xx in this case' -- what is xx? There seems to be some implicit convention between variable naming in the compilation that is lost on me.
+* Section 7.1 - are the OpenMP annotations generated as well? Or are these added by hand to the expensive loops?
+* line 1171 - 'sensible' -> perhaps you mean 'sensitive'
+* line 1184 - 'less' -> 'fewer'
+* line 308-309 - R is typeset differently twice. Is this the same R?
+
+
+
+Review #99C
+===========================================================================
+
+Overall merit
+-------------
+C. Weak paper, though I will not fight strongly against it
+
+Reviewer Expertise
+------------------
+X. I am an expert in this area
+
+Reviewer Confidence
+-------------------
+3. Good: I am reasonably sure of my assessment
+
+Paper summary
+-------------
+The paper presents a deep embedding of an array language DSL in Agda. The DSL types include arrays and index types parametrised by shapes, ensuring safety of indexing.
+The language primitives are high-level and tailored to the implementation of convolution, which is central to the running example.
+
+Automatic differentiation is implemented as a source-to-source transformation. Code generation into SaC and eventually C is implemented, achieving comparable performance with cited previous work. Difficulties with generating SaC code that would optimize away intermediate array allocation are discussed.
+
+Assessment of the paper
+-----------------------
+The paper demonstrates the ability of dependently typed languages to embed and transform domain specific ones, including the generation of highly performant executable code.
+
+While the paper argues their approach provides greater correctness guarantees than machine learning frameworks in other languages, these seem to be mostly limited to array indexing safety, which is a staple of dependently typed programming. Correctness of the automatic differentiation implementation or optimizations are not proven.
+
+Previous work on code generation for a DSL is not discussed (e.g. "Verified Tensor-Program Optimization Via High-level Scheduling Rewrites" by Amanda Liu et al.).
+
+Overall, while demonstrating a sound a approach, the paper does not appear to introduce something sufficiently novel.
+
+
+
+Review #99D
+===========================================================================
+
+Overall merit
+-------------
+C. Weak paper, though I will not fight strongly against it
+
+Reviewer Expertise
+------------------
+X. I am an expert in this area
+
+Reviewer Confidence
+-------------------
+3. Good: I am reasonably sure of my assessment
+
+Paper summary
+-------------
+This paper first presents a rank-polymorphic array theory in Adga together with the implementation of a CNN (for digit recognition, similar to LeNet?).
+Then, it presents an embedded DSL on which reverse automatic differentiation (AD) and optimizations are defined, and whose semantics are defined by evaluation to the previous array theory. 
+Finally, the performance of the SaC and C code generated from the DSL is evaluated by comparison to the hand-written SaC code, for the previously mentioned CNN.
+Overall, the paper advocates for combining a dependently typed programming language to express correctness invariants with a high-performance language.
+
+Assessment of the paper
+-----------------------
+Strengths:
++ the problem of combining correctness with performance is an important and difficult one
++ the paper combines an array theory with practical optimizations and an experimental evaluation
++ the paper is illustrated with many type-checked Agda code snippets 
++ the Agda implementation enforces the consistency of array shapes and ranks, and prevents out-of-bound accesses
+
+Weaknesses:
+- there is no related work section, and although background is given on AD, related work on combining a dependently typed programming language with a high-performance language is not discussed
+- in the evaluation, the generated SaC code is 6-10x slower than the handwritten code, and the generated C code is 1.23x slower
+- there seems to be no particular guarantees on the result of AD and optimization, besides the consistency of shapes and accesses
+- same for the extraction phase, which could additionally break the guarantees on shapes and accesses
+- the description of the benchmark setup is lacking (see questions below)
+
+Overall, while this work is very interesting, the paper needs work and the benefits of the presented embedded DSL are not convincingly demonstrated.
+
+Questions for authors’ response
+-------------------------------
+- the paper severely lacks to mention related work combining theorem provers with high-performance code generation for array languages, for example how does it compare to:
+  + *Verified tensor-program optimization via high-level scheduling rewrites* is a POPL'22 paper that expresses and verifies tensor optimizations in Coq while generating C code for performance. The framework ensures shape consistency and prevents out-of-bounds accesses.
+  + *Indexed Streams: A Formal Intermediate Representation for Fused Contraction Programs* is a PLDI'23 paper that formalizes indexed streams in Lean and their compilation to a C-like language.
+- what are the demonstrated benefits of the AD and optimizations implemented in Agda, besides defining them on an embedded DSL with verified consistency of shapes and accesses?
+- what exactly is the CNN implemented, is it a state-of-the-art CNN or a toy CNN?
+- how many times where benchmarks run, are the results statistically significant?
+- what do you mean by "produce the same results"? can you explain and quantify?
+
+Comments for authors
+--------------------
+This work is very interesting, but the paper needs work.
+
+Some of the phrasing in the paper is too subjective for a scientific paper: "The idealist inside of us is exasperated", 1023-1028, "After overcoming the natural instinct to give up", etc.
+
+> 11-12: demonstrate that the generated code matches the performance of hand-written code
+
+This statement is misleading, given that the achieved performance is only 0.81x of the baseline. The performance ratio needs to be reported, or at least this sentence weakened. Same in the conclusion (1203).
+
+> 38-39: our performance challenge lies in running the program as fast as we can on the chosen hardware architectures
+
+This statement is also misleading, since only CPUs seem to be considered in this work.
+
+> 40: one of the canonical convolutional neural network (CNN)
+
+The paper keeps referring to this CNN without providing important details on it: what is the name of this CNN, what is it doing (digit recognition), is this a state-of-the-art CNN or a toy CNN? Is it similar to LeNet?
+
+> 83: how is it possible to ensure that the AD algorithm is implemented correctly?
+
+This paper does not really answer this question besides enforcing consistency of shapes and accesses? Besides, final extraction could break these properties?
+
+In Section 4.1, I think that more explanations are required on the left subtraction: only after analysing the `backslide` implementation did I realize that not only is $k = i - j >= 0$ ensured, but also $k = i - j < 1 + n$. Similarly, the explanation of `backslide` in Section 4.2 is very expeditive: I had to make a drawing on paper to understand what `backslide` is doing and deduct how its implementation works.
+
+> 312: The mconv runs u convs adds biases to each of them
+
+Besides the typo, this explanation is hard to follow: it might be helpful to clarify that these convolutions and biases are run in parallel, and simply batched in an outer array dimension.
+
+> 321: the logistic function
+
+Why is this function introduced now in the flow of the paper, maybe say that this is an activation function (?) 
+
+> 332: it would be inconvenient to block arrays beforehand as this does not go well with slides
+
+I did not understand the challenge here, the `rblock` and `rblock-selfinv` definitions seem to simply play with associativity and commutativity rules over tensor products.
+Besides, the `block` and `unblock` functions assume that array shapes are dividable by the block size, have you thought about supporting blocking in cases where the shape is not perfectly dividable?
+
+356: In the definition of `avgp2`, it seems that the block size is implicitly inferred from the shape of the input array `a`? Would this definition still work if the input shape would use e.g. `2 * m` instead of `m * 2`? If not, it would be useful to clarify that the block size is heavily syntax-directed -- also, does this not make using the blocking function counter-intuitive and error-prone? I can imagine accidentally blocking by `m`, `n` instead of `2`, `2` with the wrong input type.
+
+> 359: the image of a hand-written digit
+
+Context is missing to make this description useful, the word image could have multiple meaning, and the reader is expected to guess that the CNN is used for digit recognition on 2D images.
+
+> 381: Any implementation of automatic differentation has to decide which operations are supported
+
+I do not think this is true, some languages allow extending differentiable operations through traits or typeclasses. In this paper, it seems that deciding on the support operations makes optimization easier, since the set of operations to optimize for is known.
+
+Why is the embedded DSL based on De Bruijn indices? This seems highly impractical for end users, for example on page 21, explicit index shifts are required. Have you considered providing a name-based interface for end users?
+
+428: I had a lot of questions while looking at the definition of `data E` that where answered later in Section 5.1. I would recommend warning the reader that the language constructs and their semantics is discussed later, otherwise trying to understand `data E` and its types at this point is counter-productive.
+
+474: what is the `(i (# 0))` doing?
+
+487: why is the default value of `backslide` fixed to 0.0 for the DSL?
+
+664-666: I was surprised that the backpropagation of imaps was defined through selections, is there no way to define it as a whole-array operation with less temporary values (i.e. how does it compare to other definitions of AD on array languages)? if this is unnecessary due to the later optimizations, it might be useful to mention this briefly at this stage.
+
+I was surprised to see that AD is defined with backpropagation on a context, rather than adjoint functions. Does this mean that the AD process needs to know the global context and is not compositional (can the results from AD on multiple sub-expressions or functions be easily combined together), or am I mistaken?
+
+> 691: Differentiating conditional is straight-forward
+
+It might be useful to discuss piecewise derivatives here.
+
+In Section 6.1, optimizations are performed by normalization (assuming that all peep-hole optimizations are always beneficial), however ML frameworks typically explore optimization spaces with complex trade-offs (e.g. sometimes not fusing a computation and keeping a temporary array may be a better choice), have you considered how to deal with this difficulty?
+
+I was surprised by the approach taken in Section 6.3, which seems complicated and inflexible, why not add support for let bindings in the presented DSL? It seems that the CNN definition at the end of 6 is much harder to write than the CNN definition at the end of Section 4. Supporting lets is mentioned in the future work part of the Conclusion, but this is not very satisfying.
+
+In Section 7, the description of the benchmark setup is lacking:
+- what exactly is the CNN being benchmarked?
+- how many times where benchmarks run, are the results statistically significant, what are for example the quartiles?
+- what do you mean by "produce the same results"? this needs to be explained and ideally quantified
+
+> 1081: similar to $\beta$-reduction
+
+is this more precisely deforestation?
+
+1177-1182: why is the frequently used `-ffast-math` flag not used?
+
+> 1192: strong correctness guarantees
+
+remind the reader of which ones (1205-1206 comes a bit late)
+
+> 1200: domain-specific optimisations
+
+which ones? are we talking about the array domain or the CNN domain?
+
+> 1215: with this work we demonstrate that such cooperation is feasible in practice
+
+Was this not already shown by prior work? c.f. questions for response. 
+
+Typos:
+- 91: of of
+- 231-232: A reader may convince herself --> themselves
+- 262: q is a pointwise addition --> r ?
+- 550: As our context do not
+- 653: a function from that
+- 708: selections a+nd sum
+- 770: the expression form squared to linear
+- 890: a mechanism that introduce
+
+
+
+Rebuttal Response by Author [Artjoms Sinkarovs <tema@pm.me>] (473 words)
+---------------------------------------------------------------------------
+Thanks to all the reviewers for their in-depth comments.  We address major concerns and clarify misunderstanding.
+
+1) One important novelty of the proposed array theory is *rank polymorphism*.  We can define functions where array ranks (and obviously shapes) are **runtime** values.  This is **not supported** by: Gibbons' Naperian functors, Liu's Verified Tensors and Kovach's indexed streams.  All these frameworks operate with static ranks.  This is a significant difference because we essential move control-flow (loop-nests traversing index-spaces) into data (array shapes).  As shapes have non-trivial structure, we are able to introduce `Reshape` which, again, makes it possible to define array transformations without knowing ranks or shapes statically.  This is the reason why operations in Section 4 can be defined as one-liners, and we do not even need to instantiate them.
+
+2) We have chosen a really tough performance target to compete with --- a hand-written SaC code that outperforms state-of-the-art frameworks PyTorch and Tensorflow.  Therefore, getting a comparable performance from such a high level specification is a significant achievement.  I am not aware of any high-level safe framework that is similar to ours that is able to demonstrate this.
+
+3) As for the partiality of the C backend.  We have chosen to keep it partial because of the assumption that the backend cannot allocate any intermediate arrays.  It is trivial to make it total --- we only need to introduce an `allocate` primitive (e.g. as Liu's Verified tensors do).  However, the point is that these excessive allocations are crucial for performance.  By keeping the backend partial, it is guaranteed that if the program compiles, no internal allocations happening. If the program does not compile, a programmer can do something about it, and the proposed framework makes it possible to fix this on multiple levels.
+
+4) Completeness of `Reshape`.  The notion of `Reshape` is similar to the notion of Hom set in the category theory.  Various restrictions to `Reshape` will lead to different array theories (categories).  For this paper we have chose `Reshape` to encode a subset of cartesian morphisms (functions that preserve all the elements of the array, but potentially permute them).  Can we make `Reshape` complete?  Yes, we can, all our arrays are finite.  We will have to introduce additional constructors in the `Reshape` data type.  One can relax this even further by allowing reshapes that do not preserve the elements.   Once again, this will just lead to different array theories.
+
+5) Lack of related work.  We are very sorry that lack of related work upset so many reviewers.  We were very constrained on space, so we thought that squeezing some of the related work into Background would be sufficient.  This was a stupid choice, and we are happy to fix this given the paper is accepted.
+
+In the attached file we present a line-by-line response to the individual questions raised by the individual reviewers.
