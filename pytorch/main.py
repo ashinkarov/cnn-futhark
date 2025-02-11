@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-from __future__ import print_function
 import argparse
 import time
 import torch
@@ -9,6 +8,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 import torch.multiprocessing as mp
 from torchvision import datasets, transforms
+import logging
 
 
 class Net(nn.Module):
@@ -40,11 +40,12 @@ def cast_target (target, device):
     return (torch.arange(10, device=device) == target[:,None]).type(torch.float32)
 
 def train(args, model, device, train_loader, optimizer, epoch):
+    logger = logging.getLogger('pytorch')
     model.train()
     loss_fun = nn.MSELoss(reduction='sum')
     loss = None
     for batch_idx, (data, target) in enumerate(train_loader):
-        if batch_idx > (args.train_size/args.batch_size):
+        if batch_idx > (args.training_size/args.batch_size):
             break
         data, target = data.to(device), target.to(device)
         output = model(data)
@@ -52,9 +53,10 @@ def train(args, model, device, train_loader, optimizer, epoch):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-    print ('Epoch: {:d}, Loss {:.10f}'.format (epoch, loss.item()/10.0/args.batch_size))
+    logger.info ('Epoch: {:d}, Loss {:.10f}'.format (epoch, loss.item()/10.0/args.batch_size))
 
 def test(args, model, device, test_loader):
+    logger = logging.getLogger('pytorch')
     model.eval()
     loss_fun = nn.MSELoss(reduction='sum')
     test_loss = 0
@@ -71,11 +73,15 @@ def test(args, model, device, test_loader):
 
     test_loss /= args.batch_size
 
-    print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+    logger.info('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, correct, len(test_loader.dataset),
         100. * correct / len(test_loader.dataset)))
 
 def main():
+    logging.basicConfig()
+    logger = logging.getLogger('pytorch')
+    logger.setLevel(logging.INFO)
+
     # Training settings
     parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
     parser.add_argument('mnistpath', metavar='MNIST_PATH', type=str,
@@ -84,7 +90,7 @@ def main():
                     help='use EMNIST datasets instead of MNIST.')
     parser.add_argument('--batch-size', type=int, default=100, metavar='N',
                         help='input batch size for training (default: 100)')
-    parser.add_argument('--train-size', type=int, default=10000, metavar='TR',
+    parser.add_argument('--training-size', type=int, default=10000, metavar='TR',
                         help='number of data items to train over (default: 10000)')
     parser.add_argument('--test-size', type=int, default=10000, metavar='TR',
                         help='number of data items to test over (default: 10000)')
@@ -102,12 +108,12 @@ def main():
     args = parser.parse_args()
     use_cuda = not args.no_cuda and torch.cuda.is_available()
     if use_cuda:
-        print ('Using GPU - setting threads to 1')
+        logger.info ('Using GPU - setting threads to 1')
         args.num_threads = 1
 
-    print ('Running with threads({})'.format(args.num_threads))
-    print ('Parameters: epoch({}), batch-size({}), training-rate({:f}), training-size({}), evaluate-size({})'.format(
-        args.epochs, args.batch_size, args.lr, args.train_size, args.test_size))
+    logger.info ('Running with threads({})'.format(args.num_threads))
+    logger.info ('Parameters: epoch({}), batch-size({}), training-rate({:f}), training-size({}), evaluate-size({})'.format(
+        args.epochs, args.batch_size, args.lr, args.training_size, args.test_size))
 
     torch.manual_seed(args.seed)
     torch.set_num_threads(args.num_threads)
@@ -131,7 +137,7 @@ def main():
                            ])),
             batch_size=args.batch_size, **kwargs)
     else:
-        print ('Using EMNIST `balanced` dataset')
+        logger.info ('Using EMNIST `balanced` dataset')
         train_loader = torch.utils.data.DataLoader(
             datasets.EMNIST(args.mnistpath, split='balanced', train=True,
                            transform=transforms.Compose([
@@ -150,6 +156,7 @@ def main():
         model = Net().cuda()
     else:
         model = Net().cpu()
+    model.to(device)
     optimizer = optim.SGD(model.parameters(), lr=args.lr, weight_decay=0.5)
 
     train_start = time.perf_counter ()
@@ -157,13 +164,7 @@ def main():
         train(args, model, device, train_loader, optimizer, epoch)
     train_stop = time.perf_counter () - train_start
 
-    test_start = time.perf_counter ()
-    test(args, model, device, test_loader)
-    test_stop = time.perf_counter () - test_start
-    print ('Train: {:f}s, Test: {:f}s'.format(train_stop, test_stop))
-
-    #if (args.save_model):
-    #    torch.save(model.state_dict(),"mnist_cnn.pt")
+    logger.info ('Train: {:f}s'.format(train_stop))
 
 if __name__ == '__main__':
     main()

@@ -181,17 +181,5 @@ if __name__ == "__main__":
             train_cnn (images.reshape (args.batch_size, 28, 28, 1), tf.reshape (labels, (args.batch_size, cats)))
         logger.info ('Epoch {}, Loss: {:f}'.format (epoch+1, tr_loss.result()))
     train_stop = time.perf_counter () - train_start
-    logger.info ('Train: {:f}s'.format(train_stop))
 
-    # run evaluation
-    #logger.info ('Evaluating the model now')
-    #te_loss.reset_states()
-    #te_accu.reset_states()
-    #test_start = time.perf_counter ()
-    #for i in range (0, args.evaluate_size, args.batch_size):
-    #    images = test_images[i:i+args.batch_size, :]
-    #    labels = test_labels[i:i+args.batch_size, :]
-    #    test_cnn (images.reshape (args.batch_size, 28, 28, 1), tf.reshape (labels, (args.batch_size, cats)))
-    #test_stop = time.perf_counter () - test_start
-    #logger.info ('Loss {:f}, Correct {:f} out of {}'.format(te_loss.result(), te_accu.result() * args.evaluate_size, args.evaluate_size))
-    #logger.info ('Train: {:f}s, Test: {:f}s'.format(train_stop, test_stop))
+    logger.info ('Train: {:f}s'.format(train_stop))

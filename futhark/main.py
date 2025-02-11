@@ -23,6 +23,7 @@ if __name__ == "__main__":
                         help='epochs to iterate')
     parser.add_argument('-r', '--training-rate', type=float, default=0.05,
                         help='rate to learn at')
+    parser.add_argument('--futhark', type=str, help='server-mode binary')
 
     args = parser.parse_args()
 
@@ -36,7 +37,7 @@ if __name__ == "__main__":
     train_labels = train_labels_raw.astype(np.int8, copy=False)
 
     logger.info(f'Parameters: epoch({args.epoch}), batch-size({args.batch_size}), training-rate({args.training_rate}), training-size({args.training_size})')
-    with futhark_server.Server('./conv') as server:
+    with futhark_server.Server(args.futhark) as server:
         server.put_value('batchsize', np.int64(args.batch_size))
         server.put_value('rate', np.float32(args.training_rate))
         server.put_value('trainings', np.int64(args.training_size))
