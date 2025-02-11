@@ -1,0 +1,7 @@
+numpy
+python-mnist
+tensorflow==2.13.0
+torch
+torchvision
+futhark-server
+futhark-data
