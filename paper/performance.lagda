@@ -1,5 +1,15 @@
 \section{Performance\label{sec:performance}}
 
+% Notes for Troels:
+%
+% - Leave Agda-side optimisations for Artem
+% - Only backend: Futhark
+% - Compared with:
+%   - TensorFlow (on GPU)
+%   - Hand-written Futhark (lower priority)
+% - Will try for multicore numbers as well, if does not complicate story
+
+
 One of the goals of this work is to demonstrate that it is possible to formulate
 the problem in a proof assistant and then pass it on to the other system that can
 run the algorithm efficiently.  In order to substantiate this claim, we compare
