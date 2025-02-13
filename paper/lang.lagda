@@ -1,9 +1,11 @@
 \begin{code}[hide]
+{-# OPTIONS  --backtracking-instance-search #-}
 open import Relation.Binary.PropositionalEquality
 open import Relation.Nullary
 open import Data.List using (List; []; _∷_)
+open import Data.Nat using (ℕ; zero; suc)
 open import Data.Empty
-open import Function
+--open import Function hiding (⟨_⟩)
 
 -- Our local files.
 open import arrays
@@ -42,9 +44,15 @@ by the same transformation and we can share all optimisations between the code i
 and its derivatives.
 \begin{code}[hide]
 module Lang where
-  open Array hiding (sum; slide; backslide)
+  --open Array hiding (sum; slide; backslide)
   open import Data.Nat using (ℕ; zero; suc)
   infixl 15 _▹_
+  module Ar where
+    open Array public
+    open CNN public
+
+  open Ar hiding (sum; slide; backslide; imapb; selb; logistic)
+
 \end{code}
 
 As we operate within a dependently-typed proof-assistant, we can easily make our
@@ -103,7 +111,7 @@ multiplication).
 \begin{mathpar}
 \codeblock{\begin{code}
   unit : S
-  unit = ι 1
+  unit = []
 \end{code}}
 \and
 \codeblock{\begin{code}
@@ -129,8 +137,8 @@ syntax for infix plus and multiplication denoted \AC{⊞} and \AC{⊠} correspon
     zero       : E Γ (ar s)
     one        : E Γ (ar s)
 
-    imapₛ      : E (Γ ▹ ix s) (ar unit) → E Γ (ar s)
-    selₛ       : E Γ (ar s) → E Γ (ix s) → E Γ (ar unit)
+    imaps      : E (Γ ▹ ix s) (ar unit) → E Γ (ar s)
+    sels       : E Γ (ar s) → E Γ (ix s) → E Γ (ar unit)
 
     imap       : E (Γ ▹ ix s) (ar p) → E Γ (ar (s ⊗ p))
     sel        : E Γ (ar (s ⊗ p)) → E Γ (ix s) → E Γ (ar p)
@@ -148,7 +156,7 @@ syntax for infix plus and multiplication denoted \AC{⊞} and \AC{⊠} correspon
     bin        : Bop → E Γ (ar s) → E Γ (ar s) → E Γ (ar s)
     scaledown  : ℕ → E Γ (ar s) → E Γ (ar s)
     minus      : E Γ (ar s) → E Γ (ar s)
-
+    let′       : E Γ (ar s) → E (Γ ▹ ar s) (ar p) → E Γ (ar p)
 
   pattern _⊠_ a b = bin mul a b
   pattern _⊞_ a b = bin plus a b
@@ -156,18 +164,44 @@ syntax for infix plus and multiplication denoted \AC{⊞} and \AC{⊠} correspon
 %}
 %\end{mathpar}
 
+\subsection{Reals}
+\todo[inline]{Explain that this is our module for abstract reals with
+  operations and their properties and that we parametrise our
+  evaluator witht this module.}
+
+\begin{code}
+record Real : Set₁ where
+  field
+    R : Set
+    fromℕ : ℕ → R
+    _+_ _*_ _÷_ : R → R → R
+    -_ e^_ : R → R
+\end{code}
+\begin{code}[hide]
+  infixl 10 _+_ 
+  infixl 15 _*_ 
+  infixl 15 _÷_ 
+\end{code}
+\begin{code}
+  logisticʳ : R → R
+  logisticʳ x = fromℕ 1 ÷ (fromℕ 1 + e^ (- x))
+\end{code}
+
 
 \subsection{Evaluation}
+\todo[inline]{The text in this section needs adjustment}
 \begin{code}[hide]
-module Eval where
-  open Lang
-  open Array
-  open import Data.Float as F renaming (Float to ℝ) hiding (⌊_⌋)
+module Eval (real : Real) where
+  --open import Data.Float as F renaming (Float to ℝ) hiding (⌊_⌋)
   open import Data.Unit
   open import Data.Product using (_×_; proj₁; proj₂; _,_)
   open import Data.Fin using (Fin; zero; suc; #_)
   open import Relation.Nullary.Decidable
   open import Data.Bool
+
+  open Lang
+  open Array
+  open Real real
 \end{code}
 
 We define the interpretation \AF{⟦\_⟧} for (\AF{E} \AB{Γ} \AB{is}) into the value
@@ -178,7 +212,7 @@ translates variables within the context into variables within the environment.
 \begin{mathpar}
 \codeblock{\begin{code}
   Val : IS → Set
-  Val (ar s)  = Ar s ℝ
+  Val (ar s)  = Ar s R
   Val (ix s)  = P s
 \end{code}}
 \and
@@ -203,25 +237,26 @@ which behave similarly to hidden arguments, but they have a more powerful resolu
 algorithm.  As a result we can omit mentioning the environment in recursive calls
 when it is passed unchanged.
 \begin{code}
-  ⟦_⟧ : E Γ is → ⦃ Env Γ ⦄ → Val is
-  ⟦ var x                ⟧ ⦃ ρ ⦄  = lookup x ρ
-  ⟦ zero                 ⟧ ⦃ ρ ⦄  = K 0.0
-  ⟦ one                  ⟧ ⦃ ρ ⦄  = K 1.0
-  ⟦ imapₛ e              ⟧ ⦃ ρ ⦄  = λ i → ⟦ e ⟧ ⦃ ρ , i ⦄ (ι (# 0))
-  ⟦ selₛ e e₁            ⟧ ⦃ ρ ⦄  = K $ ⟦ e ⟧ ⟦ e₁ ⟧
-  ⟦ imap e               ⟧ ⦃ ρ ⦄  = unnest λ i → ⟦ e ⟧ ⦃ ρ , i ⦄
-  ⟦ sel e e₁             ⟧ ⦃ ρ ⦄  = nest ⟦ e ⟧ ⟦ e₁ ⟧
-  ⟦ imapb m e            ⟧ ⦃ ρ ⦄  = CNN.unblock m $ unnest λ i → ⟦ e ⟧ ⦃ ρ , i ⦄
-  ⟦ selb m e e₁          ⟧ ⦃ ρ ⦄  = nest (CNN.block m ⟦ e ⟧) ⟦ e₁ ⟧
-  ⟦ zero-but i j e       ⟧ ⦃ ρ ⦄  = if ⌊ ⟦ i ⟧ ≟ₚ ⟦ j ⟧ ⌋ then ⟦ e ⟧ else K 0.0
-  ⟦ sum e                ⟧ ⦃ ρ ⦄  = Array.sum (zipWith _+_) (K 0.0) λ i → ⟦ e ⟧ ⦃ ρ , i ⦄
-  ⟦ e ⊞ e₁               ⟧ ⦃ ρ ⦄  = Array.zipWith _+_ ⟦ e ⟧ ⟦ e₁ ⟧
-  ⟦ e ⊠ e₁               ⟧ ⦃ ρ ⦄  = Array.zipWith _*_ ⟦ e ⟧ ⟦ e₁ ⟧
-  ⟦ slide i pl e su      ⟧ ⦃ ρ ⦄  = Array.slide ⟦ i ⟧ pl ⟦ e ⟧ su
-  ⟦ backslide i e su pl  ⟧ ⦃ ρ ⦄  = Array.backslide ⟦ i ⟧ ⟦ e ⟧ su 0.0 pl
-  ⟦ scaledown n e        ⟧ ⦃ ρ ⦄  = Array.map (_÷ fromℕ n) ⟦ e ⟧
-  ⟦ minus e              ⟧ ⦃ ρ ⦄  = Array.map (-_) ⟦ e ⟧
-  ⟦ logistic e           ⟧ ⦃ ρ ⦄  = CNN.logistic ⟦ e ⟧
+  ⟦_⟧ : E Γ is → Env Γ → Val is
+  ⟦ var x               ⟧ ρ  = lookup x ρ
+  ⟦ zero                ⟧ ρ  = K (fromℕ 0)
+  ⟦ one                 ⟧ ρ  = K (fromℕ 1)
+  ⟦ imaps e             ⟧ ρ  = λ i → ⟦ e ⟧ (ρ , i) [] 
+  ⟦ sels e e₁           ⟧ ρ  = K (⟦ e ⟧ ρ (⟦ e₁ ⟧ ρ))
+  ⟦ imap e              ⟧ ρ  = unnest λ i → ⟦ e ⟧ (ρ , i)
+  ⟦ sel e e₁            ⟧ ρ  = nest (⟦ e ⟧ ρ) (⟦ e₁ ⟧ ρ)
+  ⟦ imapb m e           ⟧ ρ  = Ar.imapb (λ i → ⟦ e ⟧ (ρ , i)) m
+  ⟦ selb m e e₁         ⟧ ρ  = Ar.selb (⟦ e ⟧ ρ) m (⟦ e₁ ⟧ ρ)
+  ⟦ sum e               ⟧ ρ  = Ar.sum (Ar.zipWith _+_) (K (fromℕ 0)) (λ i → ⟦ e ⟧ (ρ , i))
+  ⟦ zero-but i j e      ⟧ ρ  = if ⌊ ⟦ i ⟧ ρ ≟ₚ ⟦ j ⟧ ρ ⌋ then ⟦ e ⟧ ρ else K (fromℕ 0)
+  ⟦ slide e p e₁ s      ⟧ ρ  = Ar.slide (⟦ e ⟧ ρ) p (⟦ e₁ ⟧ ρ) s
+  ⟦ backslide e e₁ s p  ⟧ ρ  = Ar.backslide (⟦ e ⟧ ρ) (⟦ e₁ ⟧ ρ) s (fromℕ 0) p
+  ⟦ logistic e          ⟧ ρ  = Ar.map logisticʳ (⟦ e ⟧ ρ)
+  ⟦ e ⊞ e₁              ⟧ ρ  = Ar.zipWith _+_ (⟦ e ⟧ ρ) (⟦ e₁ ⟧ ρ)
+  ⟦ e ⊠ e₁              ⟧ ρ  = Ar.zipWith _*_ (⟦ e ⟧ ρ) (⟦ e₁ ⟧ ρ)
+  ⟦ scaledown n e       ⟧ ρ  = Ar.map (_÷ fromℕ n) (⟦ e ⟧ ρ) 
+  ⟦ minus e             ⟧ ρ  = Ar.map -_ (⟦ e ⟧ ρ)
+  ⟦ let′ e e₁           ⟧ ρ  = ⟦ e₁ ⟧ (ρ , ⟦ e ⟧ ρ)
 \end{code}
 With the above definition we can better explain the choices of language constructors.
 The most important question to clarify is why do we have three array
@@ -252,7 +287,7 @@ one instance of \AC{sum} which makes our expressions a little tidier.
 
 
 \subsection{Weakening and Substitution}
-
+\todo[inline]{Adjust the text}
 As our language has explicit de Bruin variables (as opposed to HOAS~\cite{hoas} approaches),
 we need the means to do weakening and substitution when we optimise expressions in \AF{E}.
 Our language is intrinsically typed(shaped) which
@@ -267,235 +302,397 @@ variables (\AF{wkv}) and expressions (\AF{wk}) that take a variable or expressio
 in the context without the variable \AF{v} and return this variable or expression
 in the context where \AB{v} is present.
 \begin{code}[hide]
-module SubWk where
+module WkSub where
   open Lang
 \end{code}
 \begin{mathpar}
 \codeblock{\begin{code}
-  _/_ : (Γ : Ctx) → is ∈ Γ → Ctx
-  (Γ ▹ x) / v₀    = Γ
-  (Γ ▹ x) / vₛ v  = (Γ / v) ▹ x
+  data _⊆_ : Ctx → Ctx → Set where
+    ε    : ε ⊆ ε
+    skip : Γ ⊆ Δ → Γ ⊆ (Δ ▹ is)
+    keep : Γ ⊆ Δ → (Γ ▹ is) ⊆ (Δ ▹ is)
 \end{code}}
 \and
 \codeblock{\begin{code}  
-  wkv  : (v : is ∈ Γ) → ip ∈ (Γ / v) → ip ∈ Γ
-  wk   : (v : is ∈ Γ) → E (Γ / v) ip → E Γ ip
+  wkv : Γ ⊆ Δ → is ∈ Γ → is ∈ Δ
+  wk : Γ ⊆ Δ → E Γ is → E Δ is
 \end{code}}
 \end{mathpar}
-We give ourselves a nicer syntax for common cases when expressions
-are lifted into the context with extra one or two variables:
-\begin{code}[hide]
-  infixr 18 ↑_
-  infixr 18 ↑↑_
+
+\todo[inline]{Expand this (or hide?)}
+\begin{code}
+  ⊆-eq : Γ ⊆ Γ
+  ⊆-eq {ε} = ε
+  ⊆-eq {Γ ▹ x} = keep ⊆-eq
+
+  _↑ : E Γ is → E (Γ ▹ ip) is
+  _↑ = wk (skip ⊆-eq)
 \end{code}
-\begin{mathpar}
-\codeblock{\begin{code}
-  ↑_ : E Γ is → E (Γ ▹ ip) is
-  ↑_ = wk v₀
-\end{code}}
-\and
-\codeblock{\begin{code}
-  ↑↑_ : E Γ is → E (Γ ▹ ip ▹ iq) is
-  ↑↑_ = ↑_ ∘ ↑_
-\end{code}}
-\end{mathpar}
+
+
+% We give ourselves a nicer syntax for common cases when expressions
+% are lifted into the context with extra one or two variables:
+% \begin{code}[hide]
+%   infixr 18 ↑_
+%   infixr 18 ↑↑_
+% \end{code}
+% \begin{mathpar}
+% \codeblock{\begin{code}
+%   ↑_ : E Γ is → E (Γ ▹ ip) is
+%   ↑_ = wk v₀
+% \end{code}}
+% \and
+% \codeblock{\begin{code}
+%   ↑↑_ : E Γ is → E (Γ ▹ ip ▹ iq) is
+%   ↑↑_ = ↑_ ∘ ↑_
+% \end{code}}
+% \end{mathpar}
 \begin{code}[hide]
-  wkv v₀ w = vₛ w
-  wkv (vₛ v) v₀ = v₀
-  wkv (vₛ v) (vₛ w) = vₛ (wkv v w)
-  
-  wk v (var x) = (var (wkv v x))
-  wk v zero = zero
-  wk v one = one
-  
-  wk v (imapₛ e) = imapₛ (wk (vₛ v) e)
-  wk v (selₛ e e₁) = selₛ (wk v e) (wk v e₁)
-  --wk v (zero-butₛ idx e) = zero-butₛ (wk v idx) (wk v e)
-  
-  -- Copy-paste from scalar versions
-  wk v (imap e) = imap (wk (vₛ v) e)
-  wk v (sel e e₁) = sel (wk v e) (wk v e₁)
-  --wk v (zero-but idx e) = zero-but (wk v idx) (wk v e)
-  
-  wk v (zero-but i j e) = zero-but (wk v i) (wk v j) (wk v e)
-  wk v (sum e) = E.sum (wk (vₛ v) e)
-  wk v (bin x e e₁) = bin x (wk v e) (wk v e₁)
-  wk v (slide i pl e su) = E.slide (wk v i) pl (wk v e) su
-  wk v (backslide i e su pl) = E.backslide (wk v i) (wk v e) su pl
-  
-  wk v (scaledown x e) = scaledown x (wk v e)
-  wk v (minus e) = minus (wk v e)
-  wk v (logistic e) = logistic (wk v e)
-  --wk v (block x e) = block x (wk v e)
-  --wk v (unblock x e) = unblock x (wk v e)
-  wk v (imapb m e) = imapb m (wk (vₛ v) e)
-  wk v (selb m e e₁) = selb m (wk v e) (wk v e₁)
-  --wk v (zero-butb m e e₁) = zero-butb m (wk v e) (wk v e₁)
+  wkv (skip s) v = vₛ (wkv s v)
+  wkv (keep s) v₀ = v₀
+  wkv (keep s) (vₛ v) = vₛ (wkv s v)
+
+  wk s (var x) = var (wkv s x)
+  wk s zero = zero
+  wk s one = one
+  wk s (imaps e) = imaps (wk (keep s) e)
+  wk s (sels e e₁) = sels (wk s e) (wk s e₁)
+  wk s (imap e) = imap (wk (keep s) e)
+  wk s (sel e e₁) = sel (wk s e) (wk s e₁)
+  wk s (imapb x e) = imapb x (wk (keep s) e)
+  wk s (selb x e e₁) = selb x (wk s e) (wk s e₁)
+  wk s (sum e) = sum (wk (keep s) e)
+  wk s (zero-but e e₁ e₂) = zero-but (wk s e) (wk s e₁) (wk s e₂)
+  wk s (slide e x e₁ x₁) = slide (wk s e) x (wk s e₁) x₁
+  wk s (backslide e e₁ x x₁) = backslide (wk s e) (wk s e₁) x x₁
+  wk s (logistic e) = logistic (wk s e)
+  wk s (bin x e e₁) = bin x (wk s e) (wk s e₁)
+  wk s (scaledown x e) = scaledown x (wk s e)
+  wk s (minus e) = minus (wk s e)
+  wk s (let′ e e₁) = let′ (wk s e) (wk (keep s) e₁)
 \end{code} 
 
-A prerequisite for substitution is decidable equality
-of variables which will be also useful during optimisations.  The code below
-is a copy-paste from~\cite{subst}, but we reiterate its wonderfully mind-twisting
-mechanics here.  The relation for variable equality is given by the type \AD{Eq}
-which has two constructors.  In case variables are equal (\AC{eq} constructor)
-they literally have to match.  In case variables $x$ and $y$ are different
-(\AC{neq} constructor), we would like to know where to find $y$ in the context
-without $x$.  After that, \AF{eq?} shows that variable equality is decidable.
-The substitution \AF{sub} explains how to substitute the variable $v$ in the
-expression $e$ with the expression $e₁$. 
-\begin{mathpar}
-\codeblock{\begin{code}
-  data Eq : is ∈ Γ → ip ∈ Γ → Set where
-    eq   : {x : is ∈ Γ} → Eq x x
-    neq  : (x : is ∈ Γ) → (y : ip ∈ (Γ / x))
-         → Eq x (wkv x y)
+\todo[inline]{Say something about substitution}
+\begin{code}
+  data Sub (Γ : Ctx) : Ctx → Set where
+    ε   : Sub Γ ε
+    _▹_ : Sub Γ Δ → E Γ is → Sub Γ (Δ ▹ is)
 
-  sub : (v : is ∈ Γ) (e : E Γ ip) (e₁ : E (Γ / v) is)
-      → E (Γ / v) ip
-\end{code}}
-\and
-\codeblock{\begin{code}
-  eq? : (x : is ∈ Γ) → (y : ip ∈ Γ) → Eq x y
-  eq? v₀      v₀      = eq
-  eq? v₀      (vₛ y)  = neq v₀ y
-  eq? (vₛ x)  v₀      = neq (vₛ x) v₀
-  eq? (vₛ x)  (vₛ y) with eq? x y
-  ... | eq        = eq
-  ... | neq .x y  = neq (vₛ x) (vₛ y)
-\end{code}}
-\end{mathpar}
-% A common case of substituting the top variable
-% can be defined as follows:
-% \begin{code}
-%   sub₀ : E (Γ ▹ is) ip → E Γ is → E Γ ip
-%   sub₀ e e₁ = sub v₀ e e₁
-% \end{code}
-\begin{code}[hide]
-  sub-var : (v : is ∈ Γ) → ip ∈ Γ → E (Γ / v) is → E (Γ / v) ip
-  sub-var x y e with eq? x y
-  ... | eq = e
-  ... | neq .x y = var y
-  
-  sub v zero e₂ = zero
-  sub v one e₂ = one
-  
-  sub v (var x) e₂ = sub-var v x e₂
-  sub v (imapₛ e₁) e₂ = imapₛ (sub (vₛ v) e₁ (wk v₀ e₂))
-  sub v (selₛ e₁ e₃) e₂ = selₛ (sub v e₁ e₂) (sub v e₃ e₂)
-  
-  sub v (imap e₁) e₂ = imap (sub (vₛ v) e₁ (wk v₀ e₂))
-  sub v (sel e₁ e₃) e₂ = sel (sub v e₁ e₂) (sub v e₃ e₂)
-  
-  sub v (zero-but i j e) e₂ = zero-but (sub v i e₂) (sub v j e₂) (sub v e e₂)
-  sub v (sum e₁) e₂ = E.sum (sub (vₛ v) e₁ (wk v₀ e₂))
-  sub v (bin x e₁ e₃) e₂ = bin x (sub v e₁ e₂) (sub v e₃ e₂)
-  sub v (slide i pl e su) e₂ = E.slide (sub v i e₂) pl (sub v e e₂) su
-  sub v (backslide i e su pl) e₂ = E.backslide (sub v i e₂) (sub v e e₂) su pl
-  
-  sub v (scaledown x e) e₂ = scaledown x (sub v e e₂)
-  sub v (minus e) e₂ = minus (sub v e e₂)
-  sub v (logistic e) e₂ = logistic (sub v e e₂)
-  
-  sub v (imapb m e) e₂ = imapb m (sub (vₛ v) e (wk v₀ e₂))
-  sub v (selb m e e₁) e₂ = selb m (sub v e e₂) (sub v e₁ e₂)
+  sub : E Δ is → Sub Γ Δ → E Γ is
 \end{code}
+\begin{code}[hide]
+  wks : Sub Γ Δ → Γ ⊆ Ψ → Sub Ψ Δ
+  wks ε p = ε
+  wks (s ▹ x) p = (wks s p) ▹ wk p x
+  
+  sdrop : Sub Γ Δ → Sub (Γ ▹ is) Δ
+  sdrop s = wks s (skip ⊆-eq)
 
+  skeep : Sub Γ Δ → Sub (Γ ▹ is) (Δ ▹ is)
+  skeep s = sdrop s ▹ var v₀
+
+  subv : Sub Γ Δ → is ∈ Δ → E Γ is
+  subv (s ▹ x) v₀ = x
+  subv (s ▹ x) (vₛ v) = subv s v
+  
+  sub (var x) s = subv s x
+  sub zero s = zero
+  sub one s = one
+  sub (imaps e) s = imaps (sub e (skeep s))
+  sub (sels e e₁) s = sels (sub e s) (sub e₁ s)
+  sub (imap e) s = imap (sub e (skeep s))
+  sub (sel e e₁) s = sel (sub e s) (sub e₁ s)
+  sub (imapb x e) s = imapb x (sub e (skeep s))
+  sub (selb x e e₁) s = selb x (sub e s) (sub e₁ s)
+  sub (sum e) s = sum (sub e (skeep s))
+  sub (zero-but e e₁ e₂) s = zero-but (sub e s) (sub e₁ s) (sub e₂ s)
+  sub (slide e x e₁ x₁) s = slide (sub e s) x (sub e₁ s) x₁
+  sub (backslide e e₁ x x₁) s = backslide (sub e s) (sub e₁ s) x x₁
+  sub (logistic e) s = logistic (sub e s)
+  sub (bin x e e₁) s = bin x (sub e s) (sub e₁ s)
+  sub (scaledown x e) s = scaledown x (sub e s)
+  sub (minus e) s = minus (sub e s)
+  sub (let′ e e₁) s = let′ (sub e s) (sub e₁ (skeep s))
+
+  _∙ˢ_ : Sub Δ Ψ → Sub Γ Δ → Sub Γ Ψ
+  ε ∙ˢ t = ε
+  (s ▹ x) ∙ˢ t = (s ∙ˢ t) ▹ sub x t
+\end{code}
+We can define identity substitution as folows:
+\begin{code}
+  sub-id : Sub Γ Γ
+  sub-id {ε} = ε
+  sub-id {Γ ▹ x} = skeep sub-id
+\end{code}
 As our context do not encode explicit dependencies between the variables,
-we can define the operation that swaps two consequent variables at any given
-position in the context.  Similarly to (\AB{Γ} \AF{/} \AB{v}), we define the
-function \AF{SwapAt} that computes the context where $x$ and its successor are
-swapped.  Then we define the operation \AF{ctx-swap} that translates the expression
-$e$ into the context where $x$ is swapped with its successor.
+we can easily define a substitution that swaps two top variables in the
+context.  This will be used later for optimising programs in our DSL.
 \begin{code}
-  SwapAt : (Γ : Ctx) → is ∈ Γ → Ctx
-  SwapAt (Γ ▹ is)       v₀           = Γ ▹ is
-  SwapAt (Γ ▹ ip ▹ is)  v₁           = Γ ▹ is ▹ ip
-  SwapAt (Γ ▹ ip ▹ is)  (vₛ (vₛ x))  = SwapAt (Γ ▹ ip) (vₛ x) ▹ is
-  
-  ctx-swap : (x : is ∈ Γ) (e : E Γ ip) → E (SwapAt Γ x) ip
-\end{code}
-\begin{code}[hide]
-  var-swap : (x : is ∈ Γ) → ip ∈ Γ → ip ∈ SwapAt Γ x
-  var-swap v₀ y = y
-  var-swap v₁ v₀ = v₁
-  var-swap v₁ v₁ = v₀
-  var-swap v₁ (vₛ (vₛ y)) = vₛ (vₛ y)
-  var-swap (vₛ (vₛ x)) v₀ = v₀
-  var-swap (vₛ (vₛ x)) (vₛ y) = vₛ (var-swap (vₛ x) y)
-  
-  ctx-swap x zero = zero
-  ctx-swap x one = one
-  
-  ctx-swap x (var y) = var (var-swap x y)
-  ctx-swap v₀ (imapₛ e) = imapₛ e
-  ctx-swap (vₛ x) (imapₛ e) = imapₛ (ctx-swap (vₛ (vₛ x)) e)
-  ctx-swap x (selₛ e e₁) = selₛ (ctx-swap x e) (ctx-swap x e₁)
-  ctx-swap v₀ (imap e) = imap e
-  ctx-swap (vₛ x) (imap e) = imap (ctx-swap (vₛ (vₛ x)) e)
-  ctx-swap x (sel e e₁) = sel (ctx-swap x e) (ctx-swap x e₁)
-  ctx-swap v₀ (imapb m e) = imapb m e
-  ctx-swap (vₛ x) (imapb m e) = imapb m (ctx-swap (vₛ (vₛ x)) e)
-  ctx-swap x (selb m e e₁) = selb m (ctx-swap x e) (ctx-swap x e₁)
-  ctx-swap x (zero-but e e₁ e₂) = zero-but (ctx-swap x e) (ctx-swap x e₁) (ctx-swap x e₂)
-  ctx-swap v₀ (sum e) = E.sum e
-  ctx-swap (vₛ x) (sum e) = E.sum (ctx-swap (vₛ (vₛ x)) e)
-  ctx-swap x (bin op e e₁) = bin op (ctx-swap x e) (ctx-swap x e₁)
-  ctx-swap x (slide e x₁ e₁ x₂) = E.slide (ctx-swap x e) x₁ (ctx-swap x e₁) x₂
-  ctx-swap x (backslide e e₁ x₁ x₂) = E.backslide (ctx-swap x e) (ctx-swap x e₁) x₁ x₂
-  ctx-swap x (scaledown x₁ e) = scaledown x₁ (ctx-swap x e)
-  ctx-swap x (minus e) = minus (ctx-swap x e)
-  ctx-swap x (logistic e) = logistic (ctx-swap x e)
+  sub-swap : Sub (Γ ▹ is ▹ ip) (Γ ▹ ip ▹ is)
+  sub-swap = (sdrop (sdrop sub-id) ▹ var v₀) ▹ var (vₛ v₀)
 \end{code}
 
+\paragraph{Syntax}
+\todo[inline]{Explain that we want to simplify the life of programers by
+introducing HOAS-like syntax, which is difficult, as our DSL is intrinsically-typed.}
 
-\paragraph{Building Blocks}
-Now we implement the remaining building blocks in \AD{E} that are needed
-to define our CNN.
 \begin{code}[hide]
-module BB where
-  open import Data.Nat as ℕ using (ℕ; zero; suc)
-  open Array hiding (sum; slide; backslide)
+module Syntax where
   open Lang
-  open SubWk using (wk; ↑_; ↑↑_)
-
-  --_⊞_ _⊠_ : (a b : E Γ (ar s)) → E Γ (ar s)
-  Imapₛ : (E (Γ ▹ ix s) (ix s) → E (Γ ▹ ix s) (ar unit)) → E Γ (ar s)
-  Imap : (E (Γ ▹ ix s) (ix s) → E (Γ ▹ ix s) (ar p)) → E Γ (ar (s ⊗ p))
-  Sum : (E (Γ ▹ ix s) (ix s) → E (Γ ▹ ix s) (ar p)) → E Γ (ar p)
+  open import Data.List as L using (List; []; _∷_)
+  open Array hiding (sum; imapb)
 \end{code}
-We start with a several convenience functions that wrap \AC{imap}s and \AC{sum}
-such that when we write (\AF{Imap} \AB{λ} \AB{i} \AB{→} \AB{⋯}), Agda's variable
-$i$ is mapped to the \AF{E}'s variable \AC{v₀}.
-\begin{mathpar}
-\codeblock{\begin{code}
-  Imapₛ f = imapₛ (f (var v₀))
-\end{code}}
-\and
-\codeblock{\begin{code}
-  Imap f = imap (f (var v₀))
-\end{code}}
-\and
-\codeblock{\begin{code}
-  Sum f = sum (f (var v₀))
-\end{code}}
-\end{mathpar}
-
-The remaining operations are \AF{conv}, \AF{mconv} and \AF{avgp₂} which
-can be defined as functions on \AF{E} as follows.
 \begin{code}
-  conv : E Γ (ar r) → s + p ≈ r → E Γ (ar s) → suc p ≈ u → E Γ (ar u)
-  conv f sp g su = Sum λ i → slide i sp (↑ f) su ⊠ Imapₛ λ _ → selₛ (↑↑ g) (↑ i)
+  data Prefix : (Γ Δ : Ctx) → Set where
+    instance
+      zero : Prefix Γ Γ
+      suc  : ⦃ Prefix Γ Δ ⦄ → Prefix Γ (Δ ▹ is)
 
-  mconv : s + p ≈ r → (inp : E Γ (ar r)) (we : E Γ (ar (u ⊗ s))) (b : E Γ (ar u))
-        → suc p ≈ w → E Γ (ar (u ⊗ w))
-  mconv sp inp we b su = Imap λ i → conv (↑ inp) sp (sel (↑ we) i) su ⊞ Imapₛ λ _ → selₛ (↑↑ b) (↑ i)
+  -- A term that can be lifted into larger contexts
+  GE : Ctx → IS → Set
+  GE Γ is = ∀ {Δ} → ⦃ Prefix Γ Δ ⦄ → E Δ is
 
-  avgp₂ : ∀ m n → (a : E Γ (ar (ι (m ℕ.* 2) ⊗ ι (n ℕ.* 2)))) → E Γ (ar (ι m ⊗ ι n))
-  avgp₂ m n a = Imapₛ λ i → scaledown 4 $ Sum λ j → selₛ (selb (ι ⊗ ι) (↑↑ a) (↑ i)) j
+  -- A variable that can be lifted into larger contexts
+  GVar : Ctx → IS → Set
+  GVar Γ is = ∀ {Δ} → ⦃ p : Prefix Γ Δ ⦄ → is ∈ Δ
 
+  -- Lift var
+  V : is ∈ Γ → GVar Γ is
+  V v ⦃ p = zero ⦄ = v
+  V v ⦃ p = suc  ⦄ = vₛ (V v)
 \end{code}
-Note that these definitions are not very different from those found in
-Section~\ref{sec:array-theory}.  Some operations such as \AF{nest} and \AF{unnest}
-got inlined into \AF{E}'s operators, and all we really have to take care of is 
-weakening of the expressions whenever we go under binders.
+We can implement HOAS operators that will allow to use bound variables
+under further binders.
+\begin{code}
+  -- Use GE GVar and V to define HOAS-style imap, imaps, and impab
+  Imap : ∀ {Γ}
+       → (GE (Γ ▹ ix s) (ix s) → E (Γ ▹ ix s) (ar p))
+       → E Γ (ar (s ⊗ p))
+  Imap f = imap (f λ {Δ} ⦃ p ⦄ → var (V v₀))
+\end{code}
+We do the same wrappers for \AC{sum}, \AC{imaps}, \AC{imapb}, and the one
+for \AC{let′}, providing a familiar let-like syntax.
+\begin{code}[hide]
+  Sum : ∀ {Γ}
+       → (GE (Γ ▹ ix s) (ix s) → E (Γ ▹ ix s) (ar p))
+       → E Γ (ar p)
+  Sum f = sum (f λ {Δ} ⦃ p ⦄ → var (V v₀))
+
+  Imaps : ∀ {Γ}
+        → (GE (Γ ▹ ix s) (ix s) → E (Γ ▹ ix s) (ar unit))
+        → E Γ (ar s)
+  Imaps f = imaps (f λ {Δ} ⦃ p ⦄ → var (V v₀))
+
+  Imapb : ∀ {Γ}
+        → s * p ≈ q 
+        → (GE (Γ ▹ ix s) (ix s) → E (Γ ▹ ix s) (ar p)) 
+        → E Γ (ar q)
+  Imapb p f = imapb p (f λ {Δ} ⦃ p ⦄ → var (V v₀))
+\end{code}
+\begin{code}
+  Let-syntax : ∀ {Γ}
+      → (E Γ (ar s))
+      → (GE (Γ ▹ (ar s)) (ar s) → E (Γ ▹ (ar s)) (ar p))
+      → E Γ (ar p)
+  Let-syntax x f = let′ x (f λ {Δ} ⦃ p ⦄ → var (V v₀))
+  
+  syntax Let-syntax e (λ x → e') = Let x := e In e'
+\end{code}
+
+The final convenience operator that we are missing is the ability
+to represent contexts in the HOAS style.
+\begin{code}[hide]
+  infixl 3 Let-syntax
+
+  -- Extend context with a list of types
+  -- (List is a context that grows to the left)
+\end{code}
+First of all, we define a helper function that appends a list of \AF{IS}
+at the end of some context \AF{Γ}:
+\begin{code}
+  ext : Ctx → List IS → Ctx
+  ext Γ [] = Γ
+  ext Γ (x ∷ l) = ext (Γ ▹ x) l
+\end{code}
+\begin{code}[hide]
+  -- Turn the list of IS into the following function:
+  --   l = [a, b, c]
+  --   X = X
+  --   Γ = Γ
+  --   ----------------------------
+  --   GE Γ a → GE Γ b → GE Γ c → X
+  lfunh : (l : List IS) (X : Set) (Γ : Ctx) → Set
+  lfunh [] X Γ = X
+  lfunh (a ∷ l) X Γ = GE Γ a → lfunh l X Γ
+
+  -- Diagonalise lfunh:
+  --   l = [a, b]
+  --   Γ = Γ
+  --   is = is
+  --   ---------------------------------------------
+  --   GE (ext Γ l) a → GE (ext Γ l) → E (ext Γ l) is
+\end{code}
+Then, we define \AF{lfun} that for the given list of \AF{IS}-es
+(l = [is₁, \dots, isₙ]), some context \AF{Γ} and some \AF{IS}
+ip computes an Agda function of type (\AF{GE} (\AF{ext} \AF{Γ} l) is₁ →
+\dots → \AF{GE} (\AF{ext} \AF{Γ} l) isₙ → \AD{E} (\AF{ext} Γ l) ip).
+The function \AF{lvar} lifts a variable in some context Γ into
+an extended context.
+\begin{code}
+  lfun : (l : List IS)  (Γ : Ctx) (is : IS) → Set
+  lvar : ∀ l → is ∈ Γ → GE (ext Γ l) is
+\end{code}
+\begin{code}[hide]
+  lfun l Γ τ = lfunh l (E (ext Γ l) τ) (ext Γ l)
+  lvar [] v = var (V v)
+  lvar (x ∷ l) v = lvar l (vₛ v)
+
+  -- Apply function to the corresponding variables of the context
+\end{code}
+With these helper functions we define the \AF{Lcon} helper that
+for the given list of types $l$, resulting type \AB{is}, the initial
+context Γ and the function of type \AF{lfun} l Γ \AB{is} computes
+the expression in the context \AF{ext} Γ l.
+\begin{code}
+  Lcon : ∀ l is Γ → (f : lfun l Γ is) → E (ext Γ l) is
+  Lcon []      is Γ f = f
+  Lcon (x ∷ l) is Γ f = Lcon l is (Γ ▹ x) (f (lvar l v₀))
+\end{code}
+This means that we can bind the last $n$ elements of the
+context to Agda variables and use them safely under binders.
+For example, consider this expression:
+\begin{code}
+  _ : E _ _
+  _ = Lcon (ar (ι 5) ∷ ar (5 ∷ 5 ∷ []) ∷ []) (ar []) ε
+      λ a b → Sum λ i → sels a i ⊞ sels (sel b i) i
+\end{code}
+where we \AB{a} and \AB{b} are bound to the arguments of
+the Agda's lambda term and which are used when computing
+expression in the context (ε ▹ 5 ∷ [] ▹ 5 ∷ 5 ∷ []). 
+
+
+
+\paragraph{Primitives}
+We are defining primitives that are needed for expresison our
+running example in $E$.  We consider an example for the \AF{conv}-olution:
+\begin{code}[hide]
+module Primitives where
+
+  open import Data.List as L using (List; []; _∷_)
+  open import Data.Nat as ℕ using (ℕ; zero; suc)
+  open import Function using (_$_; it; _∋_; ⟨_⟩)
+  open import Relation.Binary.PropositionalEquality
+  open Array hiding (slide; selb)
+  open Syntax
+  open WkSub
+  open Lang
+
+  fromPrefix : Prefix Γ Δ → Γ ⊆ Δ
+  fromPrefix zero = ⊆-eq
+  fromPrefix (suc ⦃ p ⦄) = skip (fromPrefix p)
+  
+  wkp : Prefix Γ Δ → E Γ is → E Δ is
+  wkp p = wk (fromPrefix p)
+
+  ⟨_⟩ : E Γ is → GE Γ is
+  ⟨_⟩ t {Δ} ⦃ p ⦄ = wkp p t
+\end{code}
+\begin{code}
+  conv : ∀ {Γ} → E Γ (ar r) → ⦃ s + p ≈ r ⦄ → E Γ (ar s) → ⦃ suc p ≈ u ⦄ 
+       → E Γ (ar u)
+  conv f ⦃ s+p ⦄ g ⦃ ss ⦄ 
+    = Sum λ i → (slide i s+p ⟨ f ⟩ ss) ⊠ Imaps λ j → sels ⟨ g ⟩ i
+
+  mconv : ⦃ s + p ≈ r ⦄ → (inp : E Γ (ar r)) (ws : E Γ (ar (u ⊗ s)))
+          (bᵥ : E Γ (ar u)) → ⦃ suc p ≈ w ⦄ → E Γ (ar (u ⊗ w))
+  mconv ⦃ sp ⦄ inp wᵥ bᵥ ⦃ su ⦄ = 
+    Imap λ i → conv ⟨ inp ⟩ (sel ⟨ wᵥ ⟩ i) ⊞ Imaps λ _ → sels ⟨ bᵥ ⟩ i
+
+  avgp₂ : ∀ m n → (a : E Γ (ar (m ℕ.* 2 ∷ n ℕ.* 2 ∷ []))) 
+        → E Γ (ar (m ∷ n ∷ []))
+  avgp₂ m n a =
+    Imaps λ i → scaledown 4 $ Sum λ j → sels (selb it ⟨ a ⟩ i) j
+
+  sqerr : (r o : E Γ (ar [])) → E Γ (ar [])
+  sqerr r o = scaledown 2 ((r ⊞ (minus o)) ⊠ (r ⊞ (minus o)))
+
+  meansqerr : (r o : E Γ (ar s)) → E Γ (ar [])
+  meansqerr r o = Sum λ i → sqerr (sels ⟨ r ⟩ i) (sels ⟨ o ⟩ i) 
+\end{code}
+where \AF{⟨\_⟩} lifts an expression into a generalised expression
+simply by applying weakening according to the prefix.
+
+Finally, the CNN embedded in $E$ is given as follows:
+\begin{code}
+  cnn : E _ _
+  cnn = Lcon (  ar (28 ∷ 28 ∷ []) ∷ ar (6 ∷ 5 ∷ 5 ∷ [])
+              ∷ ar (6 ∷ [])       ∷ ar (12 ∷ 6 ∷ 5 ∷ 5 ∷ [])
+              ∷ ar (12 ∷ [])      ∷ ar (10 ∷ 12 ∷ 1 ∷ 4 ∷ 4 ∷ [])
+              ∷ ar (10 ∷ [])      ∷ ar (10 ∷ 1 ∷ 1 ∷ 1 ∷ 1 ∷ []) 
+              ∷ [])
+             (ar []) ε
+        λ inp k₁ b₁ k₂ b₂ fc b target → 
+        Let c₁₁ := mconv inp k₁ b₁  In
+        Let c₁  := logistic c₁₁ In
+        Let s₁  := (Imap {s = 6 ∷ []} λ i → avgp₂ 12 12 (sel c₁ i)) In
+        Let c₂₁ := mconv s₁ k₂ b₂ In
+        Let c₂  := logistic c₂₁ In
+        Let s₂  := (Imap {s = 12 ∷ 1 ∷ []} λ i → avgp₂ 4 4 (sel c₂ i)) In
+        Let o₁  := mconv s₂ fc b In
+        Let o   := logistic o₁ In
+        Let e   := meansqerr target o In
+        e
+        
+\end{code}
+
+% \paragraph{Building Blocks}
+% Now we implement the remaining building blocks in \AD{E} that are needed
+% to define our CNN.
+% \begin{code}[hide]
+% module BB where
+%   open import Data.Nat as ℕ using (ℕ; zero; suc)
+%   open Array hiding (sum; slide; backslide)
+%   open Lang
+%   open SubWk using (wk; ↑_; ↑↑_)
+% 
+%   --_⊞_ _⊠_ : (a b : E Γ (ar s)) → E Γ (ar s)
+%   Imapₛ : (E (Γ ▹ ix s) (ix s) → E (Γ ▹ ix s) (ar unit)) → E Γ (ar s)
+%   Imap : (E (Γ ▹ ix s) (ix s) → E (Γ ▹ ix s) (ar p)) → E Γ (ar (s ⊗ p))
+%   Sum : (E (Γ ▹ ix s) (ix s) → E (Γ ▹ ix s) (ar p)) → E Γ (ar p)
+% \end{code}
+% We start with a several convenience functions that wrap \AC{imap}s and \AC{sum}
+% such that when we write (\AF{Imap} \AB{λ} \AB{i} \AB{→} \AB{⋯}), Agda's variable
+% $i$ is mapped to the \AF{E}'s variable \AC{v₀}.
+% \begin{mathpar}
+% \codeblock{\begin{code}
+%   Imapₛ f = imapₛ (f (var v₀))
+% \end{code}}
+% \and
+% \codeblock{\begin{code}
+%   Imap f = imap (f (var v₀))
+% \end{code}}
+% \and
+% \codeblock{\begin{code}
+%   Sum f = sum (f (var v₀))
+% \end{code}}
+% \end{mathpar}
+% 
+% The remaining operations are \AF{conv}, \AF{mconv} and \AF{avgp₂} which
+% can be defined as functions on \AF{E} as follows.
+% \begin{code}
+%   conv : E Γ (ar r) → s + p ≈ r → E Γ (ar s) → suc p ≈ u → E Γ (ar u)
+%   conv f sp g su = Sum λ i → slide i sp (↑ f) su ⊠ Imapₛ λ _ → selₛ (↑↑ g) (↑ i)
+% 
+%   mconv : s + p ≈ r → (inp : E Γ (ar r)) (we : E Γ (ar (u ⊗ s))) (b : E Γ (ar u))
+%         → suc p ≈ w → E Γ (ar (u ⊗ w))
+%   mconv sp inp we b su = Imap λ i → conv (↑ inp) sp (sel (↑ we) i) su ⊞ Imapₛ λ _ → selₛ (↑↑ b) (↑ i)
+% 
+%   avgp₂ : ∀ m n → (a : E Γ (ar (ι (m ℕ.* 2) ⊗ ι (n ℕ.* 2)))) → E Γ (ar (ι m ⊗ ι n))
+%   avgp₂ m n a = Imapₛ λ i → scaledown 4 $ Sum λ j → selₛ (selb (ι ⊗ ι) (↑↑ a) (↑ i)) j
+% 
+% \end{code}
+% Note that these definitions are not very different from those found in
+% Section~\ref{sec:array-theory}.  Some operations such as \AF{nest} and \AF{unnest}
+% got inlined into \AF{E}'s operators, and all we really have to take care of is 
+% weakening of the expressions whenever we go under binders.
 

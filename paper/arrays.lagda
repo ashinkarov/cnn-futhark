@@ -11,7 +11,7 @@ module _ where
 module Array where
   open import Data.Nat using (zero; suc; ℕ; _+_; _*_; _≤_; s≤s; z≤n; _<_)
   open import Data.Nat.Properties using (+-mono-≤; ≤-step; ≤-pred; _≟_; +-comm; +-suc)
-  open import Data.Fin using (zero; suc; Fin; combine; remQuot; fromℕ<; inject+; splitAt)
+  open import Data.Fin as F using (zero; suc; Fin; combine; remQuot; fromℕ<; inject+; splitAt)
   open import Data.Fin.Properties using (suc-injective; toℕ<n; splitAt-inject+)
   --open import Fin2 using (Fin; #_; combine; remQuot; zerof; sucf; _⊕_; _⊝_)
   open import Data.Sum using (_⊎_; inj₁; inj₂)
@@ -133,6 +133,14 @@ the types of these three operations:
 
   split {s = []}    is = [] , is
   split {s = x ∷ s} (i ∷ is) = Prod.map₁ (i ∷_) (split is)
+
+  _≟ₚ_ : (i j : P s) → Dec (i ≡ j)
+  _≟ₚ_ {[]} [] [] = yes refl
+  _≟ₚ_ {x ∷ s} (i ∷ is) (j ∷ js) with i F.≟ j
+  ... | no ¬p = no λ { refl → ¬p refl }
+  ... | yes refl with is ≟ₚ js
+  ... | no ¬q = no λ { refl → ¬q refl }
+  ... | yes refl = yes refl
 \end{code}
 
 Arrays are homogeneously nested, \ie{} the shapes of all the sub-arrays
