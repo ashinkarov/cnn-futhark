@@ -164,9 +164,10 @@ module _ where
   ee-let v x ρ = let′ x $ ee-sub ρ (glet-sub v) 
 
   {-# TERMINATING #-}
-  -- TODO: Show that this is terminating (in a different file).
   grad-last : E Γ (ar s) → EE (Γ ▹ ar s) Γ → EE Γ Γ
 
+  -- Just an alternative (arguably more complicated) implementation
+  -- of the `grad-last` function.
   grad-last′ : (v : ar s ∈ Γ) → E (Γ / v) (ar s) → EE (Γ) (Γ / v) → EE (Γ / v) (Γ / v)
 
   grad : (e s : E Γ is) → EE Γ Γ → EE Γ Γ
@@ -215,6 +216,9 @@ module _ where
     r = ee-rm-/ u v
     in r
   grad-last′ v e (let′ x ρ) = let′ x $′ ee-tail $′ grad-last′ (there v) (e ↑) (ee-push-zero ρ)
+
+
+
 
   grad-last e (env (ρ ▹ x)) = ee-tail $′ let′ x $′ grad (e ↑) (var v₀) (ee-push-zero $′ ee-wk (skip ⊆-eq) (env ρ))
   grad-last e (let′ x ρ) = let

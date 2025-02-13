@@ -1,5 +1,15 @@
 \section{Performance\label{sec:performance}}
 
+% Notes for Troels:
+%
+% - Leave Agda-side optimisations for Artem
+% - Only backend: Futhark
+% - Compared with:
+%   - TensorFlow (on GPU)
+%   - Hand-written Futhark (lower priority)
+% - Will try for multicore numbers as well, if does not complicate story
+
+
 One of the goals of this work is to demonstrate that it is possible to formulate
 the problem in a proof assistant and then pass it on to the other system that can
 run the algorithm efficiently.  In order to substantiate this claim, we compare
@@ -337,9 +347,9 @@ explicit operations on indices:
 \>[2]\AgdaInductiveConstructor{div}%
 \>[13]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSpace{}%
-\AgdaOperator{\AgdaDatatype{*}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{*}}\AgdaSpace{}%
 \AgdaGeneralizable{p}\AgdaSpace{}%
-\AgdaOperator{\AgdaDatatype{≈}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{≈}}\AgdaSpace{}%
 \AgdaGeneralizable{q}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{i}\AgdaSpace{}%
@@ -358,9 +368,9 @@ explicit operations on indices:
 \>[2]\AgdaInductiveConstructor{mod}%
 \>[13]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSpace{}%
-\AgdaOperator{\AgdaDatatype{*}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{*}}\AgdaSpace{}%
 \AgdaGeneralizable{p}\AgdaSpace{}%
-\AgdaOperator{\AgdaDatatype{≈}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{≈}}\AgdaSpace{}%
 \AgdaGeneralizable{q}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{i}\AgdaSpace{}%
@@ -392,15 +402,15 @@ explicit operations on indices:
 \AgdaSymbol{(}\AgdaInductiveConstructor{ix}\AgdaSpace{}%
 \AgdaGeneralizable{u}\AgdaSymbol{))}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
-\AgdaOperator{\AgdaDatatype{suc}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{suc}}\AgdaSpace{}%
 \AgdaGeneralizable{p}\AgdaSpace{}%
-\AgdaOperator{\AgdaDatatype{≈}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{≈}}\AgdaSpace{}%
 \AgdaGeneralizable{u}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSpace{}%
-\AgdaOperator{\AgdaDatatype{+}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{+}}\AgdaSpace{}%
 \AgdaGeneralizable{p}\AgdaSpace{}%
-\AgdaOperator{\AgdaDatatype{≈}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{≈}}\AgdaSpace{}%
 \AgdaGeneralizable{r}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
 \AgdaDatatype{E}\AgdaSpace{}%
@@ -426,14 +436,14 @@ explicit operations on indices:
 \AgdaGeneralizable{s}\AgdaSymbol{))}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSpace{}%
-\AgdaOperator{\AgdaDatatype{+}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{+}}\AgdaSpace{}%
 \AgdaGeneralizable{p}\AgdaSpace{}%
-\AgdaOperator{\AgdaDatatype{≈}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{≈}}\AgdaSpace{}%
 \AgdaGeneralizable{r}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
-\AgdaOperator{\AgdaDatatype{suc}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{suc}}\AgdaSpace{}%
 \AgdaGeneralizable{p}\AgdaSpace{}%
-\AgdaOperator{\AgdaDatatype{≈}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{≈}}\AgdaSpace{}%
 \AgdaGeneralizable{u}\<%
 \\
 %
@@ -471,14 +481,14 @@ explicit operations on indices:
 \AgdaGeneralizable{u}\AgdaSymbol{))}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSpace{}%
-\AgdaOperator{\AgdaDatatype{+}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{+}}\AgdaSpace{}%
 \AgdaGeneralizable{p}\AgdaSpace{}%
-\AgdaOperator{\AgdaDatatype{≈}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{≈}}\AgdaSpace{}%
 \AgdaGeneralizable{r}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
-\AgdaOperator{\AgdaDatatype{suc}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{suc}}\AgdaSpace{}%
 \AgdaGeneralizable{p}\AgdaSpace{}%
-\AgdaOperator{\AgdaDatatype{≈}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{≈}}\AgdaSpace{}%
 \AgdaGeneralizable{u}\<%
 \\
 %
@@ -575,7 +585,7 @@ explicit operations on indices:
 \AgdaGeneralizable{Γ}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaInductiveConstructor{ar}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaGeneralizable{s}\AgdaSpace{}%
-\AgdaOperator{\AgdaInductiveConstructor{⊗}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{⊗}}\AgdaSpace{}%
 \AgdaGeneralizable{p}\AgdaSymbol{))}\<%
 \\
 %
@@ -585,7 +595,7 @@ explicit operations on indices:
 \AgdaGeneralizable{Γ}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaInductiveConstructor{ar}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaGeneralizable{s}\AgdaSpace{}%
-\AgdaOperator{\AgdaInductiveConstructor{⊗}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{⊗}}\AgdaSpace{}%
 \AgdaGeneralizable{p}\AgdaSymbol{))}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
 \AgdaDatatype{E}\AgdaSpace{}%
@@ -607,9 +617,9 @@ explicit operations on indices:
 \>[2]\AgdaInductiveConstructor{imapb}\AgdaSpace{}%
 \AgdaSymbol{:}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSpace{}%
-\AgdaOperator{\AgdaDatatype{*}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{*}}\AgdaSpace{}%
 \AgdaGeneralizable{p}\AgdaSpace{}%
-\AgdaOperator{\AgdaDatatype{≈}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{≈}}\AgdaSpace{}%
 \AgdaGeneralizable{q}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
 \AgdaDatatype{E}\AgdaSpace{}%
@@ -629,9 +639,9 @@ explicit operations on indices:
 \>[2]\AgdaInductiveConstructor{selb}\AgdaSpace{}%
 \AgdaSymbol{:}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSpace{}%
-\AgdaOperator{\AgdaDatatype{*}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{*}}\AgdaSpace{}%
 \AgdaGeneralizable{p}\AgdaSpace{}%
-\AgdaOperator{\AgdaDatatype{≈}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{≈}}\AgdaSpace{}%
 \AgdaGeneralizable{q}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
 \AgdaDatatype{E}\AgdaSpace{}%
@@ -724,9 +734,9 @@ explicit operations on indices:
 \AgdaGeneralizable{s}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSpace{}%
-\AgdaOperator{\AgdaDatatype{+}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{+}}\AgdaSpace{}%
 \AgdaGeneralizable{p}\AgdaSpace{}%
-\AgdaOperator{\AgdaDatatype{≈}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{≈}}\AgdaSpace{}%
 \AgdaGeneralizable{r}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
 \AgdaDatatype{E}\AgdaSpace{}%
@@ -736,9 +746,9 @@ explicit operations on indices:
 \\
 \>[.][@{}l@{}]\<[468I]%
 \>[8]\AgdaSymbol{→}\AgdaSpace{}%
-\AgdaOperator{\AgdaDatatype{suc}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{suc}}\AgdaSpace{}%
 \AgdaGeneralizable{p}\AgdaSpace{}%
-\AgdaOperator{\AgdaDatatype{≈}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{≈}}\AgdaSpace{}%
 \AgdaGeneralizable{u}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
 \AgdaDatatype{E}\AgdaSpace{}%
@@ -759,17 +769,17 @@ explicit operations on indices:
 \AgdaSymbol{(}\AgdaInductiveConstructor{ar}\AgdaSpace{}%
 \AgdaGeneralizable{u}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
-\AgdaOperator{\AgdaDatatype{suc}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{suc}}\AgdaSpace{}%
 \AgdaGeneralizable{p}\AgdaSpace{}%
-\AgdaOperator{\AgdaDatatype{≈}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{≈}}\AgdaSpace{}%
 \AgdaGeneralizable{u}\<%
 \\
 \>[.][@{}l@{}]\<[493I]%
 \>[12]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSpace{}%
-\AgdaOperator{\AgdaDatatype{+}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{+}}\AgdaSpace{}%
 \AgdaGeneralizable{p}\AgdaSpace{}%
-\AgdaOperator{\AgdaDatatype{≈}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{≈}}\AgdaSpace{}%
 \AgdaGeneralizable{r}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
 \AgdaDatatype{E}\AgdaSpace{}%

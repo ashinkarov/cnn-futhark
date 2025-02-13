@@ -440,7 +440,7 @@ introducing HOAS-like syntax, which is difficult, as our DSL is intrinsically-ty
 module Syntax where
   open Lang
   open import Data.List as L using (List; []; _∷_)
-  open Array hiding (sum; imapb)
+  open Array hiding (sum)
 \end{code}
 \begin{code}
   data Prefix : (Γ Δ : Ctx) → Set where
@@ -580,9 +580,9 @@ module Primitives where
 
   open import Data.List as L using (List; []; _∷_)
   open import Data.Nat as ℕ using (ℕ; zero; suc)
-  open import Function using (_$_; it; _∋_; ⟨_⟩)
+  open import Function using (_$_; it; _∋_)
   open import Relation.Binary.PropositionalEquality
-  open Array hiding (slide; selb)
+  open Array hiding (slide)
   open Syntax
   open WkSub
   open Lang
