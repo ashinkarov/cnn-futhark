@@ -169,6 +169,9 @@ if __name__ == "__main__":
     train_labels = tf.one_hot (train_labels_raw, cats)
     test_labels = tf.one_hot (test_labels_raw, cats)
 
+    # Do a single minimal pass just to force compilation of the graph.
+    train_cnn (train_images[0:1,:].reshape (1, 28, 28, 1), tf.reshape(train_labels[0:1,:], (1, cats)))
+
     # do the training
     logger.info ('Training the model now')
     train_start = time.perf_counter ()
