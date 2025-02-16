@@ -476,16 +476,434 @@ to do with selections a+nd sum.  Consider the snippet of the optimiser for
 % the \AB{seed} by $b$, which is the expected answer.  This reduces complexity
 % of the expression form squared to linear.
 % 
-\subsection{Extraction}
- 
-\todo[inline]{Replace the old text, explain the NBE trick we are using in
-the code generation.}
-Extraction from \AF{E} into SaC translates constructors of \AF{E} into
-corresponding SaC expressions or function calls.  The translation starts with
-a definition of an environment (\AF{SEnv} \AB{Γ}) that assigns SaC variable names
-to all positions in \AB{Γ}.  The assumption here is that when we compile
-expressions in context \AF{Γ}, variable names of the corresponding shapes are
-available in SaC.
+\subsection{Compilation}
+
+We had two reasons to define the embedded langauge \AF{E}.
+Firstly, \AF{E} makes it possible to implement automatic differention
+within Agda, as we described in the previous section.
+Secondly, we compile expressions in \AF{E} into
+a programming langauge that can produce efficient code.  This
+section describes extraction process into Futhark.
+
+Futhark is a functional language with automatic memory management and
+built-in type for arrays.  Futhark provides key array combinators such as
+map and reduce, which makes translation process straight-forward.  
+There are two non-trivial aspects of the process that we describe below.
+
+\paragraph{Static Ranks} In Futhark, array rnaks are static. This means that
+it is not possible to translate any expression in \AF{E} into Futhark.
+We assume that all the ranks are known statically, which is true for
+many numerical applications including our running example.
+
+
+\paragraph{Normalisation} Consider translating an expression like
+\AC{sel} (\AC{imap} λ i → \AB{e}) \AB{u}.  If you were to treat arrays
+as functions and selections as applications, then the above expression
+can be normalised into $e[i := u]$.  One could hope that Furhark could do
+such a $\beta$-reduction on the generated code, but this is not the case.
+The intuition for this choice is that in Futhark arrrays are tabulated
+functions, and inlnining arbitrary evaluation of array elements may
+have a significant performance cost.  For example, in the expression
+\texttt{let a = imap \textbackslash i -> }$e$ \texttt{in imap \textbackslash j -> a[f j]}, Futhark
+allocates memory for $a$ and computes all the values, an within the
+body of the let, selection actually looks up the elements.  If we were
+to inline $a$ by replacing $a[f\ j]$ with $e[i := f\ j]$, we loose sharing
+by potentially recomputing $e$ much more often than needed
+(e.g. assume that $i$ ranges over 10 elements, but $j$ over $10^5$).
+Resolving when such inlining is beneficial for perfoamance is non-trivial,
+therefore Futhark (and many other array languages) do not inline 
+computation of array elements.  For our running example, naive translation
+results in too many cases when arrays are constructed just to select
+an element from them.  Therefore, we need some notion of normalisation
+prior extraction.
+
+
+We are going to combine normalisation and extraction in a single step,
+resulting in something similar to normalisation by evaluation.
+We model Futhark arrays as Agda functions space which makes it
+easy to encode normalisation steps.
+\begin{code}[hide]
+module Futhark where
+  open import Data.Nat.Show using () renaming (show to show-nat)
+  open import Data.List as L using (List; []; _∷_)
+  open import Data.List.Relation.Unary.All as All using (All; []; _∷_)
+  open import Relation.Binary.PropositionalEquality
+  open import Data.String
+  open import Text.Printf
+  open import Data.Unit
+  open import Data.Product as Prod hiding (_<*>_)
+  open import Data.Nat using (ℕ; zero; suc)
+  open import arrays 
+  open import lang
+  open import Function
+  open Array hiding (_++_; Ix)
+  open Lang
+
+  open import Effect.Monad.State
+  open import Effect.Monad using (RawMonad)
+  open RawMonadState {{...}} -- public
+  open RawMonad {{...}} -- public
+  
+  instance
+    _ = monad
+    _ = applicative
+    _ = monadState
+\end{code}
+Futhark indices for an array of shape $s$ are given by the type \AD{Ix} which
+is simply a list of strings (the name of the index) per dimension:
+\begin{code}
+  data Ix : S → Set where 
+    []  : Ix []
+    _∷_ : String → Ix s → Ix (n ∷ s)
+\end{code}
+The \AF{Sem} function gives an interpretation to types of \AF{E} expressions.
+Indices are just interpreted as \AF{Ix} of the corresponding shape.  Array
+types are morally functions fro indices to strings.  However, in the definition
+the type is a little more complicated:
+\begin{code}
+  Sem : IS → Set
+  Sem (ar s) = (Ix s → State ℕ ((String → String) × String))
+  Sem (ix s) = Ix s
+\end{code}
+Let us explain the complexity of the array type.  First of all, the codomain
+of the array is wrapped into a state monad which gives a source of fresh variable
+names.  Within the monad we have a pair we have a functoin which represents
+a context for the actual array computation which is the second argument.
+This context is needed because of the interplay between let bindings and
+imaps.  Consider for a moment that we do not have explicit context in the
+type for \AC{ar} and we are compiling an expression
+\AF{Let} z \AF{:=} \AC{zero} \AF{in} \AF{Imaps} λ i → z which can result in
+somehing like:
+\begin{code}
+  f : Ix s → State ℕ String
+  f i = return ("let z = 0 in " ++ (λ j → "z") i)
+\end{code}
+If we selct into this array (by applying it to some index expression)
+or compose it with other functions, this works as expected.  However,
+at a certain point we may need to turn this experssion into the actual
+array, which looks something like \AS{"imap λ i → "} \AF{++} f \AS{"i"}.
+However, this expression evaluates to \AS{"imap λ i → let z = 0\ in z"},
+but this inlines computation of let binding in the body of the imap,
+which may have a serious performance impact if let binds a non-trivial
+computation.  By introducing contexts in \AF{Sem}, we just control where
+the imap code is injected.  Generally speaking, our strategy here is to
+preserve sharing that is introduced by let bidings, yet normalise
+bound expressions and bodies.
+
+For the actual extraction we define the environment of Futhar values
+called \AF{FEnv}.  Two functions that actually do the translation are
+\AF{to-fut} which computest the \AF{Sem} value, and \AF{to-str} that
+calls \AF{to-fut} and wraps the result with \AF{imap} as we described
+above.
+\begin{mathpar}
+\codeblock{\begin{code}
+  FEnv : Ctx → Set
+  FEnv ε = ⊤
+  FEnv (Γ ▹ is) = FEnv Γ × Sem is
+\end{code}}
+\and
+\codeblock{\begin{code}[hide]
+  lookup : is ∈ Γ → FEnv Γ → Sem is
+  lookup v₀ (ρ , e) = e
+  lookup (vₛ x) (ρ , e) = lookup x ρ
+
+  --show-shape : S → String
+  --show-shape s = printf "[%s]" $ intersperse ", " $ L.map show-nat s
+
+  s-list : S → List ℕ
+  s-list [] = []
+  s-list (n ∷ ns) = n ∷ s-list ns
+
+  list-s : List ℕ → S
+  list-s [] = []
+  list-s (n ∷ ns) = n ∷ list-s ns
+
+  shape-args : S → String
+  shape-args = intersperse " " ∘ L.map show-nat ∘ s-list
+
+  dim : S → ℕ
+  dim = L.length ∘ s-list
+
+  fresh-var : ℕ → String
+  fresh-var n = "x" ++ show-nat n
+  
+  fresh-ix : String → Ix s
+  fresh-ix n = proj₂ (runState (go n) 0)
+    where
+      go : String → State ℕ (Ix s)
+      go {[]} n = return []
+      go {x ∷ s} n = do
+        c ← get
+        modify suc
+        is ← go {s} n
+        return (printf "%s_%u" n c ∷ is)
+
+  iv : (s : S) → State ℕ (Ix s)
+  iv s = do
+    c ← get
+    modify suc
+    return (fresh-ix (fresh-var c))
+
+  
+  bop : Bop -> String
+  bop plus = "F.+"
+  bop mul = "F.*"
+
+  show-array-type : S → String
+  show-array-type [] = "f32"
+  show-array-type s = printf "%sf32" $ intersperse "" $ L.map (printf "[%s]" ∘ show-nat) (s-list s)
+
+  _⊗ⁱ_ : Ix s → Ix p → Ix (s Ar.⊗ p)
+  [] ⊗ⁱ js = js
+  (i ∷ is) ⊗ⁱ js = i ∷ (is ⊗ⁱ js)
+  
+  splitⁱ : (ij : Ix (s Ar.⊗ p)) → Σ (Ix s) λ i → Σ (Ix p) λ j → i ⊗ⁱ j ≡ ij
+  splitⁱ {[]} ij = [] , ij , refl
+  splitⁱ {_ ∷ s} (x ∷ ij) with splitⁱ {s} ij
+  ... | i , j , refl = (x ∷ i) , j , refl
+
+  ix-curry : (Ix (s Ar.⊗ p) → X) → Ix s → Ix p → X
+  ix-curry f i j = f (i ⊗ⁱ j)
+
+  ix-uncurry : (Ix s → Ix p → X) → Ix (s Ar.⊗ p) → X
+  ix-uncurry {s = s} f ij with splitⁱ {s} ij
+  ... | i , j , refl = f i j
+
+  ix-map : (String → String) → Ix s → Ix s
+  ix-map f [] = []
+  ix-map f (x ∷ i) = f x ∷ ix-map f i
+  
+  ix-zipwith : ((a b : String) → String) → Ix s → Ix s → Ix s
+  ix-zipwith f [] [] = []
+  ix-zipwith f (x ∷ i) (y ∷ j) = f x y ∷ ix-zipwith f i j
+
+
+  ix-join : Ix s → String → String
+  ix-join [] d = ""
+  ix-join (x ∷ []) d = x
+  ix-join {s = _ ∷ s} (x ∷ y ∷ xs) d = x ++ d ++ ix-join {s} (y ∷ xs) d
+
+  ix-to-list : Ix s → List String
+  ix-to-list [] = []
+  ix-to-list (x ∷ xs) = x ∷ ix-to-list xs
+
+
+  to-sel : Ix s → String → String
+  to-sel i a = a ++ ix-join (ix-map (printf "[%s]") i) ""
+
+
+  to-imap : (s : S) → (i : Ix s) → (e : String) → String
+  to-imap s i e = printf "(imap%u %s (\\ %s -> %s))" 
+                   (dim s) (shape-args s) (ix-join i " ")
+                   e
+  --to-sum : (s : S) → (i : Ix s) → (e : String) → String
+  --to-sum [] i e = e
+  --to-sum s  i e = printf "(sum%ud %s)" (dim s) (to-imap s i e)
+
+  to-sum : (s : S) → (i : Ix s) → (e : String) → String
+  to-sum [] i e = e
+  to-sum s  i e = printf "(isum%u %s (\\ %s -> %s))" (dim s) (shape-args s)
+                         (ix-join i " ") e 
+
+  ix-plus : s + p ≈ r → (suc_≈_ p u) 
+          → (i : Ix s)
+          → (j : Ix u)
+          → Ix r
+  ix-plus []  [] [] [] = []
+  ix-plus (cons ⦃ _ ⦄ ⦃ s+p ⦄) (cons ⦃ _ ⦄ ⦃ sp ⦄) (i ∷ is) (j ∷ js) =
+    printf "(%s + %s)" i j ∷ ix-plus s+p sp is js
+
+  ix-eq : (i j : Ix s) → String
+  ix-eq i j = ix-join (ix-zipwith (printf "(%s == %s)") i j) " && " 
+
+  ix-minus : s + p ≈ r → (suc_≈_ p u)
+           → (i : Ix r)
+           → (j : Ix s)
+           → Ix u
+  ix-minus []  [] [] [] = []
+  ix-minus (cons ⦃ _ ⦄ ⦃ s+p ⦄) (cons ⦃ _ ⦄ ⦃ sp ⦄) (i ∷ is) (j ∷ js) =
+    printf "(%s - %s)" i j ∷ ix-minus s+p sp is js
+
+
+  to-div-mod : s * p ≈ q → Ix q 
+             → Ix s × Ix p 
+  to-div-mod []   [] = [] , []
+  to-div-mod (cons {n = n} ⦃ _ ⦄ ⦃ eq ⦄) (x ∷ i) =
+    -- (i: Fin (m*n)) → [p,q] : Fin [m,n] => p=i/n q=i%n
+    Prod.map (printf "(%s / %s)" x (show-nat n) ∷_)
+             (printf "(%s %% %s)" x (show-nat n) ∷_)
+             (to-div-mod eq i)
+
+  from-div-mod : s * p ≈ q 
+               → Ix s → Ix p 
+               → Ix q
+  from-div-mod [] [] [] = []
+  from-div-mod (cons {n = n} ⦃ _ ⦄ ⦃ eq ⦄) (i ∷ is) (j ∷ js) =
+    -- (i : Fin m) (j : Fin n)  (k : Fin (m * n))  k = i * n + j  
+    printf "((%s * %s) + %s)" i (show-nat n) j
+    ∷ from-div-mod eq is js
+
+  -- Generate a new name for an external array
+  mkar : String → Ix s → State ℕ ((String → String) × String)
+  mkar a i = return (id , to-sel i a)
+\end{code}
+\begin{code}
+  to-fut : E Γ is → FEnv Γ → State ℕ (Sem is)
+  to-str : E Γ (ar s) → FEnv Γ → State ℕ String
+\end{code}}
+\end{mathpar}
+Consider two cases of \AF{to-fut} for \AC{imap} an \AC{sel}.
+In both cases the array we are constructing or selecting from is
+of shape $s ++ p$.  We use two helper functions \AF{ix-curry}
+and \AF{ix-uncurry} that translate between funtions of type
+\AD{Ix (s ++ p)} → X and \AD{Ix} s → \AD{Ix p} → X.  In the
+\AC{imap} case we generate a function keeping potential let
+chains within the imap expression.  In case of \AF{sel}, we
+are computing the value of the array we are slecting from (i.e. $a$)
+and within the returned expression we apply $a$ to the correspoinding
+indices --- this is normalisation step.
+\begin{mathpar}
+\codeblock{\begin{code}
+  to-fut (imap {s = s} e) ρ = 
+    return $ ix-uncurry {s} λ i j → do
+      b ← to-fut e (ρ , i)
+      f , b′ ← b j
+      return (id , f b′)
+\end{code}}
+\and
+\codeblock{\begin{code}
+  to-fut (sel e e₁) ρ = do
+     a ← to-fut e ρ
+     i ← to-fut e₁ ρ
+     return λ j → do
+       f , a′ ← ix-curry a i j
+       return (f , a′)
+\end{code}}
+\end{mathpar}
+\begin{code}[hide]
+  to-fut (var x) ρ = return $ lookup x ρ
+  to-fut zero ρ = return (λ _ → return (id , "zero"))
+  to-fut one ρ = return (λ _ → return (id , "one"))
+  to-fut (imaps e) ρ = return λ i → do
+     b ← to-fut e (ρ , i)
+     f , b′ ← b []
+     return (id , f b′)
+
+     --λ i → let k = to-fut e (ρ , i) ; r = (_$ []) <$> k in join r
+  to-fut (sels e e₁) ρ = do
+     a ← to-fut e ρ
+     x ← to-fut e₁ ρ
+     return λ i → do
+       f , a′ ← a x
+       return (f , a′)
+     --return λ _ → f x
+  to-fut (E.imapb x e) ρ = return λ i → do
+    let j , k = to-div-mod x i
+    b ← to-fut e (ρ , j)
+    f , b′ ← b k
+    return (id , f b′)
+  to-fut (E.selb x e e₁) ρ = do
+    a ← to-fut e ρ
+    i ← to-fut e₁ ρ
+    return λ j → do
+      let k = from-div-mod x i j
+      f , a′ ← a k
+      return (f , a′)
+  to-fut (E.sum {s = s} e) ρ = do
+    i ← iv s
+    b ← to-fut e (ρ , i)
+    return λ j → do
+      f , b′ ← b j
+      return (id , to-sum s i (f b′))
+  to-fut (zero-but e e₁ e₂) ρ = do
+    i ← to-fut e ρ
+    j ← to-fut e₁ ρ
+    a ← to-fut e₂ ρ
+    return λ k → do
+      f , a′ ← a k
+      -- move context under if, so that we do not evaluate stuff that we do not need.
+      return (id , printf "(if (%s) then %s else zero)" (ix-eq i j) (f a′))
+  to-fut (E.slide e x e₁ x₁) ρ = do
+    i ← to-fut e ρ
+    a ← to-fut e₁ ρ
+    return λ j → do
+      f , a′ ← a (ix-plus x x₁ i j)
+      return (f , a′)
+  to-fut (E.backslide {u = u} e e₁ x x₁) ρ = do
+    i ← to-fut e ρ
+    a ← to-fut e₁ ρ
+    return λ j → do
+      let j-i = ix-minus x₁ x j i
+      let j≥i = intersperse " && " (L.zipWith (printf "%s >= %s") (ix-to-list j) (ix-to-list i)) 
+      let j-i<u = intersperse " && " (L.zipWith (printf "%s < %u") (ix-to-list j-i) (s-list u))
+
+      f , a′ ← a j-i
+      -- Again, move the context under if.
+      let b = printf "if (%s && %s) then %s else zero"
+                     j≥i j-i<u (f a′)
+
+      return (id , b)
+  to-fut (logistic e) ρ = do
+    a ← to-fut e ρ
+    return λ i → do
+      f , a′ ← a i
+      return (f ,  printf "(logistics %s)" a′)
+  to-fut (e ⊞ e₁) ρ = do
+    l ← to-fut e ρ
+    r ← to-fut e₁ ρ
+    return λ i → do
+      f , l′ ← l i
+      g , r′ ← r i
+      return (f ∘ g , printf "(%s F.+ %s)" l′ r′)
+
+  to-fut (e ⊠ e₁) ρ = do
+    l ← to-fut e ρ
+    r ← to-fut e₁ ρ
+    return λ i → do
+      f , l′ ← l i
+      g , r′ ← r i
+      return (f ∘ g , printf "(%s F.* %s)" l′ r′)
+
+  to-fut (scaledown x e) ρ = do
+    a ← to-fut e ρ
+    return λ i → do
+      f , a′ ← a i
+      return (f ,  printf "(%s F./ fromi64 %s)" a′ (show-nat x))
+
+
+  to-fut (minus e) ρ = do
+    a ← to-fut e ρ
+    return λ i → do
+      f , a′ ← a i
+      return (f ,  printf "(F.neg %s)" a′)
+
+  to-fut (let′ e e₁) ρ = do
+    c ← get
+    modify suc
+    let n = fresh-var c 
+    b ← to-fut e₁ (ρ , (mkar n))
+    return λ i → do
+      x ← to-str e ρ
+      f , b′ ← b i
+      return (printf "(let %s = %s\nin %s)" n x ∘ f ,  b′)
+
+
+  to-str {s = []} e ρ = do
+    p ← to-fut e ρ
+    f , b ← p []
+    return (f b)
+  to-str {s = s} e ρ = do
+    p ← to-fut e ρ
+    i ← iv s
+    f , b ← p i
+    return (f (to-imap s i b))
+\end{code}
+The rest of the code generator looks very similar, therefore we omit it
+here but the full code is available in the supplementary materials.
+
+
+
+
 % 
 % Next, we have to take care of shapes.  Array shapes in \AF{E} are binary trees,
 % but array shapes in SaC are 1-dimensional arrays (flattened binary trees).
