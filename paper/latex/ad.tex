@@ -1517,17 +1517,341 @@ pair forms a satisfying \AF{∇}-symmetry.  Finally, \AC{scaledown}, \AC{minus} 
  
 \subsection{Optimisation\label{sec:opt}}
 
-\todo[inline]{Replace the old text, explain that we are semantically-preserving now}
-Our algorithm often delivers expressions that are not computationally efficient.
-While we can hope for the backend to take care of this, it is relatively
-easy to implement a number of rewriting rules prior to extraction.  
-We constructed \AF{E} such that no computation is happening in the shape
-or context positions.  As a result, dependent pattern-matching is always
-applicable on \AF{E} expressions, and our optimisations can be formulated
-very concisely.  We omit constant-folding like rewrites such as addition
-with zero and multiplication by one and focus on less trivial cases that have
-to do with selections a+nd sum.  Consider the snippet of the optimiser for
-\AF{selₛ} and \AF{sum}.
+Our rule-based AD algorithm from the previous section guarantees that its
+output preserves correct shapes and that all the variables are well-scoped.
+However, direct compilation of the AD-generated expressions may be
+computationally inefficient.
+While we can hope that the backend will take care of this, it is relatively
+easy to implement a number of rewriting rules prior that will be applied
+during prior compilation.  The motivation is two-fold: (i) designing
+optimisations for a small DSL is much easier than for a general-purpose
+languge; (ii) as we have semantics of \AF{E}, we can make sure that our
+optimisations are correct (semantics-preserving).
+We are only going to demonstrate here the general setting, please refer
+to supplementary materials for futher details.
+
+Firstly, as our semantics is defined on abstrat reals, we require some
+properties of their properties to prove semantics preservation.
+For the optimisations that we implement,
+we only need neutrality of addition and multiplication:
+\begin{code}[hide]%
+\>[0]\AgdaKeyword{module}\AgdaSpace{}%
+\AgdaModule{Opt}\AgdaSpace{}%
+\AgdaKeyword{where}\<%
+\\
+\>[0][@{}l@{\AgdaIndent{0}}]%
+\>[2]\AgdaKeyword{open}\AgdaSpace{}%
+\AgdaKeyword{import}\AgdaSpace{}%
+\AgdaModule{Data.Nat}\AgdaSpace{}%
+\AgdaSymbol{as}\AgdaSpace{}%
+\AgdaModule{ℕ}\AgdaSpace{}%
+\AgdaKeyword{using}\AgdaSpace{}%
+\AgdaSymbol{(}\AgdaDatatype{ℕ}\AgdaSymbol{;}\AgdaSpace{}%
+\AgdaInductiveConstructor{zero}\AgdaSymbol{;}\AgdaSpace{}%
+\AgdaInductiveConstructor{suc}\AgdaSymbol{)}\<%
+\\
+%
+\>[2]\AgdaKeyword{open}\AgdaSpace{}%
+\AgdaKeyword{import}\AgdaSpace{}%
+\AgdaModule{Data.Product}\<%
+\\
+%
+\>[2]\AgdaKeyword{open}\AgdaSpace{}%
+\AgdaModule{Lang}\<%
+\\
+%
+\>[2]\AgdaKeyword{open}\AgdaSpace{}%
+\AgdaModule{WkSub}\<%
+\end{code}
+\begin{code}%
+%
+\>[2]\AgdaKeyword{record}\AgdaSpace{}%
+\AgdaRecord{RealProp}\AgdaSpace{}%
+\AgdaSymbol{(}\AgdaBound{r}\AgdaSpace{}%
+\AgdaSymbol{:}\AgdaSpace{}%
+\AgdaRecord{Real}\AgdaSymbol{)}\AgdaSpace{}%
+\AgdaSymbol{:}\AgdaSpace{}%
+\AgdaPrimitive{Set}\AgdaSpace{}%
+\AgdaKeyword{where}\<%
+\\
+\>[2][@{}l@{\AgdaIndent{0}}]%
+\>[4]\AgdaKeyword{open}\AgdaSpace{}%
+\AgdaModule{Real}\AgdaSpace{}%
+\AgdaBound{r}\AgdaSymbol{;}\AgdaSpace{}%
+\AgdaKeyword{field}\<%
+\\
+\>[4][@{}l@{\AgdaIndent{0}}]%
+\>[6]\AgdaField{+-neutˡ}\AgdaSpace{}%
+\AgdaSymbol{:}\AgdaSpace{}%
+\AgdaSymbol{∀}\AgdaSpace{}%
+\AgdaSymbol{\{}\AgdaBound{x}\AgdaSymbol{\}}\AgdaSpace{}%
+\AgdaSymbol{→}\AgdaSpace{}%
+\AgdaFunction{fromℕ}\AgdaSpace{}%
+\AgdaNumber{0}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{+}}\AgdaSpace{}%
+\AgdaBound{x}%
+\>[37]\AgdaOperator{\AgdaDatatype{≡}}\AgdaSpace{}%
+\AgdaBound{x}\AgdaSymbol{;}%
+\>[43]\AgdaField{+-neutʳ}\AgdaSpace{}%
+\AgdaSymbol{:}\AgdaSpace{}%
+\AgdaSymbol{∀}\AgdaSpace{}%
+\AgdaSymbol{\{}\AgdaBound{x}\AgdaSymbol{\}}\AgdaSpace{}%
+\AgdaSymbol{→}\AgdaSpace{}%
+\AgdaBound{x}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{+}}\AgdaSpace{}%
+\AgdaFunction{fromℕ}\AgdaSpace{}%
+\AgdaNumber{0}%
+\>[74]\AgdaOperator{\AgdaDatatype{≡}}\AgdaSpace{}%
+\AgdaBound{x}\<%
+\\
+%
+\>[6]\AgdaField{*-neutˡ}\AgdaSpace{}%
+\AgdaSymbol{:}\AgdaSpace{}%
+\AgdaSymbol{∀}\AgdaSpace{}%
+\AgdaSymbol{\{}\AgdaBound{x}\AgdaSymbol{\}}\AgdaSpace{}%
+\AgdaSymbol{→}\AgdaSpace{}%
+\AgdaFunction{fromℕ}\AgdaSpace{}%
+\AgdaNumber{1}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{*}}\AgdaSpace{}%
+\AgdaBound{x}%
+\>[37]\AgdaOperator{\AgdaDatatype{≡}}\AgdaSpace{}%
+\AgdaBound{x}\AgdaSymbol{;}%
+\>[43]\AgdaField{*-neutʳ}\AgdaSpace{}%
+\AgdaSymbol{:}\AgdaSpace{}%
+\AgdaSymbol{∀}\AgdaSpace{}%
+\AgdaSymbol{\{}\AgdaBound{x}\AgdaSymbol{\}}\AgdaSpace{}%
+\AgdaSymbol{→}\AgdaSpace{}%
+\AgdaBound{x}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{*}}\AgdaSpace{}%
+\AgdaFunction{fromℕ}\AgdaSpace{}%
+\AgdaNumber{1}%
+\>[74]\AgdaOperator{\AgdaDatatype{≡}}\AgdaSpace{}%
+\AgdaBound{x}\<%
+\end{code}
+We define the meaning of semantics preservation by means of the \AF{\_≈ᵉ\_}
+relation, which says that two expressions are equivalent if they evaluate
+to equivalent values.  Equivalence of values is given by the propositional
+equality of indices and extensional equaly of arrays.  The type of
+semantics-preserving \AF{opt}imisation function is given as follows.
+\begin{code}[hide]%
+%
+\>[2]\AgdaKeyword{postulate}\<%
+\\
+\>[2][@{}l@{\AgdaIndent{0}}]%
+\>[4]\AgdaPostulate{real}\AgdaSpace{}%
+\AgdaSymbol{:}\AgdaSpace{}%
+\AgdaRecord{Real}\<%
+\\
+%
+\\[\AgdaEmptyExtraSkip]%
+%
+\>[2]\AgdaKeyword{open}\AgdaSpace{}%
+\AgdaModule{Eval}\AgdaSpace{}%
+\AgdaPostulate{real}\<%
+\end{code}
+\begin{mathpar}
+\codeblock{\begin{code}%
+%
+\>[2]\AgdaOperator{\AgdaFunction{\AgdaUnderscore{}≈ᵛ\AgdaUnderscore{}}}\AgdaSpace{}%
+\AgdaSymbol{:}\AgdaSpace{}%
+\AgdaSymbol{(}\AgdaBound{a}\AgdaSpace{}%
+\AgdaBound{b}\AgdaSpace{}%
+\AgdaSymbol{:}\AgdaSpace{}%
+\AgdaFunction{Val}\AgdaSpace{}%
+\AgdaGeneralizable{is}\AgdaSymbol{)}\AgdaSpace{}%
+\AgdaSymbol{→}\AgdaSpace{}%
+\AgdaPrimitive{Set}\<%
+\\
+%
+\>[2]\AgdaOperator{\AgdaFunction{\AgdaUnderscore{}≈ᵛ\AgdaUnderscore{}}}\AgdaSpace{}%
+\AgdaSymbol{\{}\AgdaInductiveConstructor{ix}\AgdaSpace{}%
+\AgdaBound{s}\AgdaSymbol{\}}\AgdaSpace{}%
+\AgdaBound{a}\AgdaSpace{}%
+\AgdaBound{b}\AgdaSpace{}%
+\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaBound{a}\AgdaSpace{}%
+\AgdaOperator{\AgdaDatatype{≡}}\AgdaSpace{}%
+\AgdaBound{b}\<%
+\\
+%
+\>[2]\AgdaOperator{\AgdaFunction{\AgdaUnderscore{}≈ᵛ\AgdaUnderscore{}}}\AgdaSpace{}%
+\AgdaSymbol{\{}\AgdaInductiveConstructor{ar}\AgdaSpace{}%
+\AgdaBound{s}\AgdaSymbol{\}}\AgdaSpace{}%
+\AgdaBound{a}\AgdaSpace{}%
+\AgdaBound{b}\AgdaSpace{}%
+\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaSymbol{∀}\AgdaSpace{}%
+\AgdaBound{i}\AgdaSpace{}%
+\AgdaSymbol{→}\AgdaSpace{}%
+\AgdaBound{a}\AgdaSpace{}%
+\AgdaBound{i}\AgdaSpace{}%
+\AgdaOperator{\AgdaDatatype{≡}}\AgdaSpace{}%
+\AgdaBound{b}\AgdaSpace{}%
+\AgdaBound{i}\<%
+\end{code}}
+\and
+\codeblock{\begin{code}%
+%
+\>[2]\AgdaOperator{\AgdaFunction{\AgdaUnderscore{}≈ᵉ\AgdaUnderscore{}}}\AgdaSpace{}%
+\AgdaSymbol{:}\AgdaSpace{}%
+\AgdaDatatype{E}\AgdaSpace{}%
+\AgdaGeneralizable{Γ}\AgdaSpace{}%
+\AgdaGeneralizable{is}\AgdaSpace{}%
+\AgdaSymbol{→}\AgdaSpace{}%
+\AgdaDatatype{E}\AgdaSpace{}%
+\AgdaGeneralizable{Γ}\AgdaSpace{}%
+\AgdaGeneralizable{is}\AgdaSpace{}%
+\AgdaSymbol{→}\AgdaSpace{}%
+\AgdaPrimitive{Set}\<%
+\\
+%
+\>[2]\AgdaOperator{\AgdaFunction{\AgdaUnderscore{}≈ᵉ\AgdaUnderscore{}}}\AgdaSpace{}%
+\AgdaSymbol{\{}\AgdaBound{Γ}\AgdaSymbol{\}}\AgdaSpace{}%
+\AgdaBound{a}\AgdaSpace{}%
+\AgdaBound{b}\AgdaSpace{}%
+\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaSymbol{(}\AgdaBound{ρ}\AgdaSpace{}%
+\AgdaSymbol{:}\AgdaSpace{}%
+\AgdaFunction{Env}\AgdaSpace{}%
+\AgdaBound{Γ}\AgdaSymbol{)}\AgdaSpace{}%
+\AgdaSymbol{→}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
+\AgdaBound{a}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
+\AgdaBound{ρ}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{≈ᵛ}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
+\AgdaBound{b}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
+\AgdaBound{ρ}\<%
+\\
+\>[0]\<%
+\\
+%
+\>[2]\AgdaFunction{opt}\AgdaSpace{}%
+\AgdaSymbol{:}\AgdaSpace{}%
+\AgdaSymbol{(}\AgdaBound{e}\AgdaSpace{}%
+\AgdaSymbol{:}\AgdaSpace{}%
+\AgdaDatatype{E}\AgdaSpace{}%
+\AgdaGeneralizable{Γ}\AgdaSpace{}%
+\AgdaGeneralizable{is}\AgdaSymbol{)}\AgdaSpace{}%
+\AgdaSymbol{→}\AgdaSpace{}%
+\AgdaFunction{∃}\AgdaSpace{}%
+\AgdaSymbol{λ}\AgdaSpace{}%
+\AgdaBound{e′}\AgdaSpace{}%
+\AgdaSymbol{→}\AgdaSpace{}%
+\AgdaSymbol{(}\AgdaBound{e}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{≈ᵉ}}\AgdaSpace{}%
+\AgdaBound{e′}\AgdaSymbol{)}\<%
+\end{code}}
+\end{mathpar}
+\begin{code}[hide]%
+%
+\>[2]\AgdaFunction{reflᵉ}\AgdaSpace{}%
+\AgdaSymbol{:}\AgdaSpace{}%
+\AgdaSymbol{∀}\AgdaSpace{}%
+\AgdaSymbol{(}\AgdaBound{e}\AgdaSpace{}%
+\AgdaSymbol{:}\AgdaSpace{}%
+\AgdaDatatype{E}\AgdaSpace{}%
+\AgdaGeneralizable{Γ}\AgdaSpace{}%
+\AgdaGeneralizable{is}\AgdaSymbol{)}\AgdaSpace{}%
+\AgdaSymbol{→}\AgdaSpace{}%
+\AgdaBound{e}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{≈ᵉ}}\AgdaSpace{}%
+\AgdaBound{e}\<%
+\\
+%
+\>[2]\AgdaFunction{reflᵉ}\AgdaSpace{}%
+\AgdaSymbol{\{}\AgdaBound{is}\AgdaSymbol{\}}\AgdaSpace{}%
+\AgdaSymbol{\{}\AgdaInductiveConstructor{ix}\AgdaSpace{}%
+\AgdaBound{x}\AgdaSymbol{\}}\AgdaSpace{}%
+\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaSymbol{λ}\AgdaSpace{}%
+\AgdaBound{e}\AgdaSpace{}%
+\AgdaBound{ρ}\AgdaSpace{}%
+\AgdaSymbol{→}\AgdaSpace{}%
+\AgdaInductiveConstructor{refl}\<%
+\\
+%
+\>[2]\AgdaFunction{reflᵉ}\AgdaSpace{}%
+\AgdaSymbol{\{}\AgdaBound{is}\AgdaSymbol{\}}\AgdaSpace{}%
+\AgdaSymbol{\{}\AgdaInductiveConstructor{ar}\AgdaSpace{}%
+\AgdaBound{x}\AgdaSymbol{\}}\AgdaSpace{}%
+\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaSymbol{λ}\AgdaSpace{}%
+\AgdaBound{e}\AgdaSpace{}%
+\AgdaBound{ρ}\AgdaSpace{}%
+\AgdaBound{i}\AgdaSpace{}%
+\AgdaSymbol{→}\AgdaSpace{}%
+\AgdaInductiveConstructor{refl}\<%
+\\
+%
+\>[2]\AgdaFunction{opt}\AgdaSpace{}%
+\AgdaBound{e}\AgdaSpace{}%
+\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaBound{e}\AgdaSpace{}%
+\AgdaOperator{\AgdaInductiveConstructor{,}}\AgdaSpace{}%
+\AgdaFunction{reflᵉ}\AgdaSpace{}%
+\AgdaBound{e}\<%
+\end{code}
+
+Consider several examples of the rewrites that we are implementing.
+We omit the proofs for readability, but they are available in the
+supplementary materials.
+\begin{mathpar}
+   \AC{sels}\ zero\ e \rightsquigarrow \AC{zero}
+   \and
+   \AC{sels}\ one\ e \rightsquigarrow \AC{one}
+   \and
+   \AC{sels}\ (\AC{sum} e)\ i \rightsquigarrow \AC{sum}\ (\AC{sels}\ e\ (i\ \AF{↑}))
+   \and
+   \AC{sum}\ \AC{zero} \rightsquigarrow \AC{zero}
+   \and
+   \AC{sum}\ (\AC{imap*}\ e) \rightsquigarrow 
+   \AC{imap*}\ (\AC{sum}\ (\AF{sub}\ e\ \AF{sub-swap}))
+\end{mathpar}
+Semantic preservation becomes especially useful in the following cases which
+are not immediately obvious:
+\begin{align*}
+   \AC{sum}\ (\AC{zero-but}\ (\AC{var}\ i)\ (\AC{var}\ j)\ e)
+   &\mathop{|} i = v_0 \wedge j = v_0
+   \rightsquigarrow 
+   \AC{sum}\ e
+   \\
+   \AC{sum}\ (\AC{zero-but}\ (\AC{var}\ i)\ (\AC{var}\ j)\ e)
+   &\mathop{|} i \neq v_0 \wedge j = v_0
+   \rightsquigarrow 
+   \AF{sub}\ e\ (\AF{sub-id}\ \AC{▹}\ \AC{var}\ i)
+   \\
+   \AC{sum}\ (\AC{zero-but}\ (\AC{var}\ i)\ (\AC{var}\ j)\ e)
+   &\mathop{|} i = v_0 \wedge j \neq v_0
+   \rightsquigarrow 
+   \AF{sub}\ e\ (\AF{sub-id}\ \AC{▹}\ \AC{var}\ j)
+\end{align*}
+which tell us that if we are summing-up comparisons of indices that
+happen to be variables, we can compare whether either of the variables
+is \AC{v₀} (the one that \AC{sum} binds) and potentially avoid comparison
+or summation.
+
+There is a number of rewrite rules that we left out.  Note that we are
+not claiming that these optimisations are complete in any sense.  We have
+implemented enough rewrites for the chosen example and backend compiler.
+However, it is straight-forward to add more rewrite rules if they are
+needed in other contexts.
+
+Additionally to rewrites described above, we implemented a pass that
+identifies whether let bodies re-define expressions that are bound to
+the let variable.  If this is the case, then the expression is substitured
+by the variable.  The main reason for this is the expression \AC{logistic} $e$,
+which recomputes \AF{logistic} $e$ as a part of its derivative.  While
+this is correct mathematically, this creates code duplication in cases
+such as (\AC{let′} (\AF{logistic} $e$) $\dots$).  Instead of reusing
+the variable that is bound in let, it recomputes the entire expression.
+As it is difficult to tell whether the call to logistic has been bound
+somewhere before, we implemen a generally useful deduplication that
+solves this problem.
+
+
 
 % \begin{code}[hide]
 % module Opt where
@@ -2791,10 +3115,10 @@ above.
 \AgdaBound{i}\AgdaSpace{}%
 \AgdaBound{e}\AgdaSpace{}%
 \AgdaSymbol{=}%
-\>[1583I]\AgdaFunction{printf}\AgdaSpace{}%
+\>[1754I]\AgdaFunction{printf}\AgdaSpace{}%
 \AgdaString{"(imap\%u\ \%s\ (\textbackslash{}\textbackslash{}\ \%s\ ->\ \%s))"}\<%
 \\
-\>[1583I][@{}l@{\AgdaIndent{0}}]%
+\>[1754I][@{}l@{\AgdaIndent{0}}]%
 \>[19]\AgdaSymbol{(}\AgdaFunction{dim}\AgdaSpace{}%
 \AgdaBound{s}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaFunction{shape-args}\AgdaSpace{}%
@@ -2850,13 +3174,13 @@ above.
 \AgdaCatchallClause{\AgdaBound{e}}\AgdaSpace{}%
 \AgdaSymbol{=}\AgdaSpace{}%
 \AgdaFunction{printf}%
-\>[1615I]\AgdaString{"(isum\%u\ \%s\ (\textbackslash{}\textbackslash{}\ \%s\ ->\ \%s))"}\AgdaSpace{}%
+\>[1786I]\AgdaString{"(isum\%u\ \%s\ (\textbackslash{}\textbackslash{}\ \%s\ ->\ \%s))"}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaFunction{dim}\AgdaSpace{}%
 \AgdaBound{s}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaFunction{shape-args}\AgdaSpace{}%
 \AgdaBound{s}\AgdaSymbol{)}\<%
 \\
-\>[.][@{}l@{}]\<[1615I]%
+\>[.][@{}l@{}]\<[1786I]%
 \>[25]\AgdaSymbol{(}\AgdaFunction{ix-join}\AgdaSpace{}%
 \AgdaBound{i}\AgdaSpace{}%
 \AgdaString{"\ "}\AgdaSymbol{)}\AgdaSpace{}%
@@ -2866,7 +3190,7 @@ above.
 \\[\AgdaEmptyExtraSkip]%
 %
 \>[2]\AgdaFunction{ix-plus}%
-\>[1623I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[1794I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{+}}\AgdaSpace{}%
 \AgdaGeneralizable{p}\AgdaSpace{}%
@@ -2877,7 +3201,7 @@ above.
 \AgdaGeneralizable{p}\AgdaSpace{}%
 \AgdaGeneralizable{u}\AgdaSymbol{)}\<%
 \\
-\>[.][@{}l@{}]\<[1623I]%
+\>[.][@{}l@{}]\<[1794I]%
 \>[10]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{i}\AgdaSpace{}%
 \AgdaSymbol{:}\AgdaSpace{}%
@@ -2971,7 +3295,7 @@ above.
 \\[\AgdaEmptyExtraSkip]%
 %
 \>[2]\AgdaFunction{ix-minus}%
-\>[1696I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[1867I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{+}}\AgdaSpace{}%
 \AgdaGeneralizable{p}\AgdaSpace{}%
@@ -2982,7 +3306,7 @@ above.
 \AgdaGeneralizable{p}\AgdaSpace{}%
 \AgdaGeneralizable{u}\AgdaSymbol{)}\<%
 \\
-\>[.][@{}l@{}]\<[1696I]%
+\>[.][@{}l@{}]\<[1867I]%
 \>[11]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{i}\AgdaSpace{}%
 \AgdaSymbol{:}\AgdaSpace{}%
@@ -3052,7 +3376,7 @@ above.
 \\[\AgdaEmptyExtraSkip]%
 %
 \>[2]\AgdaFunction{to-div-mod}%
-\>[1751I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[1922I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{*}}\AgdaSpace{}%
 \AgdaGeneralizable{p}\AgdaSpace{}%
@@ -3062,7 +3386,7 @@ above.
 \AgdaDatatype{Ix}\AgdaSpace{}%
 \AgdaGeneralizable{q}\<%
 \\
-\>[.][@{}l@{}]\<[1751I]%
+\>[.][@{}l@{}]\<[1922I]%
 \>[13]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaDatatype{Ix}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSpace{}%
@@ -3101,14 +3425,14 @@ above.
 \\
 %
 \>[4]\AgdaFunction{Prod.map}%
-\>[1784I]\AgdaSymbol{(}\AgdaFunction{printf}\AgdaSpace{}%
+\>[1955I]\AgdaSymbol{(}\AgdaFunction{printf}\AgdaSpace{}%
 \AgdaString{"(\%s\ /\ \%s)"}\AgdaSpace{}%
 \AgdaBound{x}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaFunction{show-nat}\AgdaSpace{}%
 \AgdaBound{n}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaOperator{\AgdaInductiveConstructor{∷\AgdaUnderscore{}}}\AgdaSymbol{)}\<%
 \\
-\>[.][@{}l@{}]\<[1784I]%
+\>[.][@{}l@{}]\<[1955I]%
 \>[13]\AgdaSymbol{(}\AgdaFunction{printf}\AgdaSpace{}%
 \AgdaString{"(\%s\ \%\%\ \%s)"}\AgdaSpace{}%
 \AgdaBound{x}\AgdaSpace{}%
@@ -3125,14 +3449,14 @@ above.
 \\[\AgdaEmptyExtraSkip]%
 %
 \>[2]\AgdaFunction{from-div-mod}%
-\>[1797I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[1968I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{*}}\AgdaSpace{}%
 \AgdaGeneralizable{p}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{≈}}\AgdaSpace{}%
 \AgdaGeneralizable{q}\<%
 \\
-\>[.][@{}l@{}]\<[1797I]%
+\>[.][@{}l@{}]\<[1968I]%
 \>[15]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaDatatype{Ix}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSpace{}%
@@ -3845,9 +4169,9 @@ indices --- this is normalisation step.
 \AgdaBound{b}\AgdaSpace{}%
 \AgdaSymbol{=}\AgdaSpace{}%
 \AgdaFunction{printf}%
-\>[2253I]\AgdaString{"if\ (\%s\ \&\&\ \%s)\ then\ \%s\ else\ zero"}\<%
+\>[2424I]\AgdaString{"if\ (\%s\ \&\&\ \%s)\ then\ \%s\ else\ zero"}\<%
 \\
-\>[.][@{}l@{}]\<[2253I]%
+\>[.][@{}l@{}]\<[2424I]%
 \>[21]\AgdaBound{j≥i}\AgdaSpace{}%
 \AgdaBound{j-i<u}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{f}\AgdaSpace{}%

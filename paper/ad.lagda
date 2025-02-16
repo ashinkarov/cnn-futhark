@@ -264,17 +264,125 @@ pair forms a satisfying \AF{∇}-symmetry.  Finally, \AC{scaledown}, \AC{minus} 
  
 \subsection{Optimisation\label{sec:opt}}
 
-\todo[inline]{Replace the old text, explain that we are semantically-preserving now}
-Our algorithm often delivers expressions that are not computationally efficient.
-While we can hope for the backend to take care of this, it is relatively
-easy to implement a number of rewriting rules prior to extraction.  
-We constructed \AF{E} such that no computation is happening in the shape
-or context positions.  As a result, dependent pattern-matching is always
-applicable on \AF{E} expressions, and our optimisations can be formulated
-very concisely.  We omit constant-folding like rewrites such as addition
-with zero and multiplication by one and focus on less trivial cases that have
-to do with selections a+nd sum.  Consider the snippet of the optimiser for
-\AF{selₛ} and \AF{sum}.
+Our rule-based AD algorithm from the previous section guarantees that its
+output preserves correct shapes and that all the variables are well-scoped.
+However, direct compilation of the AD-generated expressions may be
+computationally inefficient.
+While we can hope that the backend will take care of this, it is relatively
+easy to implement a number of rewriting rules prior that will be applied
+during prior compilation.  The motivation is two-fold: (i) designing
+optimisations for a small DSL is much easier than for a general-purpose
+languge; (ii) as we have semantics of \AF{E}, we can make sure that our
+optimisations are correct (semantics-preserving).
+We are only going to demonstrate here the general setting, please refer
+to supplementary materials for futher details.
+
+Firstly, as our semantics is defined on abstrat reals, we require some
+properties of their properties to prove semantics preservation.
+For the optimisations that we implement,
+we only need neutrality of addition and multiplication:
+\begin{code}[hide]
+module Opt where
+  open import Data.Nat as ℕ using (ℕ; zero; suc)
+  open import Data.Product
+  open Lang
+  open WkSub
+\end{code}
+\begin{code}
+  record RealProp (r : Real) : Set where
+    open Real r; field
+      +-neutˡ : ∀ {x} → fromℕ 0 + x  ≡ x;  +-neutʳ : ∀ {x} → x + fromℕ 0  ≡ x
+      *-neutˡ : ∀ {x} → fromℕ 1 * x  ≡ x;  *-neutʳ : ∀ {x} → x * fromℕ 1  ≡ x
+\end{code}
+We define the meaning of semantics preservation by means of the \AF{\_≈ᵉ\_}
+relation, which says that two expressions are equivalent if they evaluate
+to equivalent values.  Equivalence of values is given by the propositional
+equality of indices and extensional equaly of arrays.  The type of
+semantics-preserving \AF{opt}imisation function is given as follows.
+\begin{code}[hide]
+  postulate
+    real : Real
+
+  open Eval real
+\end{code}
+\begin{mathpar}
+\codeblock{\begin{code}
+  _≈ᵛ_ : (a b : Val is) → Set
+  _≈ᵛ_ {ix s} a b = a ≡ b
+  _≈ᵛ_ {ar s} a b = ∀ i → a i ≡ b i
+\end{code}}
+\and
+\codeblock{\begin{code}
+  _≈ᵉ_ : E Γ is → E Γ is → Set
+  _≈ᵉ_ {Γ} a b = (ρ : Env Γ) → ⟦ a ⟧ ρ ≈ᵛ ⟦ b ⟧ ρ
+  
+  opt : (e : E Γ is) → ∃ λ e′ → (e ≈ᵉ e′)
+\end{code}}
+\end{mathpar}
+\begin{code}[hide]
+  reflᵉ : ∀ (e : E Γ is) → e ≈ᵉ e
+  reflᵉ {is} {ix x} = λ e ρ → refl
+  reflᵉ {is} {ar x} = λ e ρ i → refl
+  opt e = e , reflᵉ e
+\end{code}
+
+Consider several examples of the rewrites that we are implementing.
+We omit the proofs for readability, but they are available in the
+supplementary materials.
+\begin{mathpar}
+   \AC{sels}\ zero\ e \rightsquigarrow \AC{zero}
+   \and
+   \AC{sels}\ one\ e \rightsquigarrow \AC{one}
+   \and
+   \AC{sels}\ (\AC{sum} e)\ i \rightsquigarrow \AC{sum}\ (\AC{sels}\ e\ (i\ \AF{↑}))
+   \and
+   \AC{sum}\ \AC{zero} \rightsquigarrow \AC{zero}
+   \and
+   \AC{sum}\ (\AC{imap*}\ e) \rightsquigarrow 
+   \AC{imap*}\ (\AC{sum}\ (\AF{sub}\ e\ \AF{sub-swap}))
+\end{mathpar}
+Semantic preservation becomes especially useful in the following cases which
+are not immediately obvious:
+\begin{align*}
+   \AC{sum}\ (\AC{zero-but}\ (\AC{var}\ i)\ (\AC{var}\ j)\ e)
+   &\mathop{|} i = v_0 \wedge j = v_0
+   \rightsquigarrow 
+   \AC{sum}\ e
+   \\
+   \AC{sum}\ (\AC{zero-but}\ (\AC{var}\ i)\ (\AC{var}\ j)\ e)
+   &\mathop{|} i \neq v_0 \wedge j = v_0
+   \rightsquigarrow 
+   \AF{sub}\ e\ (\AF{sub-id}\ \AC{▹}\ \AC{var}\ i)
+   \\
+   \AC{sum}\ (\AC{zero-but}\ (\AC{var}\ i)\ (\AC{var}\ j)\ e)
+   &\mathop{|} i = v_0 \wedge j \neq v_0
+   \rightsquigarrow 
+   \AF{sub}\ e\ (\AF{sub-id}\ \AC{▹}\ \AC{var}\ j)
+\end{align*}
+which tell us that if we are summing-up comparisons of indices that
+happen to be variables, we can compare whether either of the variables
+is \AC{v₀} (the one that \AC{sum} binds) and potentially avoid comparison
+or summation.
+
+There is a number of rewrite rules that we left out.  Note that we are
+not claiming that these optimisations are complete in any sense.  We have
+implemented enough rewrites for the chosen example and backend compiler.
+However, it is straight-forward to add more rewrite rules if they are
+needed in other contexts.
+
+Additionally to rewrites described above, we implemented a pass that
+identifies whether let bodies re-define expressions that are bound to
+the let variable.  If this is the case, then the expression is substitured
+by the variable.  The main reason for this is the expression \AC{logistic} $e$,
+which recomputes \AF{logistic} $e$ as a part of its derivative.  While
+this is correct mathematically, this creates code duplication in cases
+such as (\AC{let′} (\AF{logistic} $e$) $\dots$).  Instead of reusing
+the variable that is bound in let, it recomputes the entire expression.
+As it is difficult to tell whether the call to logistic has been bound
+somewhere before, we implemen a generally useful deduplication that
+solves this problem.
+
+
 
 % \begin{code}[hide]
 % module Opt where
