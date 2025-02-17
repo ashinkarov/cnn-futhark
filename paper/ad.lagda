@@ -584,25 +584,47 @@ solves this problem.
 % the \AB{seed} by $b$, which is the expected answer.  This reduces complexity
 % of the expression form squared to linear.
 % 
-\subsection{Compilation}
+\subsection{Extraction}
 
 We had two reasons to define the embedded langauge \AF{E}.
 Firstly, \AF{E} makes it possible to implement automatic differention
 within Agda, as we described in the previous section.
-Secondly, we compile expressions in \AF{E} into
+Secondly, we extract expressions in \AF{E} into
 a programming langauge that can produce efficient code.  This
 section describes extraction process into Futhark.
 
 Futhark is a functional language with automatic memory management and
 built-in type for arrays.  Futhark provides key array combinators such as
-map and reduce, which makes translation process straight-forward.  
-There are two non-trivial aspects of the process that we describe below.
+map and reduce, which makes translation process straight-forward.
+The only boilerplate code we are requiring from Futhark in order
+to run the generated code is: implementations of operation on reals
+from \AM{Real} (these are mapped into 32-bit floating point operations);
+and rank-$n$ versions of imap and sum combintotrs.  The latter is defined
+as follows:
+\begin{Verbatim}
+def imap1 'a : (n: i64) -> (i64 -> a) -> [n]a =
+  \n f -> map f (iota n)
+def imap2 'a : (m: i64) -> (n: i64) -> (i64 -> i64 -> a) -> [m][n]a =
+  \m n f -> imap m (\i -> imap n (f i))
+...
+def isum1 : (m: i64) -> (i64 -> real) -> real =
+  \m f -> loop r = zero for i < m do r F.+ f i
+def isum2 : (m: i64) -> (n: i64)
+          -> (i64 -> i64 -> real) -> real =
+  \m n f -> loop r = zero for i < m do r F.+ isum1 n (f i)
+...
+\end{Verbatim}
 
-\paragraph{Static Ranks} In Futhark, array rnaks are static. This means that
-it is not possible to translate any expression in \AF{E} into Futhark.
-We assume that all the ranks are known statically, which is true for
-many numerical applications including our running example.
 
+\paragraph{Static Ranks} We have to redefine imap and sum per array rank,
+as Futharks reuires that all arrays have static rank. This also means that
+it is not possible to translate an arbitrary expression in \AF{E} into
+Futhark, because \AF{E} can define a function that abstracts over shapes
+(which, in turn, means abstraction over ranks).  For the purposes of
+extraction, we assume that all the ranks are known statically, and we
+resolve possilbe shape abstractions during extraction.  The assumption about
+static ranks holds for many numerical applications including our
+running example.  Relaxing this assumption is an interesting future work.
 
 \paragraph{Normalisation} Consider translating an expression like
 \AC{sel} (\AC{imap} λ i → \AB{e}) \AB{u}.  If you were to treat arrays
@@ -627,8 +649,8 @@ prior extraction.
 
 
 We are going to combine normalisation and extraction in a single step,
-resulting in something similar to normalisation by evaluation.
-We model Futhark arrays as Agda functions space which makes it
+resulting in an approach that is similar to normalisation by evaluation.
+We model Futhark arrays as Agda functions, which makes it
 easy to encode normalisation steps.
 \begin{code}[hide]
 module Futhark where
@@ -658,21 +680,24 @@ module Futhark where
     _ = monadState
 \end{code}
 Futhark indices for an array of shape $s$ are given by the type \AD{Ix} which
-is simply a list of strings (the name of the index) per dimension:
-\begin{code}
-  data Ix : S → Set where 
-    []  : Ix []
-    _∷_ : String → Ix s → Ix (n ∷ s)
-\end{code}
+is simply a list of strings (the name of the index) per dimension.
 The \AF{Sem} function gives an interpretation to types of \AF{E} expressions.
 Indices are just interpreted as \AF{Ix} of the corresponding shape.  Array
 types are morally functions fro indices to strings.  However, in the definition
 the type is a little more complicated:
-\begin{code}
+\begin{mathpar}
+\codeblock{\begin{code}
+  data Ix : S → Set where 
+    []  : Ix []
+    _∷_ : String → Ix s → Ix (n ∷ s)
+\end{code}}
+\and
+\codeblock{\begin{code}
   Sem : IS → Set
   Sem (ar s) = (Ix s → State ℕ ((String → String) × String))
   Sem (ix s) = Ix s
-\end{code}
+\end{code}}
+\end{mathpar}
 Let us explain the complexity of the array type.  First of all, the codomain
 of the array is wrapped into a state monad which gives a source of fresh variable
 names.  Within the monad we have a pair we have a functoin which represents
