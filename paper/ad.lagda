@@ -72,13 +72,21 @@ $\frac{\partial z}{\partial x} = \cos (xy + x)(y + 1)$ and
 $\frac{\partial z}{\partial y} = \cos (xy + x)x$.
 
 
-\todo[inline]{Old text}
 In the implementation of the AD for \AF{E} in some context \AB{Γ}, we would like to obtain
 all the partial derivatives with respect to the variables in context \AB{Γ}.  Each partial
 derivative is itself an expression \AF{E} in context \AF{Γ}.  Therefore, we need to define
 a data type for an environment of \AB{Γ}-many expressions in context \AB{Γ}.  We call this
-environment \AF{Env} defined as follows:
-\begin{code}[hide]
+environment \AF{Env} which is defined below.  This is a standard construction that is
+similar to our parallel substitution \AF{Sub}, except we ignore the values of index
+types --- they never contribute to the computation of values, so we do not need to
+compute partial derivatives for them.  However, the presence of lets in \AF{E}
+means that the let-bound expressions may be shared by several partial derivative
+expressions.  While we could replicate the let binding for every partial derivative
+that needs it, this leads to unnecessary code duplication which in turn leads to
+inefficient performance.  As a solution, we allow let bindings for the entire \AF{Env},
+which is achieved by the \AF{EE} type defined as follows.
+\begin{mathpar}
+\codeblock{\begin{code}[hide]
 module AD where
   open import Data.Unit
   open import Data.Product as Prod
@@ -88,36 +96,56 @@ module AD where
 \end{code}
 \begin{code}
   data Env : Ctx → Ctx → Set where
-    ε    : Env ε Γ
-    skip : Env Γ Δ → Env (Γ ▹ ix s) Δ
-    _▹_  : Env Γ Δ → E Δ (ar s) → Env (Γ ▹ ar s) Δ
-
+    ε     : Env ε Γ
+    skip  : Env Γ Δ → Env (Γ ▹ ix s) Δ
+    _▹_   : Env Γ Δ → E Δ (ar s) → Env (Γ ▹ ar s) Δ
+\end{code}}
+\and
+\codeblock{\begin{code}
   data EE : Ctx → Ctx → Set where
-    env : Env Γ Δ → EE Γ Δ
-    let′ : E Δ (ar s) → EE Γ (Δ ▹ ar s) → EE Γ Δ 
-\end{code}
-Note that \AF{Env} only keeps array expressions, as (i) derivatives for indices do
-not exist; and (ii) we can always make an initial environment by populating all the
-elements with \AC{zero}s.  
+    env   : Env Γ Δ → EE Γ Δ
+    let′  : E Δ (ar s) → EE Γ (Δ ▹ ar s)
+          → EE Γ Δ 
+\end{code}}
+\end{mathpar}
 
-\todo[inline]{Old text}
-We define several helper operations to manipulate environments: \AF{env-zero} is 
-an environment where all the values are \AC{zero}s; \AF{update} modifies the 
-expression at the $v$-th position by applying $f$ to it; \AF{env-map} applies the function
-$f$ from \AF{E} to \AF{E} to all the elements of the environment; and \AF{env-zipWith}
-applies the binary function $f$ on two environments point-wise.  The types of these
-helper functions follow.  As environments are very similar to lists, the implementation
-of the above functions are straight-forward.
-\begin{code}
+We briefly explain a few useful combinators that manipulate (let-extended) environments.
+We can weaken environments in two ways: \AF{ee-wk} weakens each element of the environment;
+whereas \AF{ee-wk-zero} extends the length of the environment by inserting \AC{zero}
+elements according to the \AF{⊆}-argument.  We can add two environments with \AF{ee-plus}
+which adds elements of the environments point-wise combines two let chains into a single
+one.  For the environment where elements are in the context where zero-th variable
+is some (\AC{ix} s), \AF{ee-map-sum} applies \AF{sum} to all its elements.  Note that
+here we inline let-bindings of the environment into the elements, because the bindings
+may refer to the index.  This potentially leads to code duplication, but for now, we
+assume that further optimisations will be able to deal with this.  We may reconsider
+this choice later.  We can create an empty environment where all the elements are
+\AC{zero} using \AF{ee-zero}.  We remove the top element of the environment with
+\AF{ee-tail}.  We use \AF{ee-update+} \AB{ρ} \AB{i} \AB{e} to add to the $i$-th
+element of the environment (this returns the new environment with the updated element).
+Finally, we can extend the environment by adding \AC{zero} as the top element with
+\AF{\_▹𝟘}.
+\begin{mathpar}
+\codeblock{\begin{code}
   ee-wk       : Δ ⊆ Ψ → EE Γ Δ → EE Γ Ψ
   ee-wk-zero  : EE Γ Δ → Γ ⊆ Ψ → EE Ψ Δ
-  ee-tail     : EE (Γ ▹ is) Δ → EE Γ Δ
-  zero-ee     : EE Γ Δ
+\end{code}}
+\and
+\codeblock{\begin{code}
   ee-plus     : (ρ ν : EE Γ Δ) → EE Γ Δ
   ee-map-sum  : EE Γ (Δ ▹ ix s) → EE Γ Δ
-  ee-update+ : EE Γ Δ → (v : ar s ∈ Γ) (t : E Δ (ar s)) → EE Γ Δ
-  _▹𝟘 : EE Γ Δ → EE (Γ ▹ ar s) (Δ ▹ ar s)
-\end{code}
+\end{code}}
+\and
+\codeblock{\begin{code}
+  ee-tail     : EE (Γ ▹ is) Δ → EE Γ Δ
+  zero-ee     : EE Γ Δ
+\end{code}}
+\and
+\codeblock{\begin{code}
+  ee-update+  : EE Γ Δ → ar s ∈ Γ → E Δ (ar s) → EE Γ Δ
+  _▹𝟘         : EE Γ Δ → EE (Γ ▹ ar s) (Δ ▹ ar s)
+\end{code}}
+\end{mathpar}
 \begin{code}[hide]
   -- Weaken all expressions in the Env enironment
   env-wk : Δ ⊆ Ψ → Env Γ Δ → Env Γ Ψ
@@ -186,6 +214,7 @@ of the above functions are straight-forward.
   env-plus (ρ ▹ x) (ν ▹ y) = env-plus ρ ν ▹ (x ⊞ y)
 
   {-# TERMINATING #-}  -- See GradTerm.agda file where this terminates
+                       -- here we simple present a more readable version
   ee-plus (env ρ) (env ν) = env (env-plus ρ ν)
   ee-plus (env ρ) (let′ x ν) = let′ x (ee-plus (ee-wk (skip ⊆-eq) (env ρ)) ν)
   ee-plus (let′ x ρ) ν = let′ x (ee-plus ρ (ee-wk (skip ⊆-eq) ν))
@@ -193,11 +222,20 @@ of the above functions are straight-forward.
   δ ▹𝟘 = ee-push-zero $ ee-wk (skip ⊆-eq) δ
 \end{code}
 
-We define the function \AF{∇} that takes an expression \AF{E} and the seed
-which is the multiplier on the left of the chain, and we compute a function
-from that updates the environment.
+We define\footnote{Agda does not recognise that the definition of \AF{∇} that
+we give here terminates.  We fix this in the supplementary materials by choosing
+an inductively decreasing invariant.  However we keep this definition in the
+paper for readability.} the function \AF{∇} that takes an expression \AF{E}
+and the seed (initially set to one) and we compute a function that
+updates the environment of partial derivatives (initial environment is \AF{ee-zero}).
+We use two helper functions: \AF{∇Σ} for summing up environments and \AF{∇}
+for dealing with the derivative of let expressions.  The code is presented
+below and the explanation of how it works follow.
+\begin{code}[hide]
+  {-# TERMINATING #-}  -- See GradTerm.agda file where this terminates
+                       -- here we simply present a more readable version.
+\end{code}
 \begin{code}
-  {-# TERMINATING #-}
   ∇ₗ : E Γ (ar s) → EE (Γ ▹ ar s) Γ → EE Γ Γ
   ∇Σ : (e s : E (Γ ▹ ix s) (ar p)) → EE Γ Γ → EE Γ Γ
 
@@ -234,29 +272,81 @@ from that updates the environment.
   ∇ₗ e (env (ρ ▹ x))  = ee-tail $ let′ x (∇ (e ↑) (var v₀) (env ρ ▹𝟘))
   ∇ₗ e (let′ x ρ)     = let′ x (ee-tail $ ∇ₗ (e ↑) (ee-wk-zero ρ (keep (skip ⊆-eq))))
 \end{code}
-\todo[inline]{Old text}
-Let us now walk through the cases.  Derivative of constants (\AC{zero} and \AC{one})
+Derivative of constants (\AC{zero} and \AC{one})
 is zero, so nothing needs to be updated in the environment.  Index variables are
 not stored in the environment, so no updates are needed either.  If we differentiate
 the variable $x$ with some seed \AB{s}, we update the $x$-th position in the environment
-by adding \AB{s} to it.  Differentiation of \AC{imap}s proceeds as follows: we
-recursively apply \AF{∇} to $e$ (in the context \AB{Γ} \AC{▹} (\AC{ix} \AB{p}))
-with the element of the original seed \AB{s} selected at the top variable.  This
-gives us the environment in the extended context, then we map \AC{sum} to every
-element of the environment to accumulate the derivatives at every index.
+by adding \AB{s} to it.
+
+Differentiation of \AC{imap}s proceeds as follows: if we inline \AF{∇Σ}, we
+recursively apply \AF{∇} to $e$ 
+with the element of the original seed \AB{s} selected at the top variable in
+the \AF{ee-zero} environment.  Recall that $s$ is an array of the shape that
+corresponds to the result of \AC{imap} computation, and $e$ is defined in
+the context of shape (\AB{Γ} \AC{▹} (\AC{ix} \AB{p})).  Then we apply \AF{sum}
+to all the elements of the resulting environment (\ie{} we sum-up all the
+changes to the environment caused by computations of the individual array
+elements).  Finally we add the current environment \AB{δ} to the result.
+Note that the use of \AF{ee-tail} in \AF{∇Σ} is only needed to remove the
+trivial \AC{ix} element from the environment.  This strategy applies to all
+three \AF{imap}s, we just use the right kind of selection into the seed $s$.
+
 When differentiating selections we recurse on the array we are
 selecting from with the seed that is zero everywhere except the index we were
 selecting at.  Differentiating
-conditional is straight-forward, as $i$ and $j$ must be in the context, we can
-simply differentiate $e$ with the condition on seed.  If indices were equal, we will
+conditionals is straight-forward, as $i$ and $j$ must be in the context, we can
+simply differentiate $e$ with the condition on the seed.  If indices were equal, we will
 compute the update, otherwise we will differentiate with seed \AC{zero} which
 has no effect.  As we are operating in a total language, there is no need to worry
-about pulling the expression out of conditional.  The argument of \AC{sum}
+about pulling the expression out of conditional.
+
+The argument of \AC{sum}
 lives is in the extended context, so we apply the same rules as for the \AC{imap} family,
 except we propagate the original seed to all the summands.  Addition and multiplication
-rules are straight-forward application of differentiation rules.  The \AC{slide}/\AC{backslide}
+rules are straight-forward application of rules of symbolic differentiation.
+The \AC{slide}/\AC{backslide}
 pair forms a satisfying \AF{∇}-symmetry.  Finally, \AC{scaledown}, \AC{minus} and
 \AC{logistic} follow the rules of differentiation.
+
+\paragraph{Let expressions} The rules for the let case look complicated due to
+encoding, but it is easy to understand what is going on from the following example.
+Consider an expression in one variable $a$ that binds a local variable $x$ to $a^2$
+and the initial environment for $\partial a$ that is set to $0$:
+\[ 
+   \AF{∇}\ (\AC{let}\ x = a^2\ \AC{in}\ (a + a)x)\ 1\ \langle 0 \rangle
+\]
+The first step is to apply \AF{∇} to the body of the let.  This
+requires extending our environment with an element for $\partial x$,
+computing:
+\[ 
+   \AF{∇}\ ((a + a)x)\ 1\ (\AC{let}\ x = a^2\ \AC{in}\ \langle 0, 0 \rangle)
+   = \AC{let}\ x = a^2\ \AC{in}\ \langle x+x, a+a \rangle
+\]
+in the environment that preserves the $x$-bound expression.  This exactly
+the call we do in the \AC{let′} case of \AF{∇}.
+The next step is to apply the chain rule, computing the derivative of the
+$x$-bound expression using the result of the previous computation as seed:
+\[ 
+   \AF{∇}\ a^2\ (a+a)\ (\AC{let}\ x = a^2\ \AC{in}\ \langle x+x \rangle)
+   = \AC{let}\ x = a^2\ \AC{in}\ \langle x+x + a(a+a) + a(a+a) \rangle
+\]
+which gives the expected result $6a^2$ (we were differentiating $2a^3$ written
+in a funny way).  However, direct use of $(a+a)$ as a seed in the last step
+inlines the computation of the $(a+a)$ expression.  Instead, we can share 
+this computation by defining a new let-binding and rearranging the call to
+\AF{∇} as follows:
+\[
+   \AC{let}\ x = a^2\ \AC{in}\ 
+   \AC{let}\ y = a+a\ \AC{in}\ 
+   (\AF{∇}\ a^2\ y\ \langle x \rangle)
+   = 
+   \AC{let}\ x = a^2\ \AC{in}\ 
+   \AC{let}\ y = a+a\ \AC{in}\
+   \langle x+x + ya + ya \rangle
+\]
+this is exactly what \AF{∇ₗ} is doing --- traverse under the chain let
+and share the seed by introducing a new variable.
+
  
  
  
@@ -272,12 +362,12 @@ While we can hope that the backend will take care of this, it is relatively
 easy to implement a number of rewriting rules prior that will be applied
 during prior compilation.  The motivation is two-fold: (i) designing
 optimisations for a small DSL is much easier than for a general-purpose
-languge; (ii) as we have semantics of \AF{E}, we can make sure that our
+language; (ii) as we have semantics of \AF{E}, we can make sure that our
 optimisations are correct (semantics-preserving).
 We are only going to demonstrate here the general setting, please refer
-to supplementary materials for futher details.
+to supplementary materials for further details.
 
-Firstly, as our semantics is defined on abstrat reals, we require some
+Firstly, as our semantics is defined on abstract reals, we require some
 properties of their properties to prove semantics preservation.
 For the optimisations that we implement,
 we only need neutrality of addition and multiplication:
@@ -297,7 +387,7 @@ module Opt where
 We define the meaning of semantics preservation by means of the \AF{\_≈ᵉ\_}
 relation, which says that two expressions are equivalent if they evaluate
 to equivalent values.  Equivalence of values is given by the propositional
-equality of indices and extensional equaly of arrays.  The type of
+equality of indices and extensional equality of arrays.  The type of
 semantics-preserving \AF{opt}imisation function is given as follows.
 \begin{code}[hide]
   postulate
@@ -372,14 +462,14 @@ needed in other contexts.
 
 Additionally to rewrites described above, we implemented a pass that
 identifies whether let bodies re-define expressions that are bound to
-the let variable.  If this is the case, then the expression is substitured
+the let variable.  If this is the case, then the expression is substituted
 by the variable.  The main reason for this is the expression \AC{logistic} $e$,
 which recomputes \AF{logistic} $e$ as a part of its derivative.  While
 this is correct mathematically, this creates code duplication in cases
 such as (\AC{let′} (\AF{logistic} $e$) $\dots$).  Instead of reusing
 the variable that is bound in let, it recomputes the entire expression.
 As it is difficult to tell whether the call to logistic has been bound
-somewhere before, we implemen a generally useful deduplication that
+somewhere before, we implement a generally useful deduplication that
 solves this problem.
 
 
@@ -586,11 +676,11 @@ solves this problem.
 % 
 \subsection{Extraction}
 
-We had two reasons to define the embedded langauge \AF{E}.
-Firstly, \AF{E} makes it possible to implement automatic differention
+We had two reasons to define the embedded language \AF{E}.
+Firstly, \AF{E} makes it possible to implement automatic differentiation
 within Agda, as we described in the previous section.
 Secondly, we extract expressions in \AF{E} into
-a programming langauge that can produce efficient code.  This
+a programming language that can produce efficient code.  This
 section describes extraction process into Futhark.
 
 Futhark is a functional language with automatic memory management and
@@ -599,7 +689,7 @@ map and reduce, which makes translation process straight-forward.
 The only boilerplate code we are requiring from Futhark in order
 to run the generated code is: implementations of operation on reals
 from \AM{Real} (these are mapped into 32-bit floating point operations);
-and rank-$n$ versions of imap and sum combintotrs.  The latter is defined
+and rank-$n$ versions of imap and sum combinators.  The latter is defined
 as follows:
 \begin{Verbatim}
 def imap1 'a : (n: i64) -> (i64 -> a) -> [n]a =
@@ -617,12 +707,12 @@ def isum2 : (m: i64) -> (n: i64)
 
 
 \paragraph{Static Ranks} We have to redefine imap and sum per array rank,
-as Futharks reuires that all arrays have static rank. This also means that
+as Futharks requires that all arrays have static rank. This also means that
 it is not possible to translate an arbitrary expression in \AF{E} into
 Futhark, because \AF{E} can define a function that abstracts over shapes
 (which, in turn, means abstraction over ranks).  For the purposes of
 extraction, we assume that all the ranks are known statically, and we
-resolve possilbe shape abstractions during extraction.  The assumption about
+resolve possible shape abstractions during extraction.  The assumption about
 static ranks holds for many numerical applications including our
 running example.  Relaxing this assumption is an interesting future work.
 
@@ -631,7 +721,7 @@ running example.  Relaxing this assumption is an interesting future work.
 as functions and selections as applications, then the above expression
 can be normalised into $e[i := u]$.  One could hope that Furhark could do
 such a $\beta$-reduction on the generated code, but this is not the case.
-The intuition for this choice is that in Futhark arrrays are tabulated
+The intuition for this choice is that in Futhark arrays are tabulated
 functions, and inlnining arbitrary evaluation of array elements may
 have a significant performance cost.  For example, in the expression
 \texttt{let a = imap \textbackslash i -> }$e$ \texttt{in imap \textbackslash j -> a[f j]}, Futhark
@@ -640,7 +730,7 @@ body of the let, selection actually looks up the elements.  If we were
 to inline $a$ by replacing $a[f\ j]$ with $e[i := f\ j]$, we loose sharing
 by potentially recomputing $e$ much more often than needed
 (e.g. assume that $i$ ranges over 10 elements, but $j$ over $10^5$).
-Resolving when such inlining is beneficial for perfoamance is non-trivial,
+Resolving when such inlining is beneficial for performance is non-trivial,
 therefore Futhark (and many other array languages) do not inline 
 computation of array elements.  For our running example, naive translation
 results in too many cases when arrays are constructed just to select
@@ -700,32 +790,32 @@ the type is a little more complicated:
 \end{mathpar}
 Let us explain the complexity of the array type.  First of all, the codomain
 of the array is wrapped into a state monad which gives a source of fresh variable
-names.  Within the monad we have a pair we have a functoin which represents
+names.  Within the monad we have a pair we have a function which represents
 a context for the actual array computation which is the second argument.
 This context is needed because of the interplay between let bindings and
 imaps.  Consider for a moment that we do not have explicit context in the
 type for \AC{ar} and we are compiling an expression
 \AF{Let} z \AF{:=} \AC{zero} \AF{in} \AF{Imaps} λ i → z which can result in
-somehing like:
+something like:
 \begin{code}
   f : Ix s → State ℕ String
   f i = return ("let z = 0 in " ++ (λ j → "z") i)
 \end{code}
-If we selct into this array (by applying it to some index expression)
+If we select into this array (by applying it to some index expression)
 or compose it with other functions, this works as expected.  However,
-at a certain point we may need to turn this experssion into the actual
+at a certain point we may need to turn this expression into the actual
 array, which looks something like \AS{"imap λ i → "} \AF{++} f \AS{"i"}.
 However, this expression evaluates to \AS{"imap λ i → let z = 0\ in z"},
 but this inlines computation of let binding in the body of the imap,
 which may have a serious performance impact if let binds a non-trivial
 computation.  By introducing contexts in \AF{Sem}, we just control where
 the imap code is injected.  Generally speaking, our strategy here is to
-preserve sharing that is introduced by let bidings, yet normalise
+preserve sharing that is introduced by let bindings, yet normalise
 bound expressions and bodies.
 
-For the actual extraction we define the environment of Futhar values
+For the actual extraction we define the environment of Futhark values
 called \AF{FEnv}.  Two functions that actually do the translation are
-\AF{to-fut} which computest the \AF{Sem} value, and \AF{to-str} that
+\AF{to-fut} which computes the \AF{Sem} value, and \AF{to-str} that
 calls \AF{to-fut} and wraps the result with \AF{imap} as we described
 above.
 \begin{mathpar}
@@ -888,12 +978,12 @@ above.
 Consider two cases of \AF{to-fut} for \AC{imap} an \AC{sel}.
 In both cases the array we are constructing or selecting from is
 of shape $s ++ p$.  We use two helper functions \AF{ix-curry}
-and \AF{ix-uncurry} that translate between funtions of type
+and \AF{ix-uncurry} that translate between functions of type
 \AD{Ix (s ++ p)} → X and \AD{Ix} s → \AD{Ix p} → X.  In the
 \AC{imap} case we generate a function keeping potential let
 chains within the imap expression.  In case of \AF{sel}, we
-are computing the value of the array we are slecting from (i.e. $a$)
-and within the returned expression we apply $a$ to the correspoinding
+are computing the value of the array we are selecting from (i.e. $a$)
+and within the returned expression we apply $a$ to the corresponding
 indices --- this is normalisation step.
 \begin{mathpar}
 \codeblock{\begin{code}

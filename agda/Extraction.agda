@@ -169,14 +169,15 @@ module Extract where
 
   test-e : E _ _
   test-e = Lcon (ar ([]) ∷  ar [] ∷ []) (ar ([])) ε
-           λ x s  → Let y := logistic x In y ⊠ x  
+           λ a x  → (a ⊞ a) ⊠ x  
+  test-s = pp test-e (ε ▹ "a" ▹ "x")
            
-           --let z = (let bad = x
-           --         in (let x9 = one
-           --              in x9))
-           --in z ⊞ x
   test-n = WkSub.norm-lets test-e
 
+  sum-let : E _ _
+  sum-let = Lcon (ar (5 ∷ []) ∷ ar (5 ∷ []) ∷ []) (ar []) ε
+            λ a b → Sum λ i → (Let x := sels a i ⊞ sels b i In x ⊠ x)
+  sum-let-s = pp sum-let (ε ▹ "a" ▹ "b")
 
 
   grad-test-e = ee-opt (grad test-e (var v₀) zero-ee)
