@@ -47,7 +47,6 @@
 \AgdaKeyword{where}\<%
 \end{code}
 \section{Embedded DSL}
-\label{sec:edsl}
 
 Any implementation of automatic differentiation has to decide which operations
 are supported.  Surely, it does not make sense to compute derivatives
@@ -1424,20 +1423,18 @@ $\sum$-notation.
 
 
 \subsection{Weakening and Substitution}
-\todo[inline]{Adjust the text}
 As our language has explicit de Bruin variables (as opposed to HOAS~\cite{hoas} approaches),
 we need the means to do weakening and substitution when we optimise expressions in \AF{E}.
 Our language is intrinsically typed(shaped) which
 makes the definition of both operations challenging.  However, this problem has
-been well-understood, and we adopt the solution from~\cite{subst}.  We only show the
-basic mechanisms of the definition, for full details refer to~\cite{subst}.
+been well-understood, and several approaches have been proposed in the
+literature~\cite{subst}.
 
-The key structure that gives rise to weakening and substitution is a function that
-computes the context \AB{Γ} \emph{without} the variable \AB{v} 
-(denoted \AB{Γ} \AF{/} \AB{v}).  Then we define the weakening for
-variables (\AF{wkv}) and expressions (\AF{wk}) that take a variable or expression
-in the context without the variable \AF{v} and return this variable or expression
-in the context where \AB{v} is present.
+The key structure needed for weakening is order-preserving embedding of contexts given
+by \AD{\_⊆\_} which is defined inductively.  If \AB{Γ} \AD{⊆} \AB{Δ} then all the
+elements of \AB{Γ} can be found in \AB{Δ} in the original order (possibly with some gaps).
+Weakening variables according to some context embedding is given by \AF{wkv} which is
+defined as follows.
 \begin{code}[hide]%
 \>[0]\AgdaKeyword{module}\AgdaSpace{}%
 \AgdaModule{WkSub}\AgdaSpace{}%
@@ -1462,14 +1459,14 @@ in the context where \AB{v} is present.
 \\
 \>[2][@{}l@{\AgdaIndent{0}}]%
 \>[4]\AgdaInductiveConstructor{ε}%
-\>[9]\AgdaSymbol{:}\AgdaSpace{}%
+\>[10]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaInductiveConstructor{ε}\AgdaSpace{}%
 \AgdaOperator{\AgdaDatatype{⊆}}\AgdaSpace{}%
 \AgdaInductiveConstructor{ε}\<%
 \\
 %
-\>[4]\AgdaInductiveConstructor{skip}\AgdaSpace{}%
-\AgdaSymbol{:}\AgdaSpace{}%
+\>[4]\AgdaInductiveConstructor{skip}%
+\>[10]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaGeneralizable{Γ}\AgdaSpace{}%
 \AgdaOperator{\AgdaDatatype{⊆}}\AgdaSpace{}%
 \AgdaGeneralizable{Δ}\AgdaSpace{}%
@@ -1481,8 +1478,8 @@ in the context where \AB{v} is present.
 \AgdaGeneralizable{is}\AgdaSymbol{)}\<%
 \\
 %
-\>[4]\AgdaInductiveConstructor{keep}\AgdaSpace{}%
-\AgdaSymbol{:}\AgdaSpace{}%
+\>[4]\AgdaInductiveConstructor{keep}%
+\>[10]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaGeneralizable{Γ}\AgdaSpace{}%
 \AgdaOperator{\AgdaDatatype{⊆}}\AgdaSpace{}%
 \AgdaGeneralizable{Δ}\AgdaSpace{}%
@@ -1513,6 +1510,45 @@ in the context where \AB{v} is present.
 \AgdaGeneralizable{Δ}\<%
 \\
 %
+\>[2]\AgdaFunction{wkv}\AgdaSpace{}%
+\AgdaSymbol{(}\AgdaInductiveConstructor{skip}\AgdaSpace{}%
+\AgdaBound{s}\AgdaSymbol{)}\AgdaSpace{}%
+\AgdaBound{v}%
+\>[23]\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaInductiveConstructor{vₛ}\AgdaSpace{}%
+\AgdaSymbol{(}\AgdaFunction{wkv}\AgdaSpace{}%
+\AgdaBound{s}\AgdaSpace{}%
+\AgdaBound{v}\AgdaSymbol{)}\<%
+\\
+%
+\>[2]\AgdaFunction{wkv}\AgdaSpace{}%
+\AgdaSymbol{(}\AgdaInductiveConstructor{keep}\AgdaSpace{}%
+\AgdaBound{s}\AgdaSymbol{)}\AgdaSpace{}%
+\AgdaInductiveConstructor{v₀}%
+\>[23]\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaInductiveConstructor{v₀}\<%
+\\
+%
+\>[2]\AgdaFunction{wkv}\AgdaSpace{}%
+\AgdaSymbol{(}\AgdaInductiveConstructor{keep}\AgdaSpace{}%
+\AgdaBound{s}\AgdaSymbol{)}\AgdaSpace{}%
+\AgdaSymbol{(}\AgdaInductiveConstructor{vₛ}\AgdaSpace{}%
+\AgdaBound{v}\AgdaSymbol{)}%
+\>[23]\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaInductiveConstructor{vₛ}\AgdaSpace{}%
+\AgdaSymbol{(}\AgdaFunction{wkv}\AgdaSpace{}%
+\AgdaBound{s}\AgdaSpace{}%
+\AgdaBound{v}\AgdaSymbol{)}\<%
+\end{code}}
+\end{mathpar}
+
+Weakening expressions in \AF{E} according to some context embedding is given by \AF{wk}
+which type is defined below.  Reflexivity of context embeddings is given by \AF{⊆-eq}.
+A common case of weakening when expressions are lifted in a context with one extra variable
+is denoted with \AF{\_↑} and it is defined as follows.
+\begin{mathpar}
+\codeblock{\begin{code}%
+%
 \>[2]\AgdaFunction{wk}\AgdaSpace{}%
 \AgdaSymbol{:}\AgdaSpace{}%
 \AgdaGeneralizable{Γ}\AgdaSpace{}%
@@ -1527,10 +1563,8 @@ in the context where \AB{v} is present.
 \AgdaGeneralizable{Δ}\AgdaSpace{}%
 \AgdaGeneralizable{is}\<%
 \end{code}}
-\end{mathpar}
-
-\todo[inline]{Expand this (or hide?)}
-\begin{code}%
+\and
+\codeblock{\begin{code}%
 %
 \>[2]\AgdaFunction{⊆-eq}\AgdaSpace{}%
 \AgdaSymbol{:}\AgdaSpace{}%
@@ -1540,21 +1574,21 @@ in the context where \AB{v} is present.
 \\
 %
 \>[2]\AgdaFunction{⊆-eq}\AgdaSpace{}%
-\AgdaSymbol{\{}\AgdaInductiveConstructor{ε}\AgdaSymbol{\}}\AgdaSpace{}%
-\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaSymbol{\{}\AgdaInductiveConstructor{ε}\AgdaSymbol{\}}%
+\>[16]\AgdaSymbol{=}\AgdaSpace{}%
 \AgdaInductiveConstructor{ε}\<%
 \\
 %
 \>[2]\AgdaFunction{⊆-eq}\AgdaSpace{}%
 \AgdaSymbol{\{}\AgdaBound{Γ}\AgdaSpace{}%
 \AgdaOperator{\AgdaInductiveConstructor{▹}}\AgdaSpace{}%
-\AgdaBound{x}\AgdaSymbol{\}}\AgdaSpace{}%
-\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaBound{x}\AgdaSymbol{\}}%
+\>[16]\AgdaSymbol{=}\AgdaSpace{}%
 \AgdaInductiveConstructor{keep}\AgdaSpace{}%
 \AgdaFunction{⊆-eq}\<%
-\\
-%
-\\[\AgdaEmptyExtraSkip]%
+\end{code}}
+\and
+\codeblock{\begin{code}%
 %
 \>[2]\AgdaOperator{\AgdaFunction{\AgdaUnderscore{}↑}}\AgdaSpace{}%
 \AgdaSymbol{:}\AgdaSpace{}%
@@ -1574,60 +1608,10 @@ in the context where \AB{v} is present.
 \AgdaFunction{wk}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaInductiveConstructor{skip}\AgdaSpace{}%
 \AgdaFunction{⊆-eq}\AgdaSymbol{)}\<%
-\end{code}
+\end{code}}
+\end{mathpar}
 
-
-% We give ourselves a nicer syntax for common cases when expressions
-% are lifted into the context with extra one or two variables:
-% \begin{code}[hide]
-%   infixr 18 ↑_
-%   infixr 18 ↑↑_
-% \end{code}
-% \begin{mathpar}
-% \codeblock{\begin{code}
-%   ↑_ : E Γ is → E (Γ ▹ ip) is
-%   ↑_ = wk v₀
-% \end{code}}
-% \and
-% \codeblock{\begin{code}
-%   ↑↑_ : E Γ is → E (Γ ▹ ip ▹ iq) is
-%   ↑↑_ = ↑_ ∘ ↑_
-% \end{code}}
-% \end{mathpar}
 \begin{code}[hide]%
-%
-\>[2]\AgdaFunction{wkv}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaInductiveConstructor{skip}\AgdaSpace{}%
-\AgdaBound{s}\AgdaSymbol{)}\AgdaSpace{}%
-\AgdaBound{v}\AgdaSpace{}%
-\AgdaSymbol{=}\AgdaSpace{}%
-\AgdaInductiveConstructor{vₛ}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaFunction{wkv}\AgdaSpace{}%
-\AgdaBound{s}\AgdaSpace{}%
-\AgdaBound{v}\AgdaSymbol{)}\<%
-\\
-%
-\>[2]\AgdaFunction{wkv}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaInductiveConstructor{keep}\AgdaSpace{}%
-\AgdaBound{s}\AgdaSymbol{)}\AgdaSpace{}%
-\AgdaInductiveConstructor{v₀}\AgdaSpace{}%
-\AgdaSymbol{=}\AgdaSpace{}%
-\AgdaInductiveConstructor{v₀}\<%
-\\
-%
-\>[2]\AgdaFunction{wkv}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaInductiveConstructor{keep}\AgdaSpace{}%
-\AgdaBound{s}\AgdaSymbol{)}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaInductiveConstructor{vₛ}\AgdaSpace{}%
-\AgdaBound{v}\AgdaSymbol{)}\AgdaSpace{}%
-\AgdaSymbol{=}\AgdaSpace{}%
-\AgdaInductiveConstructor{vₛ}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaFunction{wkv}\AgdaSpace{}%
-\AgdaBound{s}\AgdaSpace{}%
-\AgdaBound{v}\AgdaSymbol{)}\<%
-\\
-%
-\\[\AgdaEmptyExtraSkip]%
 %
 \>[2]\AgdaFunction{wk}\AgdaSpace{}%
 \AgdaBound{s}\AgdaSpace{}%
@@ -1876,8 +1860,14 @@ in the context where \AB{v} is present.
 \AgdaBound{e₁}\AgdaSymbol{)}\<%
 \end{code} 
 
-\todo[inline]{Say something about substitution}
-\begin{code}%
+We implement parallel substitution~\cite{} in the usual way.  The key structure that
+gives rise to parallel substitution is a mapping of variables to expressions for some
+context \AF{Δ}.  This is given by \AC{Sub} \AB{Γ} {Δ} and it means a \AF{Δ}-long
+list of (\AF{E} \AB{Γ})-s where each expression is of a type that corresponds to the
+variable type in the given position of \AF{Δ}.  We define \AF{wks} which maps weakening
+to all the elements of \AF{Sub} in the following way.
+\begin{mathpar}
+\codeblock{\begin{code}%
 %
 \>[2]\AgdaKeyword{data}\AgdaSpace{}%
 \AgdaDatatype{Sub}\AgdaSpace{}%
@@ -1892,14 +1882,14 @@ in the context where \AB{v} is present.
 \\
 \>[2][@{}l@{\AgdaIndent{0}}]%
 \>[4]\AgdaInductiveConstructor{ε}%
-\>[8]\AgdaSymbol{:}\AgdaSpace{}%
+\>[9]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaDatatype{Sub}\AgdaSpace{}%
 \AgdaBound{Γ}\AgdaSpace{}%
 \AgdaInductiveConstructor{ε}\<%
 \\
 %
-\>[4]\AgdaOperator{\AgdaInductiveConstructor{\AgdaUnderscore{}▹\AgdaUnderscore{}}}\AgdaSpace{}%
-\AgdaSymbol{:}\AgdaSpace{}%
+\>[4]\AgdaOperator{\AgdaInductiveConstructor{\AgdaUnderscore{}▹\AgdaUnderscore{}}}%
+\>[9]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaDatatype{Sub}\AgdaSpace{}%
 \AgdaBound{Γ}\AgdaSpace{}%
 \AgdaGeneralizable{Δ}\AgdaSpace{}%
@@ -1913,25 +1903,9 @@ in the context where \AB{v} is present.
 \AgdaSymbol{(}\AgdaGeneralizable{Δ}\AgdaSpace{}%
 \AgdaOperator{\AgdaInductiveConstructor{▹}}\AgdaSpace{}%
 \AgdaGeneralizable{is}\AgdaSymbol{)}\<%
-\\
-%
-\\[\AgdaEmptyExtraSkip]%
-%
-\>[2]\AgdaFunction{sub}\AgdaSpace{}%
-\AgdaSymbol{:}\AgdaSpace{}%
-\AgdaDatatype{E}\AgdaSpace{}%
-\AgdaGeneralizable{Δ}\AgdaSpace{}%
-\AgdaGeneralizable{is}\AgdaSpace{}%
-\AgdaSymbol{→}\AgdaSpace{}%
-\AgdaDatatype{Sub}\AgdaSpace{}%
-\AgdaGeneralizable{Γ}\AgdaSpace{}%
-\AgdaGeneralizable{Δ}\AgdaSpace{}%
-\AgdaSymbol{→}\AgdaSpace{}%
-\AgdaDatatype{E}\AgdaSpace{}%
-\AgdaGeneralizable{Γ}\AgdaSpace{}%
-\AgdaGeneralizable{is}\<%
-\end{code}
-\begin{code}[hide]%
+\end{code}}
+\and
+\codeblock{\begin{code}%
 %
 \>[2]\AgdaFunction{wks}\AgdaSpace{}%
 \AgdaSymbol{:}\AgdaSpace{}%
@@ -1950,8 +1924,8 @@ in the context where \AB{v} is present.
 %
 \>[2]\AgdaFunction{wks}\AgdaSpace{}%
 \AgdaInductiveConstructor{ε}\AgdaSpace{}%
-\AgdaBound{p}\AgdaSpace{}%
-\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaBound{p}%
+\>[17]\AgdaSymbol{=}\AgdaSpace{}%
 \AgdaInductiveConstructor{ε}\<%
 \\
 %
@@ -1959,8 +1933,8 @@ in the context where \AB{v} is present.
 \AgdaSymbol{(}\AgdaBound{s}\AgdaSpace{}%
 \AgdaOperator{\AgdaInductiveConstructor{▹}}\AgdaSpace{}%
 \AgdaBound{x}\AgdaSymbol{)}\AgdaSpace{}%
-\AgdaBound{p}\AgdaSpace{}%
-\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaBound{p}%
+\>[17]\AgdaSymbol{=}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaFunction{wks}\AgdaSpace{}%
 \AgdaBound{s}\AgdaSpace{}%
 \AgdaBound{p}\AgdaSymbol{)}\AgdaSpace{}%
@@ -1968,9 +1942,17 @@ in the context where \AB{v} is present.
 \AgdaFunction{wk}\AgdaSpace{}%
 \AgdaBound{p}\AgdaSpace{}%
 \AgdaBound{x}\<%
-\\
-\>[0]\<%
-\\
+\end{code}}
+\end{mathpar}
+Using \AF{wks} we can define two useful combinators: \AF{sdrop} to lift all
+expressions in the \AD{Sub} list into a context that is extended by one variable;
+\AF{skeep} to weaken the list using \AF{sdrop} and add the variable at the end of
+the list.  With these combinators we can define identity substitution \AF{sub-id}
+that has no effect when applying it.  Finally, the type of the actual substitution
+that replaces all the variables in \AF{E} according to some \AF{Sub} list is given
+by \AF{sub}.
+\begin{mathpar}
+\codeblock{\begin{code}%
 %
 \>[2]\AgdaFunction{sdrop}\AgdaSpace{}%
 \AgdaSymbol{:}\AgdaSpace{}%
@@ -2019,9 +2001,50 @@ in the context where \AB{v} is present.
 \AgdaOperator{\AgdaInductiveConstructor{▹}}\AgdaSpace{}%
 \AgdaInductiveConstructor{var}\AgdaSpace{}%
 \AgdaInductiveConstructor{v₀}\<%
+\end{code}}
+\and
+\codeblock{\begin{code}%
+%
+\>[2]\AgdaFunction{sub-id}\AgdaSpace{}%
+\AgdaSymbol{:}\AgdaSpace{}%
+\AgdaDatatype{Sub}\AgdaSpace{}%
+\AgdaGeneralizable{Γ}\AgdaSpace{}%
+\AgdaGeneralizable{Γ}\<%
+\\
+%
+\>[2]\AgdaFunction{sub-id}\AgdaSpace{}%
+\AgdaSymbol{\{}\AgdaInductiveConstructor{ε}\AgdaSymbol{\}}%
+\>[18]\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaInductiveConstructor{ε}\<%
+\\
+%
+\>[2]\AgdaFunction{sub-id}\AgdaSpace{}%
+\AgdaSymbol{\{}\AgdaBound{Γ}\AgdaSpace{}%
+\AgdaOperator{\AgdaInductiveConstructor{▹}}\AgdaSpace{}%
+\AgdaBound{x}\AgdaSymbol{\}}%
+\>[18]\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaFunction{skeep}\AgdaSpace{}%
+\AgdaFunction{sub-id}\<%
 \\
 %
 \\[\AgdaEmptyExtraSkip]%
+%
+\>[2]\AgdaFunction{sub}\AgdaSpace{}%
+\AgdaSymbol{:}\AgdaSpace{}%
+\AgdaDatatype{E}\AgdaSpace{}%
+\AgdaGeneralizable{Δ}\AgdaSpace{}%
+\AgdaGeneralizable{is}\AgdaSpace{}%
+\AgdaSymbol{→}\AgdaSpace{}%
+\AgdaDatatype{Sub}\AgdaSpace{}%
+\AgdaGeneralizable{Γ}\AgdaSpace{}%
+\AgdaGeneralizable{Δ}\AgdaSpace{}%
+\AgdaSymbol{→}\AgdaSpace{}%
+\AgdaDatatype{E}\AgdaSpace{}%
+\AgdaGeneralizable{Γ}\AgdaSpace{}%
+\AgdaGeneralizable{is}\<%
+\end{code}}
+\end{mathpar}
+\begin{code}[hide]%
 %
 \>[2]\AgdaFunction{subv}\AgdaSpace{}%
 \AgdaSymbol{:}\AgdaSpace{}%
@@ -2042,8 +2065,8 @@ in the context where \AB{v} is present.
 \AgdaSymbol{(}\AgdaBound{s}\AgdaSpace{}%
 \AgdaOperator{\AgdaInductiveConstructor{▹}}\AgdaSpace{}%
 \AgdaBound{x}\AgdaSymbol{)}\AgdaSpace{}%
-\AgdaInductiveConstructor{v₀}\AgdaSpace{}%
-\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaInductiveConstructor{v₀}%
+\>[23]\AgdaSymbol{=}\AgdaSpace{}%
 \AgdaBound{x}\<%
 \\
 %
@@ -2052,8 +2075,8 @@ in the context where \AB{v} is present.
 \AgdaOperator{\AgdaInductiveConstructor{▹}}\AgdaSpace{}%
 \AgdaBound{x}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaInductiveConstructor{vₛ}\AgdaSpace{}%
-\AgdaBound{v}\AgdaSymbol{)}\AgdaSpace{}%
-\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaBound{v}\AgdaSymbol{)}%
+\>[23]\AgdaSymbol{=}\AgdaSpace{}%
 \AgdaFunction{subv}\AgdaSpace{}%
 \AgdaBound{s}\AgdaSpace{}%
 \AgdaBound{v}\<%
@@ -2345,34 +2368,12 @@ in the context where \AB{v} is present.
 \AgdaBound{x}\AgdaSpace{}%
 \AgdaBound{t}\<%
 \end{code}
-We can define identity substitution as folows:
-\begin{code}%
-%
-\>[2]\AgdaFunction{sub-id}\AgdaSpace{}%
-\AgdaSymbol{:}\AgdaSpace{}%
-\AgdaDatatype{Sub}\AgdaSpace{}%
-\AgdaGeneralizable{Γ}\AgdaSpace{}%
-\AgdaGeneralizable{Γ}\<%
-\\
-%
-\>[2]\AgdaFunction{sub-id}\AgdaSpace{}%
-\AgdaSymbol{\{}\AgdaInductiveConstructor{ε}\AgdaSymbol{\}}\AgdaSpace{}%
-\AgdaSymbol{=}\AgdaSpace{}%
-\AgdaInductiveConstructor{ε}\<%
-\\
-%
-\>[2]\AgdaFunction{sub-id}\AgdaSpace{}%
-\AgdaSymbol{\{}\AgdaBound{Γ}\AgdaSpace{}%
-\AgdaOperator{\AgdaInductiveConstructor{▹}}\AgdaSpace{}%
-\AgdaBound{x}\AgdaSymbol{\}}\AgdaSpace{}%
-\AgdaSymbol{=}\AgdaSpace{}%
-\AgdaFunction{skeep}\AgdaSpace{}%
-\AgdaFunction{sub-id}\<%
-\end{code}
 As our context do not encode explicit dependencies between the variables,
-we can easily define a substitution that swaps two top variables in the
-context.  This will be used later for optimising programs in our DSL.
-\begin{code}%
+we can define a substitution that swaps two top variables in the
+context.  This substitution is given by \AF{sub-swap} and it will
+be used later to define some of our optimisations.
+\begin{mathpar}
+\codeblock{\begin{code}%
 %
 \>[2]\AgdaFunction{sub-swap}\AgdaSpace{}%
 \AgdaSymbol{:}\AgdaSpace{}%
@@ -2391,17 +2392,18 @@ context.  This will be used later for optimising programs in our DSL.
 %
 \>[2]\AgdaFunction{sub-swap}\AgdaSpace{}%
 \AgdaSymbol{=}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaFunction{sdrop}\AgdaSpace{}%
+\AgdaFunction{sdrop}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaFunction{sdrop}\AgdaSpace{}%
 \AgdaFunction{sub-id}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaOperator{\AgdaInductiveConstructor{▹}}\AgdaSpace{}%
 \AgdaInductiveConstructor{var}\AgdaSpace{}%
-\AgdaInductiveConstructor{v₀}\AgdaSymbol{)}\AgdaSpace{}%
+\AgdaInductiveConstructor{v₀}\AgdaSpace{}%
 \AgdaOperator{\AgdaInductiveConstructor{▹}}\AgdaSpace{}%
 \AgdaInductiveConstructor{var}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaInductiveConstructor{vₛ}\AgdaSpace{}%
 \AgdaInductiveConstructor{v₀}\AgdaSymbol{)}\<%
-\end{code}
+\end{code}}
+\end{mathpar}
 
 \paragraph{Syntax}
 \todo[inline]{Explain that we want to simplify the life of programers by
@@ -2585,11 +2587,11 @@ under further binders.
 \\
 %
 \>[2]\AgdaFunction{Imap}%
-\>[1593I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[1579I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{∀}\AgdaSpace{}%
 \AgdaSymbol{\{}\AgdaBound{Γ}\AgdaSymbol{\}}\<%
 \\
-\>[.][@{}l@{}]\<[1593I]%
+\>[.][@{}l@{}]\<[1579I]%
 \>[7]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaFunction{GE}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{Γ}\AgdaSpace{}%
@@ -2637,11 +2639,11 @@ for \AC{let′}, providing a familiar let-like syntax.
 \begin{code}[hide]%
 %
 \>[2]\AgdaFunction{Sum}%
-\>[1630I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[1616I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{∀}\AgdaSpace{}%
 \AgdaSymbol{\{}\AgdaBound{Γ}\AgdaSymbol{\}}\<%
 \\
-\>[1630I][@{}l@{\AgdaIndent{0}}]%
+\>[1616I][@{}l@{\AgdaIndent{0}}]%
 \>[7]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaFunction{GE}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{Γ}\AgdaSpace{}%
@@ -2686,11 +2688,11 @@ for \AC{let′}, providing a familiar let-like syntax.
 \\[\AgdaEmptyExtraSkip]%
 %
 \>[2]\AgdaFunction{Imaps}%
-\>[1665I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[1651I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{∀}\AgdaSpace{}%
 \AgdaSymbol{\{}\AgdaBound{Γ}\AgdaSymbol{\}}\<%
 \\
-\>[.][@{}l@{}]\<[1665I]%
+\>[.][@{}l@{}]\<[1651I]%
 \>[8]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaFunction{GE}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{Γ}\AgdaSpace{}%
@@ -2735,11 +2737,11 @@ for \AC{let′}, providing a familiar let-like syntax.
 \\[\AgdaEmptyExtraSkip]%
 %
 \>[2]\AgdaFunction{Imapb}%
-\>[1700I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[1686I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{∀}\AgdaSpace{}%
 \AgdaSymbol{\{}\AgdaBound{Γ}\AgdaSymbol{\}}\<%
 \\
-\>[.][@{}l@{}]\<[1700I]%
+\>[.][@{}l@{}]\<[1686I]%
 \>[8]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{*}}\AgdaSpace{}%
@@ -3147,7 +3149,7 @@ For example, consider this expression:
 %
 \>[2]\AgdaSymbol{\AgdaUnderscore{}}\AgdaSpace{}%
 \AgdaSymbol{=}%
-\>[1950I]\AgdaFunction{Lcon}\AgdaSpace{}%
+\>[1936I]\AgdaFunction{Lcon}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaInductiveConstructor{ar}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaInductiveConstructor{ι}\AgdaSpace{}%
 \AgdaNumber{5}\AgdaSymbol{)}\AgdaSpace{}%
@@ -3164,7 +3166,7 @@ For example, consider this expression:
 \AgdaInductiveConstructor{[]}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaInductiveConstructor{ε}\<%
 \\
-\>[.][@{}l@{}]\<[1950I]%
+\>[.][@{}l@{}]\<[1936I]%
 \>[6]\AgdaSymbol{λ}\AgdaSpace{}%
 \AgdaBound{a}\AgdaSpace{}%
 \AgdaBound{b}\AgdaSpace{}%
@@ -3336,7 +3338,7 @@ running example in $E$.  We consider an example for the \AF{conv}-olution:
 \begin{code}%
 %
 \>[2]\AgdaFunction{conv}%
-\>[2067I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[2053I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{∀}\AgdaSpace{}%
 \AgdaSymbol{\{}\AgdaBound{Γ}\AgdaSymbol{\}}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
@@ -3365,7 +3367,7 @@ running example in $E$.  We consider an example for the \AF{conv}-olution:
 \AgdaGeneralizable{u}\AgdaSpace{}%
 \AgdaSymbol{⦄}\<%
 \\
-\>[.][@{}l@{}]\<[2067I]%
+\>[.][@{}l@{}]\<[2053I]%
 \>[7]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaDatatype{E}\AgdaSpace{}%
 \AgdaBound{Γ}\AgdaSpace{}%
@@ -3412,7 +3414,7 @@ running example in $E$.  We consider an example for the \AF{conv}-olution:
 %
 \>[2]\AgdaFunction{mconv}\AgdaSpace{}%
 \AgdaSymbol{:}%
-\>[2129I]\AgdaSymbol{⦃}\AgdaSpace{}%
+\>[2115I]\AgdaSymbol{⦃}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{+}}\AgdaSpace{}%
 \AgdaGeneralizable{p}\AgdaSpace{}%
@@ -3435,7 +3437,7 @@ running example in $E$.  We consider an example for the \AF{conv}-olution:
 \AgdaOperator{\AgdaFunction{⊗}}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSymbol{)))}\<%
 \\
-\>[.][@{}l@{}]\<[2129I]%
+\>[.][@{}l@{}]\<[2115I]%
 \>[10]\AgdaSymbol{(}\AgdaBound{bᵥ}\AgdaSpace{}%
 \AgdaSymbol{:}\AgdaSpace{}%
 \AgdaDatatype{E}\AgdaSpace{}%
@@ -3499,7 +3501,7 @@ running example in $E$.  We consider an example for the \AF{conv}-olution:
 \\[\AgdaEmptyExtraSkip]%
 %
 \>[2]\AgdaFunction{avgp₂}%
-\>[2202I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[2188I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{∀}\AgdaSpace{}%
 \AgdaBound{m}\AgdaSpace{}%
 \AgdaBound{n}\AgdaSpace{}%
@@ -3519,7 +3521,7 @@ running example in $E$.  We consider an example for the \AF{conv}-olution:
 \AgdaOperator{\AgdaInductiveConstructor{∷}}\AgdaSpace{}%
 \AgdaInductiveConstructor{[]}\AgdaSymbol{)))}\<%
 \\
-\>[.][@{}l@{}]\<[2202I]%
+\>[.][@{}l@{}]\<[2188I]%
 \>[8]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaDatatype{E}\AgdaSpace{}%
 \AgdaGeneralizable{Γ}\AgdaSpace{}%
@@ -3647,8 +3649,8 @@ Finally, the CNN embedded in $E$ is given as follows:
 %
 \>[2]\AgdaFunction{cnn}\AgdaSpace{}%
 \AgdaSymbol{=}%
-\>[2314I]\AgdaFunction{Lcon}%
-\>[2315I]\AgdaSymbol{(}%
+\>[2300I]\AgdaFunction{Lcon}%
+\>[2301I]\AgdaSymbol{(}%
 \>[16]\AgdaInductiveConstructor{ar}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaNumber{28}\AgdaSpace{}%
 \AgdaOperator{\AgdaInductiveConstructor{∷}}\AgdaSpace{}%
@@ -3665,7 +3667,7 @@ Finally, the CNN embedded in $E$ is given as follows:
 \AgdaOperator{\AgdaInductiveConstructor{∷}}\AgdaSpace{}%
 \AgdaInductiveConstructor{[]}\AgdaSymbol{)}\<%
 \\
-\>[2315I][@{}l@{\AgdaIndent{0}}]%
+\>[2301I][@{}l@{\AgdaIndent{0}}]%
 \>[14]\AgdaOperator{\AgdaInductiveConstructor{∷}}\AgdaSpace{}%
 \AgdaInductiveConstructor{ar}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaNumber{6}\AgdaSpace{}%
@@ -3727,12 +3729,12 @@ Finally, the CNN embedded in $E$ is given as follows:
 \>[14]\AgdaOperator{\AgdaInductiveConstructor{∷}}\AgdaSpace{}%
 \AgdaInductiveConstructor{[]}\AgdaSymbol{)}\<%
 \\
-\>[.][@{}l@{}]\<[2315I]%
+\>[.][@{}l@{}]\<[2301I]%
 \>[13]\AgdaSymbol{(}\AgdaInductiveConstructor{ar}\AgdaSpace{}%
 \AgdaInductiveConstructor{[]}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaInductiveConstructor{ε}\<%
 \\
-\>[.][@{}l@{}]\<[2314I]%
+\>[.][@{}l@{}]\<[2300I]%
 \>[8]\AgdaSymbol{λ}\AgdaSpace{}%
 \AgdaBound{inp}\AgdaSpace{}%
 \AgdaBound{k₁}\AgdaSpace{}%

@@ -346,20 +346,18 @@ $\sum$-notation.
 
 
 \subsection{Weakening and Substitution}
-\todo[inline]{Adjust the text}
 As our language has explicit de Bruin variables (as opposed to HOAS~\cite{hoas} approaches),
 we need the means to do weakening and substitution when we optimise expressions in \AF{E}.
 Our language is intrinsically typed(shaped) which
 makes the definition of both operations challenging.  However, this problem has
-been well-understood, and we adopt the solution from~\cite{subst}.  We only show the
-basic mechanisms of the definition, for full details refer to~\cite{subst}.
+been well-understood, and several approaches have been proposed in the
+literature~\cite{subst}.
 
-The key structure that gives rise to weakening and substitution is a function that
-computes the context \AB{Γ} \emph{without} the variable \AB{v} 
-(denoted \AB{Γ} \AF{/} \AB{v}).  Then we define the weakening for
-variables (\AF{wkv}) and expressions (\AF{wk}) that take a variable or expression
-in the context without the variable \AF{v} and return this variable or expression
-in the context where \AB{v} is present.
+The key structure needed for weakening is order-preserving embedding of contexts given
+by \AD{\_⊆\_} which is defined inductively.  If \AB{Γ} \AD{⊆} \AB{Δ} then all the
+elements of \AB{Γ} can be found in \AB{Δ} in the original order (possibly with some gaps).
+Weakening variables according to some context embedding is given by \AF{wkv} which is
+defined as follows.
 \begin{code}[hide]
 module WkSub where
   open Lang
@@ -367,50 +365,41 @@ module WkSub where
 \begin{mathpar}
 \codeblock{\begin{code}
   data _⊆_ : Ctx → Ctx → Set where
-    ε    : ε ⊆ ε
-    skip : Γ ⊆ Δ → Γ ⊆ (Δ ▹ is)
-    keep : Γ ⊆ Δ → (Γ ▹ is) ⊆ (Δ ▹ is)
+    ε     : ε ⊆ ε
+    skip  : Γ ⊆ Δ → Γ ⊆ (Δ ▹ is)
+    keep  : Γ ⊆ Δ → (Γ ▹ is) ⊆ (Δ ▹ is)
 \end{code}}
 \and
 \codeblock{\begin{code}  
   wkv : Γ ⊆ Δ → is ∈ Γ → is ∈ Δ
-  wk : Γ ⊆ Δ → E Γ is → E Δ is
+  wkv (skip s) v       = vₛ (wkv s v)
+  wkv (keep s) v₀      = v₀
+  wkv (keep s) (vₛ v)  = vₛ (wkv s v)
 \end{code}}
 \end{mathpar}
 
-\todo[inline]{Expand this (or hide?)}
-\begin{code}
+Weakening expressions in \AF{E} according to some context embedding is given by \AF{wk}
+which type is defined below.  Reflexivity of context embeddings is given by \AF{⊆-eq}.
+A common case of weakening when expressions are lifted in a context with one extra variable
+is denoted with \AF{\_↑} and it is defined as follows.
+\begin{mathpar}
+\codeblock{\begin{code}
+  wk : Γ ⊆ Δ → E Γ is → E Δ is
+\end{code}}
+\and
+\codeblock{\begin{code}
   ⊆-eq : Γ ⊆ Γ
-  ⊆-eq {ε} = ε
-  ⊆-eq {Γ ▹ x} = keep ⊆-eq
-
+  ⊆-eq {ε}      = ε
+  ⊆-eq {Γ ▹ x}  = keep ⊆-eq
+\end{code}}
+\and
+\codeblock{\begin{code}
   _↑ : E Γ is → E (Γ ▹ ip) is
   _↑ = wk (skip ⊆-eq)
-\end{code}
+\end{code}}
+\end{mathpar}
 
-
-% We give ourselves a nicer syntax for common cases when expressions
-% are lifted into the context with extra one or two variables:
-% \begin{code}[hide]
-%   infixr 18 ↑_
-%   infixr 18 ↑↑_
-% \end{code}
-% \begin{mathpar}
-% \codeblock{\begin{code}
-%   ↑_ : E Γ is → E (Γ ▹ ip) is
-%   ↑_ = wk v₀
-% \end{code}}
-% \and
-% \codeblock{\begin{code}
-%   ↑↑_ : E Γ is → E (Γ ▹ ip ▹ iq) is
-%   ↑↑_ = ↑_ ∘ ↑_
-% \end{code}}
-% \end{mathpar}
 \begin{code}[hide]
-  wkv (skip s) v = vₛ (wkv s v)
-  wkv (keep s) v₀ = v₀
-  wkv (keep s) (vₛ v) = vₛ (wkv s v)
-
   wk s (var x) = var (wkv s x)
   wk s zero = zero
   wk s one = one
@@ -431,28 +420,53 @@ module WkSub where
   wk s (let′ e e₁) = let′ (wk s e) (wk (keep s) e₁)
 \end{code} 
 
-\todo[inline]{Say something about substitution}
-\begin{code}
+We implement parallel substitution~\cite{} in the usual way.  The key structure that
+gives rise to parallel substitution is a mapping of variables to expressions for some
+context \AF{Δ}.  This is given by \AC{Sub} \AB{Γ} {Δ} and it means a \AF{Δ}-long
+list of (\AF{E} \AB{Γ})-s where each expression is of a type that corresponds to the
+variable type in the given position of \AF{Δ}.  We define \AF{wks} which maps weakening
+to all the elements of \AF{Sub} in the following way.
+\begin{mathpar}
+\codeblock{\begin{code}
   data Sub (Γ : Ctx) : Ctx → Set where
-    ε   : Sub Γ ε
-    _▹_ : Sub Γ Δ → E Γ is → Sub Γ (Δ ▹ is)
-
-  sub : E Δ is → Sub Γ Δ → E Γ is
-\end{code}
-\begin{code}[hide]
+    ε    : Sub Γ ε
+    _▹_  : Sub Γ Δ → E Γ is → Sub Γ (Δ ▹ is)
+\end{code}}
+\and
+\codeblock{\begin{code}
   wks : Sub Γ Δ → Γ ⊆ Ψ → Sub Ψ Δ
-  wks ε p = ε
-  wks (s ▹ x) p = (wks s p) ▹ wk p x
-  
+  wks ε p        = ε
+  wks (s ▹ x) p  = (wks s p) ▹ wk p x
+\end{code}}
+\end{mathpar}
+Using \AF{wks} we can define two useful combinators: \AF{sdrop} to lift all
+expressions in the \AD{Sub} list into a context that is extended by one variable;
+\AF{skeep} to weaken the list using \AF{sdrop} and add the variable at the end of
+the list.  With these combinators we can define identity substitution \AF{sub-id}
+that has no effect when applying it.  Finally, the type of the actual substitution
+that replaces all the variables in \AF{E} according to some \AF{Sub} list is given
+by \AF{sub}.
+\begin{mathpar}
+\codeblock{\begin{code}
   sdrop : Sub Γ Δ → Sub (Γ ▹ is) Δ
   sdrop s = wks s (skip ⊆-eq)
 
   skeep : Sub Γ Δ → Sub (Γ ▹ is) (Δ ▹ is)
   skeep s = sdrop s ▹ var v₀
+\end{code}}
+\and
+\codeblock{\begin{code}
+  sub-id : Sub Γ Γ
+  sub-id {ε}      = ε
+  sub-id {Γ ▹ x}  = skeep sub-id
 
+  sub : E Δ is → Sub Γ Δ → E Γ is
+\end{code}}
+\end{mathpar}
+\begin{code}[hide]
   subv : Sub Γ Δ → is ∈ Δ → E Γ is
-  subv (s ▹ x) v₀ = x
-  subv (s ▹ x) (vₛ v) = subv s v
+  subv (s ▹ x) v₀      = x
+  subv (s ▹ x) (vₛ v)  = subv s v
   
   sub (var x) s = subv s x
   sub zero s = zero
@@ -477,19 +491,16 @@ module WkSub where
   ε ∙ˢ t = ε
   (s ▹ x) ∙ˢ t = (s ∙ˢ t) ▹ sub x t
 \end{code}
-We can define identity substitution as folows:
-\begin{code}
-  sub-id : Sub Γ Γ
-  sub-id {ε} = ε
-  sub-id {Γ ▹ x} = skeep sub-id
-\end{code}
 As our context do not encode explicit dependencies between the variables,
-we can easily define a substitution that swaps two top variables in the
-context.  This will be used later for optimising programs in our DSL.
-\begin{code}
+we can define a substitution that swaps two top variables in the
+context.  This substitution is given by \AF{sub-swap} and it will
+be used later to define some of our optimisations.
+\begin{mathpar}
+\codeblock{\begin{code}
   sub-swap : Sub (Γ ▹ is ▹ ip) (Γ ▹ ip ▹ is)
-  sub-swap = (sdrop (sdrop sub-id) ▹ var v₀) ▹ var (vₛ v₀)
-\end{code}
+  sub-swap = sdrop (sdrop sub-id) ▹ var v₀ ▹ var (vₛ v₀)
+\end{code}}
+\end{mathpar}
 
 \paragraph{Syntax}
 \todo[inline]{Explain that we want to simplify the life of programers by

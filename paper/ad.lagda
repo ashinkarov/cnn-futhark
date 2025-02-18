@@ -404,15 +404,15 @@ semantics-preserving \AF{opt}imisation function is given as follows.
 \and
 \codeblock{\begin{code}
   _≈ᵉ_ : E Γ is → E Γ is → Set
-  _≈ᵉ_ {Γ} a b = (ρ : Env Γ) → ⟦ a ⟧ ρ ≈ᵛ ⟦ b ⟧ ρ
+  _≈ᵉ_ {Γ} a b = ⦃ ρ : Env Γ ⦄ → ⟦ a ⟧ ≈ᵛ ⟦ b ⟧
   
   opt : (e : E Γ is) → ∃ λ e′ → (e ≈ᵉ e′)
 \end{code}}
 \end{mathpar}
 \begin{code}[hide]
   reflᵉ : ∀ (e : E Γ is) → e ≈ᵉ e
-  reflᵉ {is} {ix x} = λ e ρ → refl
-  reflᵉ {is} {ar x} = λ e ρ i → refl
+  reflᵉ {is} {ix x} = λ e → refl
+  reflᵉ {is} {ar x} = λ e i → refl
   opt e = e , reflᵉ e
 \end{code}
 
