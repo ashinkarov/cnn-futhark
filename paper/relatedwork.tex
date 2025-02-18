@@ -66,3 +66,13 @@ represent rank-polymorphic arrays with strict bound checks.
 Also, correctness guarantees are inevitably restricted by the
 Haskell type system, so we are likely to find invariants that
 are inexpressible in that setup.
+
+Verified high-performance computing is an area of active research, and
+one line of research is based on the idea of separating the high level
+\emph{specification} of a problem from the \emph{schedule} that
+describe how it is to be executed. Verifying that such schedules are
+semantics-preserving is the topic of several recent
+publications~\cite{10.1145/3527328,10.1145/3498717}. Our approach
+differs by not using a scheduling language, and instead focuses on
+verifying the specification itself, and also by having a particularly
+expressive specification language.

@@ -1026,4 +1026,42 @@ abstract={In this paper we present type patterns: a notation for shape-carrying 
   pages={141--142},
   year={2012},
   publisher={IEEE}
-} 
+}
+
+@article{10.1145/3498717,
+author = {Liu, Amanda and Bernstein, Gilbert Louis and Chlipala, Adam and Ragan-Kelley, Jonathan},
+title = {Verified tensor-program optimization via high-level scheduling rewrites},
+year = {2022},
+issue_date = {January 2022},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {6},
+number = {POPL},
+url = {https://doi.org/10.1145/3498717},
+doi = {10.1145/3498717},
+abstract = {We present a lightweight Coq framework for optimizing tensor kernels written in a pure, functional array language. Optimizations rely on user scheduling using series of verified, semantics-preserving rewrites. Unusually for compilation targeting imperative code with arrays and nested loops, all rewrites are source-to-source within a purely functional language. Our language comprises a set of core constructs for expressing high-level computation detail and a set of what we call reshape operators, which can be derived from core constructs but trigger low-level decisions about storage patterns and ordering. We demonstrate that not only is this system capable of deriving the optimizations of existing state-of-the-art languages like Halide and generating comparably performant code, it is also able to schedule a family of useful program transformations beyond what is reachable in Halide.},
+journal = {Proc. ACM Program. Lang.},
+month = jan,
+articleno = {55},
+numpages = {28},
+keywords = {array programming, formal verification, optimization, proof assistants}
+}
+
+@article{10.1145/3527328,
+author = {Cl\'{e}ment, Basile and Cohen, Albert},
+title = {End-to-end translation validation for the halide language},
+year = {2022},
+issue_date = {April 2022},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {6},
+number = {OOPSLA1},
+url = {https://doi.org/10.1145/3527328},
+doi = {10.1145/3527328},
+abstract = {This paper considers the correctness of domain-specific compilers for tensor programming languages through the study of Halide, a popular representative. It describes a translation validation algorithm for affine Halide specifications, independently of the scheduling language. The algorithm relies on “prophetic” annotations added by the compiler to the generated array assignments. The annotations provide a refinement mapping from assignments in the generated code to the tensor definitions from the specification. Our implementation leverages an affine solver and a general SMT solver, and scales to complete Halide benchmarks.},
+journal = {Proc. ACM Program. Lang.},
+month = apr,
+articleno = {84},
+numpages = {30},
+keywords = {Domain-specific Languages, Formal semantics, Polyhedral Compilers, Tensor Compilers, Validation}
+}
