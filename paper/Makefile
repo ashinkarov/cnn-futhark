@@ -1,7 +1,7 @@
 SRC := paper.tex \
        intro.tex \
-       background.tex \
        performance.tex \
+       relatedwork.tex \
        conclusions.tex \
        paper.bib
 
