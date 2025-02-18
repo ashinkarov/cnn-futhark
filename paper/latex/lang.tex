@@ -53,31 +53,24 @@ Any implementation of automatic differentiation has to decide which operations
 are supported.  Surely, it does not make sense to compute derivatives
 of a function that opens a file.  This choice, no matter how it is implemented,
 can be seen as a definition of an embedded language.
-Once we accept to identify an embedded language, the idea of embedding it in a way
-that facilitates extraction actually appears rather naturally and thus advances
-the approach that we propose in this paper.
+Once we accept the idea of embedded language, we can choose to use deep embedding
+which can serve two purposes.  We can implement both AD and extraction within the
+host lanugae without modifying the compiler.  This is particularly useful in the
+context of a theorem prover, as we can annotate our implementations with the
+correctness invariants of our choice.  This is the approach we are taking here.
 
-Coming back to our example, we have to choose the primitives that the embedded language
-should support. They need to be sufficient to express AD as well as to define CNNs.
-The main trade-off here is the choice of the level of abstraction of these primitives:
-low-level primitives are easier to differentiate, but they make the overall expressions
-more complex which also adds to the challenge of optimising code.
-Making this choice is difficult and, most likely, requires quite some adjustment 
-when striving for performance.
-Here we see a key benefit of the approach we propose in this paper:
-the use of a single framework for the embedding, the optimisation, and the extraction
-makes the implementation comparatively small, allowing for quick adjustments in the
-level of abstraction, code optimisation and its extraction.
-We start with a pragmatic approach; we include the primitives that are either shared
-by the model and the back-end
-or that can be easily implemented in the back-end language.
+The next challenge lies in identifying the primitives for the embedded language.
+These have to be sufficiently powerful to define CNNs and to express AD.
+Finding the right level of abstraction for the primitives is non-trivial,
+as it heavily depends on the capabilities of the backend language and the
+optimisations that we can perform locally.  However, keeping the DSL, optimisations
+and extraction within a single framewrok makes it possible to experiment
+with these choices easily.
 
-It turns out that it is possible to choose the primitives in a way that the derivatives 
-can be expressed in the very same embedded language. 
-While this at first glance may just seem to be just a nice coincidence, it turns out
-that this has several tangible benefits: high-order derivatives can be computed 
-by the same transformation and we can share all optimisations between the code itself
-and its derivatives.
+The primitives that we have chosen are easy to implement in the backend language
+and they guarantee that AD can be performed within this DSL.
+The latter is very useful as: we can do high-order derivatives within the
+same language and we can use optimisations for programs and their derivatives.
 \begin{code}[hide]%
 \>[0]\AgdaKeyword{module}\AgdaSpace{}%
 \AgdaModule{Lang}\AgdaSpace{}%
@@ -131,12 +124,17 @@ and its derivatives.
 \>[0]\<%
 \end{code}
 
-As we operate within a dependently-typed proof-assistant, we can easily make our
-embedded language well-scoped and intrinsically typed (shaped in our case).  Our
-context \AF{Ctx} is a snoc-list of shapes where each shape has a tag indicating whether
-it is an index or an array.  We use de Bruijn variables given by the relation
-\AF{\_∈\_} in the usual way.  We also define variables \AB{v₁}, \AB{v₂}, \etc{}
-by iteratively applying \AC{vₛ} to \AC{v₀} (definition not shown).
+In Agda we can easily make our
+embedded language well-scoped and intrinsically typed (shaped).
+This is very useful as it eliminates a large class of errors that have to do
+with wrong variables uses and ill-typed expressions.
+Types of our language are given by \AD{IS}.  We distinguish between arrays of
+some shape $s$ (denoted by \AC{ar}) and indices of shape $s$
+(denoted by \AC{ix}).  Contexts are snoc-lists of \AF{IS}-es, and they are
+given by \AD{Ctx}.  We use de Bruijn variables given by the relation
+\AF{\_∈\_} in the usual way. 
+%We also define variables \AB{v₁}, \AB{v₂}, \etc{}
+%by iteratively applying \AC{vₛ} to \AC{v₀} (definition not shown).
 \begin{mathpar}
 \codeblock{\begin{code}%
 \>[0][@{}l@{\AgdaIndent{1}}]%
@@ -239,81 +237,37 @@ by iteratively applying \AC{vₛ} to \AC{v₀} (definition not shown).
 \AgdaGeneralizable{ip}\AgdaSymbol{)}\<%
 \end{code}}
 \end{mathpar}
-Note that while our contexts are non-dependent (\ie{} the shapes do not depend on the
-terms), we use non-trivial shape dependencies within the constructors.  The embedded
-language does not have a notion of shape as a value, therefore all the shape dependencies
-are handled by Agda, keeping our language simply typed (shaped).  This separation is
-very helpful when it comes to writing embedded programs.% XXX: more explanation? 
+Note that while our contexts are non-dependent (\ie{} types do not depend on the
+members of the context), we use non-trivial dependencies within constructors.
+The embedded language does not have a notion of shape as a value, therefore all
+the shape dependencies are handled by Agda, keeping our language simply
+typed (shaped).  This is very helpful when it comes to writing
+embedded programs.% XXX: more explanation? 
 \begin{code}[hide]%
 %
 \>[2]\AgdaComment{--pattern\ v₀\ =\ v₀}\<%
 \\
-%
-\>[2]\AgdaKeyword{pattern}\AgdaSpace{}%
-\AgdaInductiveConstructor{v₁}\AgdaSpace{}%
-\AgdaSymbol{=}\AgdaSpace{}%
-\AgdaInductiveConstructor{vₛ}\AgdaSpace{}%
-\AgdaInductiveConstructor{v₀}\<%
+\>[0]\AgdaComment{--\ \ pattern\ v₁\ =\ vₛ\ v₀}\<%
 \\
-%
-\>[2]\AgdaKeyword{pattern}\AgdaSpace{}%
-\AgdaInductiveConstructor{v₂}\AgdaSpace{}%
-\AgdaSymbol{=}\AgdaSpace{}%
-\AgdaInductiveConstructor{vₛ}\AgdaSpace{}%
-\AgdaInductiveConstructor{v₁}\<%
+\>[0]\AgdaComment{--\ \ pattern\ v₂\ =\ vₛ\ v₁}\<%
 \\
-%
-\>[2]\AgdaKeyword{pattern}\AgdaSpace{}%
-\AgdaInductiveConstructor{v₃}\AgdaSpace{}%
-\AgdaSymbol{=}\AgdaSpace{}%
-\AgdaInductiveConstructor{vₛ}\AgdaSpace{}%
-\AgdaInductiveConstructor{v₂}\<%
+\>[0]\AgdaComment{--\ \ pattern\ v₃\ =\ vₛ\ v₂}\<%
 \\
-%
-\>[2]\AgdaKeyword{pattern}\AgdaSpace{}%
-\AgdaInductiveConstructor{v₄}\AgdaSpace{}%
-\AgdaSymbol{=}\AgdaSpace{}%
-\AgdaInductiveConstructor{vₛ}\AgdaSpace{}%
-\AgdaInductiveConstructor{v₃}\<%
+\>[0]\AgdaComment{--\ \ pattern\ v₄\ =\ vₛ\ v₃}\<%
 \\
-%
-\>[2]\AgdaKeyword{pattern}\AgdaSpace{}%
-\AgdaInductiveConstructor{v₅}\AgdaSpace{}%
-\AgdaSymbol{=}\AgdaSpace{}%
-\AgdaInductiveConstructor{vₛ}\AgdaSpace{}%
-\AgdaInductiveConstructor{v₄}\<%
+\>[0]\AgdaComment{--\ \ pattern\ v₅\ =\ vₛ\ v₄}\<%
 \\
-%
-\>[2]\AgdaKeyword{pattern}\AgdaSpace{}%
-\AgdaInductiveConstructor{v₆}\AgdaSpace{}%
-\AgdaSymbol{=}\AgdaSpace{}%
-\AgdaInductiveConstructor{vₛ}\AgdaSpace{}%
-\AgdaInductiveConstructor{v₅}\<%
+\>[0]\AgdaComment{--\ \ pattern\ v₆\ =\ vₛ\ v₅}\<%
 \\
-%
-\>[2]\AgdaKeyword{pattern}\AgdaSpace{}%
-\AgdaInductiveConstructor{v₇}\AgdaSpace{}%
-\AgdaSymbol{=}\AgdaSpace{}%
-\AgdaInductiveConstructor{vₛ}\AgdaSpace{}%
-\AgdaInductiveConstructor{v₆}\<%
+\>[0]\AgdaComment{--\ \ pattern\ v₇\ =\ vₛ\ v₆}\<%
 \\
-%
-\>[2]\AgdaKeyword{pattern}\AgdaSpace{}%
-\AgdaInductiveConstructor{v₈}\AgdaSpace{}%
-\AgdaSymbol{=}\AgdaSpace{}%
-\AgdaInductiveConstructor{vₛ}\AgdaSpace{}%
-\AgdaInductiveConstructor{v₇}\<%
+\>[0]\AgdaComment{--\ \ pattern\ v₈\ =\ vₛ\ v₇}\<%
 \\
-%
-\>[2]\AgdaKeyword{pattern}\AgdaSpace{}%
-\AgdaInductiveConstructor{v₉}\AgdaSpace{}%
-\AgdaSymbol{=}\AgdaSpace{}%
-\AgdaInductiveConstructor{vₛ}\AgdaSpace{}%
-\AgdaInductiveConstructor{v₈}\<%
+\>[0]\AgdaComment{--\ \ pattern\ v₉\ =\ vₛ\ v₈}\<%
 \\
 %
 \\[\AgdaEmptyExtraSkip]%
-%
+\>[0][@{}l@{\AgdaIndent{0}}]%
 \>[2]\AgdaKeyword{infixl}\AgdaSpace{}%
 \AgdaNumber{10}\AgdaSpace{}%
 \AgdaOperator{\AgdaInductiveConstructor{\AgdaUnderscore{}⊞\AgdaUnderscore{}}}\<%
@@ -323,9 +277,14 @@ very helpful when it comes to writing embedded programs.% XXX: more explanation?
 \AgdaNumber{15}\AgdaSpace{}%
 \AgdaOperator{\AgdaInductiveConstructor{\AgdaUnderscore{}⊠\AgdaUnderscore{}}}\<%
 \end{code}
-We start with two helper definitions: a singleton shape that we call \AF{unit}
-and the type for binary operations that we support (for now only addition and
-multiplication).
+
+All arrays in our language are assumed to be arrays of reals.  This is why
+our contexts do not carry array element types.  However, we distinguish
+singleton arrays of shape \AF{unit} that always contain a single element.
+Such arrays are called scalars in the array literature and they are mapped
+into the type that represents real in the backend \eg{} double.
+We support two binary operstions in our langauge (addition and multiplication)
+that are given by \AD{Bop}.
 \begin{mathpar}
 \codeblock{\begin{code}%
 %
@@ -355,15 +314,18 @@ multiplication).
 \end{code}}
 \end{mathpar}
 
-The embedded language \AF{E} includes: variables \AC{var}; constants 0 and 1 given
-by \AC{zero} and \AC{one} correspondingly; three flavours of array constructor/eliminator
-pairs given by \AC{imapₛ}/\AC{selₛ}, \AC{imap}/\AC{sel} and \AC{imapb}/\AC{selb};
-summation \AC{sum}; conditional \AC{zero-but} where the predicate is fixed to equality
-of two indices and the else branch is zero; \AC{slide} and \AC{backslide} exactly
-as described before; and numerical operations.  The latter includes \AC{logistic},
-plus and multiplication, division by a constant \AC{scaledown}, and unary \AC{minus}.
+The embedded language \AF{E} includes: variables \AC{var}; constants 0 and 1
+(of arbitrary shape) given by \AC{zero} and \AC{one} correspondingly; three
+flavours of array constructor/eliminator pairs given by \AC{imaps}/\AC{sels},
+\AC{imap}/\AC{sel} and \AC{imapb}/\AC{selb}; summation \AC{sum}; conditional
+\AC{zero-but} where the predicate is fixed to equality of two indices and the
+else branch is zero; \AC{slide} and \AC{backslide} exactly as described before;
+numerical operations which includes \AC{logistic}, plus and
+multiplication, division by a constant \AC{scaledown}, and unary \AC{minus};
+and let bindings for arrays given by \AC{let′}.
 The definition of the embedded language \AF{E} follows.  We also introduce the
-syntax for infix plus and multiplication denoted \AC{⊞} and \AC{⊠} correspondingly.
+syntax for infix plus and multiplication denoted \AC{⊞} and \AC{⊠}
+correspondingly.
 %\begin{mathpar}
 %\codeblock{
 \begin{code}%
@@ -738,15 +700,39 @@ syntax for infix plus and multiplication denoted \AC{⊞} and \AC{⊠} correspon
 \AgdaBound{a}\AgdaSpace{}%
 \AgdaBound{b}\<%
 \end{code}
-%}
-%\end{mathpar}
+Let us motivate the presence of three flavours of \AC{imap}/\AC{sel}
+constructors.  The difference between \AC{imap} and \AC{imapb} follows
+from the previous definitions: the former turns an $s$-shaped array
+of $p$-shaped arrays into a $(s ⊗ p)$-shaped array, whereas \AF{imapb}
+performs tiling based on the $s * p ≈ q$ equation.  Strictly speaking, 
+scalar version of imap, that we call \AC{imaps}, is not needed, because
+the same functionality can be achieved with \AC{imap}/\AC{sel}.
+However, if \AF{imap} computes a scalar in the body, its resulting shape 
+is $s ⊗ \AF{unit}$ which is not definitionally equal to $s$.  Using
+\AC{sel} for selecting a scalar from an $s$-shaped array requires
+casting the shape into $s ⊗ \AF{unit}$.  Hence every scalar imap or
+selection will require transporting over the $s ⊗ \AF{unit} ≡ s$ equality,
+This significantly clutters expressivity.  One could quotient the shape
+type by the above equality, but this requires switching to a more
+powerful type theory such as setoid- or cubical type theory.
 
-\subsection{Reals}
-\todo[inline]{Explain that this is our module for abstract reals with
-  operations and their properties and that we parametrise our
-  evaluator witht this module.}
 
-\begin{code}%
+
+\subsection{Evaluation}
+
+We give semantics of our language by interpreting \AD{E} expressions
+into \AD{Ar} arrays using combinators that we define earlier.  Later
+we will use this semantics to prove that our optimisations preserve
+the meaning of programs.
+
+\subsubsection{Reals}
+We we parametrise our semantics with respect to the encoding of reals.
+This choice makes it possible to abstract away from the implementational
+details in the definition and gives the ability to instantiate this
+semantics to the preferred encoding of reals.  We define the set of
+reals and their basic operations as follows.
+\begin{mathpar}
+\codeblock{\begin{code}%
 \>[0]\AgdaKeyword{record}\AgdaSpace{}%
 \AgdaRecord{Real}\AgdaSpace{}%
 \AgdaSymbol{:}\AgdaSpace{}%
@@ -786,8 +772,9 @@ syntax for infix plus and multiplication denoted \AC{⊞} and \AC{⊠} correspon
 \AgdaField{R}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
 \AgdaField{R}\<%
-\end{code}
-\begin{code}[hide]%
+\end{code}}
+\and
+\codeblock{\begin{code}[hide]%
 %
 \>[2]\AgdaKeyword{infixl}\AgdaSpace{}%
 \AgdaNumber{10}\AgdaSpace{}%
@@ -824,11 +811,12 @@ syntax for infix plus and multiplication denoted \AC{⊞} and \AC{⊠} correspon
 \AgdaOperator{\AgdaField{e\textasciicircum{}}}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaOperator{\AgdaField{-}}\AgdaSpace{}%
 \AgdaBound{x}\AgdaSymbol{))}\<%
-\end{code}
+\end{code}}
+\end{mathpar}
+We require arithmetic operations for real and the notion of zero and one that we
+define through \AF{fromℕ}.  With arithmetic operations in place, logistics function
+is a derived notion that we define within the \AM{Real} module for convenience.
 
-
-\subsection{Evaluation}
-\todo[inline]{The text in this section needs adjustment}
 \begin{code}[hide]%
 \>[0]\AgdaKeyword{module}\AgdaSpace{}%
 \AgdaModule{Eval}\AgdaSpace{}%
@@ -891,7 +879,7 @@ syntax for infix plus and multiplication denoted \AC{⊞} and \AC{⊠} correspon
 \AgdaBound{real}\<%
 \end{code}
 
-We define the interpretation \AF{⟦\_⟧} for (\AF{E} \AB{Γ} \AB{is}) into the value
+We interpret expressions in \AF{E} \AB{Γ} \AB{is} into the value set of values
 (\AF{Val} \AB{is}) in the environment (\AF{Env} \AB{Γ}).  The values are either
 arrays or positions of the corresponding shape.  Environments for the given context
 \AB{Γ} are tuples of values of the corresponding shapes.  The \AF{lookup} function
@@ -987,13 +975,31 @@ translates variables within the context into variables within the environment.
 \end{code}}
 \end{mathpar}
 
-In the definition of \AF{⟦\_⟧} we wrap the environment argument into double braces.
-This is an Agda-specific syntax for instance arguments\footnote{%
-  For more details on instance arguments see:
-  \url{https://agda.readthedocs.io/en/v2.6.3/language/instance-arguments.html}}
-which behave similarly to hidden arguments, but they have a more powerful resolution
-algorithm.  As a result we can omit mentioning the environment in recursive calls
-when it is passed unchanged.
+Interpretation is given by \AF{⟦\_⟧} that is defined as follows.  Note that we pass
+the environment as instance argument\footnote{For more details on instance arguments
+refer to \url{https://agda.readthedocs.io/en/v2.7.0.1/language/instance-arguments.html}.}
+which allows us to omit mentioning the environment
+in recursive calls when it is passed unchanged.
+%  ⟦_⟧ : E Γ is → Env Γ → Val is
+%  ⟦ var x               ⟧ ρ  = lookup x ρ
+%  ⟦ zero                ⟧ ρ  = K (fromℕ 0)
+%  ⟦ one                 ⟧ ρ  = K (fromℕ 1)
+%  ⟦ imaps e             ⟧ ρ  = λ i → ⟦ e ⟧ (ρ , i) [] 
+%  ⟦ sels e e₁           ⟧ ρ  = K (⟦ e ⟧ ρ (⟦ e₁ ⟧ ρ))
+%  ⟦ imap e              ⟧ ρ  = unnest λ i → ⟦ e ⟧ (ρ , i)
+%  ⟦ sel e e₁            ⟧ ρ  = nest (⟦ e ⟧ ρ) (⟦ e₁ ⟧ ρ)
+%  ⟦ imapb m e           ⟧ ρ  = Ar.imapb (λ i → ⟦ e ⟧ (ρ , i)) m
+%  ⟦ selb m e e₁         ⟧ ρ  = Ar.selb (⟦ e ⟧ ρ) m (⟦ e₁ ⟧ ρ)
+%  ⟦ sum e               ⟧ ρ  = Ar.sum (Ar.zipWith _+_) (K (fromℕ 0)) (λ i → ⟦ e ⟧ (ρ , i))
+%  ⟦ zero-but i j e      ⟧ ρ  = if ⌊ ⟦ i ⟧ ρ ≟ₚ ⟦ j ⟧ ρ ⌋ then ⟦ e ⟧ ρ else K (fromℕ 0)
+%  ⟦ slide e p e₁ s      ⟧ ρ  = Ar.slide (⟦ e ⟧ ρ) p (⟦ e₁ ⟧ ρ) s
+%  ⟦ backslide e e₁ s p  ⟧ ρ  = Ar.backslide (⟦ e ⟧ ρ) (⟦ e₁ ⟧ ρ) s (fromℕ 0) p
+%  ⟦ logistic e          ⟧ ρ  = Ar.map logisticʳ (⟦ e ⟧ ρ)
+%  ⟦ e ⊞ e₁              ⟧ ρ  = Ar.zipWith _+_ (⟦ e ⟧ ρ) (⟦ e₁ ⟧ ρ)
+%  ⟦ e ⊠ e₁              ⟧ ρ  = Ar.zipWith _*_ (⟦ e ⟧ ρ) (⟦ e₁ ⟧ ρ)
+%  ⟦ scaledown n e       ⟧ ρ  = Ar.map (_÷ fromℕ n) (⟦ e ⟧ ρ) 
+%  ⟦ minus e             ⟧ ρ  = Ar.map -_ (⟦ e ⟧ ρ)
+%  ⟦ let′ e e₁           ⟧ ρ  = ⟦ e₁ ⟧ (ρ , ⟦ e ⟧ ρ)
 \begin{code}%
 %
 \>[2]\AgdaOperator{\AgdaFunction{⟦\AgdaUnderscore{}⟧}}\AgdaSpace{}%
@@ -1002,8 +1008,10 @@ when it is passed unchanged.
 \AgdaGeneralizable{Γ}\AgdaSpace{}%
 \AgdaGeneralizable{is}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
+\AgdaSymbol{⦃}\AgdaSpace{}%
 \AgdaFunction{Env}\AgdaSpace{}%
 \AgdaGeneralizable{Γ}\AgdaSpace{}%
+\AgdaSymbol{⦄}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
 \AgdaFunction{Val}\AgdaSpace{}%
 \AgdaGeneralizable{is}\<%
@@ -1013,8 +1021,10 @@ when it is passed unchanged.
 \AgdaInductiveConstructor{var}\AgdaSpace{}%
 \AgdaBound{x}%
 \>[24]\AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}%
-\>[29]\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaSymbol{⦃}\AgdaSpace{}%
+\AgdaBound{ρ}\AgdaSpace{}%
+\AgdaSymbol{⦄}%
+\>[33]\AgdaSymbol{=}\AgdaSpace{}%
 \AgdaFunction{lookup}\AgdaSpace{}%
 \AgdaBound{x}\AgdaSpace{}%
 \AgdaBound{ρ}\<%
@@ -1023,9 +1033,11 @@ when it is passed unchanged.
 \>[2]\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
 \AgdaInductiveConstructor{zero}%
 \>[24]\AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}%
-\>[29]\AgdaSymbol{=}\AgdaSpace{}%
-\AgdaFunction{K}\AgdaSpace{}%
+\AgdaSymbol{⦃}\AgdaSpace{}%
+\AgdaBound{ρ}\AgdaSpace{}%
+\AgdaSymbol{⦄}%
+\>[33]\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaFunction{Ar.K}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaField{fromℕ}\AgdaSpace{}%
 \AgdaNumber{0}\AgdaSymbol{)}\<%
 \\
@@ -1033,9 +1045,11 @@ when it is passed unchanged.
 \>[2]\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
 \AgdaInductiveConstructor{one}%
 \>[24]\AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}%
-\>[29]\AgdaSymbol{=}\AgdaSpace{}%
-\AgdaFunction{K}\AgdaSpace{}%
+\AgdaSymbol{⦃}\AgdaSpace{}%
+\AgdaBound{ρ}\AgdaSpace{}%
+\AgdaSymbol{⦄}%
+\>[33]\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaFunction{Ar.K}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaField{fromℕ}\AgdaSpace{}%
 \AgdaNumber{1}\AgdaSymbol{)}\<%
 \\
@@ -1044,17 +1058,21 @@ when it is passed unchanged.
 \AgdaInductiveConstructor{imaps}\AgdaSpace{}%
 \AgdaBound{e}%
 \>[24]\AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}%
-\>[29]\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaSymbol{⦃}\AgdaSpace{}%
+\AgdaBound{ρ}\AgdaSpace{}%
+\AgdaSymbol{⦄}%
+\>[33]\AgdaSymbol{=}\AgdaSpace{}%
 \AgdaSymbol{λ}\AgdaSpace{}%
 \AgdaBound{i}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
 \AgdaBound{e}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaBound{ρ}\AgdaSpace{}%
+\AgdaSymbol{⦃}\AgdaSpace{}%
+\AgdaBound{ρ}\AgdaSpace{}%
 \AgdaOperator{\AgdaInductiveConstructor{,}}\AgdaSpace{}%
-\AgdaBound{i}\AgdaSymbol{)}\AgdaSpace{}%
+\AgdaBound{i}\AgdaSpace{}%
+\AgdaSymbol{⦄}\AgdaSpace{}%
 \AgdaInductiveConstructor{[]}\<%
 \\
 %
@@ -1063,35 +1081,39 @@ when it is passed unchanged.
 \AgdaBound{e}\AgdaSpace{}%
 \AgdaBound{e₁}%
 \>[24]\AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}%
-\>[29]\AgdaSymbol{=}\AgdaSpace{}%
-\AgdaFunction{K}\AgdaSpace{}%
+\AgdaSymbol{⦃}\AgdaSpace{}%
+\AgdaBound{ρ}\AgdaSpace{}%
+\AgdaSymbol{⦄}%
+\>[33]\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaFunction{Ar.K}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
 \AgdaBound{e}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
 \AgdaBound{e₁}\AgdaSpace{}%
-\AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}\AgdaSymbol{))}\<%
+\AgdaOperator{\AgdaFunction{⟧}}\AgdaSymbol{)}\<%
 \\
 %
 \>[2]\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
 \AgdaInductiveConstructor{imap}\AgdaSpace{}%
 \AgdaBound{e}%
 \>[24]\AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}%
-\>[29]\AgdaSymbol{=}\AgdaSpace{}%
-\AgdaFunction{unnest}\AgdaSpace{}%
+\AgdaSymbol{⦃}\AgdaSpace{}%
+\AgdaBound{ρ}\AgdaSpace{}%
+\AgdaSymbol{⦄}%
+\>[33]\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaFunction{Ar.unnest}\AgdaSpace{}%
 \AgdaSymbol{λ}\AgdaSpace{}%
 \AgdaBound{i}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
 \AgdaBound{e}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaBound{ρ}\AgdaSpace{}%
+\AgdaSymbol{⦃}\AgdaSpace{}%
+\AgdaBound{ρ}\AgdaSpace{}%
 \AgdaOperator{\AgdaInductiveConstructor{,}}\AgdaSpace{}%
-\AgdaBound{i}\AgdaSymbol{)}\<%
+\AgdaBound{i}\AgdaSpace{}%
+\AgdaSymbol{⦄}\<%
 \\
 %
 \>[2]\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
@@ -1099,17 +1121,17 @@ when it is passed unchanged.
 \AgdaBound{e}\AgdaSpace{}%
 \AgdaBound{e₁}%
 \>[24]\AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}%
-\>[29]\AgdaSymbol{=}\AgdaSpace{}%
-\AgdaFunction{nest}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
+\AgdaSymbol{⦃}\AgdaSpace{}%
+\AgdaBound{ρ}\AgdaSpace{}%
+\AgdaSymbol{⦄}%
+\>[33]\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaFunction{Ar.nest}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
 \AgdaBound{e}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}\AgdaSymbol{)}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
 \AgdaBound{e₁}\AgdaSpace{}%
-\AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}\AgdaSymbol{)}\<%
+\AgdaOperator{\AgdaFunction{⟧}}\<%
 \\
 %
 \>[2]\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
@@ -1117,8 +1139,10 @@ when it is passed unchanged.
 \AgdaBound{m}\AgdaSpace{}%
 \AgdaBound{e}%
 \>[24]\AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}%
-\>[29]\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaSymbol{⦃}\AgdaSpace{}%
+\AgdaBound{ρ}\AgdaSpace{}%
+\AgdaSymbol{⦄}%
+\>[33]\AgdaSymbol{=}\AgdaSpace{}%
 \AgdaFunction{Ar.imapb}\AgdaSpace{}%
 \AgdaSymbol{(λ}\AgdaSpace{}%
 \AgdaBound{i}\AgdaSpace{}%
@@ -1126,9 +1150,11 @@ when it is passed unchanged.
 \AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
 \AgdaBound{e}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaBound{ρ}\AgdaSpace{}%
+\AgdaSymbol{⦃}\AgdaSpace{}%
+\AgdaBound{ρ}\AgdaSpace{}%
 \AgdaOperator{\AgdaInductiveConstructor{,}}\AgdaSpace{}%
-\AgdaBound{i}\AgdaSymbol{))}\AgdaSpace{}%
+\AgdaBound{i}\AgdaSpace{}%
+\AgdaSymbol{⦄)}\AgdaSpace{}%
 \AgdaBound{m}\<%
 \\
 %
@@ -1138,30 +1164,32 @@ when it is passed unchanged.
 \AgdaBound{e}\AgdaSpace{}%
 \AgdaBound{e₁}%
 \>[24]\AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}%
-\>[29]\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaSymbol{⦃}\AgdaSpace{}%
+\AgdaBound{ρ}\AgdaSpace{}%
+\AgdaSymbol{⦄}%
+\>[33]\AgdaSymbol{=}\AgdaSpace{}%
 \AgdaFunction{Ar.selb}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
 \AgdaBound{e}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaBound{m}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
 \AgdaBound{e₁}\AgdaSpace{}%
-\AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}\AgdaSymbol{)}\<%
+\AgdaOperator{\AgdaFunction{⟧}}\<%
 \\
 %
 \>[2]\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
 \AgdaInductiveConstructor{sum}\AgdaSpace{}%
 \AgdaBound{e}%
 \>[24]\AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}%
-\>[29]\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaSymbol{⦃}\AgdaSpace{}%
+\AgdaBound{ρ}\AgdaSpace{}%
+\AgdaSymbol{⦄}%
+\>[33]\AgdaSymbol{=}\AgdaSpace{}%
 \AgdaFunction{Ar.sum}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaFunction{Ar.zipWith}\AgdaSpace{}%
 \AgdaOperator{\AgdaField{\AgdaUnderscore{}+\AgdaUnderscore{}}}\AgdaSymbol{)}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaFunction{K}\AgdaSpace{}%
+\AgdaSymbol{(}\AgdaFunction{Ar.K}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaField{fromℕ}\AgdaSpace{}%
 \AgdaNumber{0}\AgdaSymbol{))}\AgdaSpace{}%
 \AgdaSymbol{(λ}\AgdaSpace{}%
@@ -1170,9 +1198,11 @@ when it is passed unchanged.
 \AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
 \AgdaBound{e}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaBound{ρ}\AgdaSpace{}%
+\AgdaSymbol{⦃}\AgdaSpace{}%
+\AgdaBound{ρ}\AgdaSpace{}%
 \AgdaOperator{\AgdaInductiveConstructor{,}}\AgdaSpace{}%
-\AgdaBound{i}\AgdaSymbol{))}\<%
+\AgdaBound{i}\AgdaSpace{}%
+\AgdaSymbol{⦄)}\<%
 \\
 %
 \>[2]\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
@@ -1181,27 +1211,26 @@ when it is passed unchanged.
 \AgdaBound{j}\AgdaSpace{}%
 \AgdaBound{e}%
 \>[24]\AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}%
-\>[29]\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaSymbol{⦃}\AgdaSpace{}%
+\AgdaBound{ρ}\AgdaSpace{}%
+\AgdaSymbol{⦄}%
+\>[33]\AgdaSymbol{=}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{if}}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{⌊}}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
 \AgdaBound{i}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{≟ₚ}}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
 \AgdaBound{j}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{⌋}}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{then}}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
 \AgdaBound{e}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{else}}\AgdaSpace{}%
-\AgdaFunction{K}\AgdaSpace{}%
+\AgdaFunction{Ar.K}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaField{fromℕ}\AgdaSpace{}%
 \AgdaNumber{0}\AgdaSymbol{)}\<%
 \\
@@ -1213,18 +1242,18 @@ when it is passed unchanged.
 \AgdaBound{e₁}\AgdaSpace{}%
 \AgdaBound{s}%
 \>[24]\AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}%
-\>[29]\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaSymbol{⦃}\AgdaSpace{}%
+\AgdaBound{ρ}\AgdaSpace{}%
+\AgdaSymbol{⦄}%
+\>[33]\AgdaSymbol{=}\AgdaSpace{}%
 \AgdaFunction{Ar.slide}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
 \AgdaBound{e}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaBound{p}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
 \AgdaBound{e₁}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaBound{s}\<%
 \\
 %
@@ -1235,17 +1264,17 @@ when it is passed unchanged.
 \AgdaBound{s}\AgdaSpace{}%
 \AgdaBound{p}%
 \>[24]\AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}%
-\>[29]\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaSymbol{⦃}\AgdaSpace{}%
+\AgdaBound{ρ}\AgdaSpace{}%
+\AgdaSymbol{⦄}%
+\>[33]\AgdaSymbol{=}\AgdaSpace{}%
 \AgdaFunction{Ar.backslide}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
 \AgdaBound{e}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}\AgdaSymbol{)}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
 \AgdaBound{e₁}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaBound{s}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaField{fromℕ}\AgdaSpace{}%
 \AgdaNumber{0}\AgdaSymbol{)}\AgdaSpace{}%
@@ -1256,14 +1285,15 @@ when it is passed unchanged.
 \AgdaInductiveConstructor{logistic}\AgdaSpace{}%
 \AgdaBound{e}%
 \>[24]\AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}%
-\>[29]\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaSymbol{⦃}\AgdaSpace{}%
+\AgdaBound{ρ}\AgdaSpace{}%
+\AgdaSymbol{⦄}%
+\>[33]\AgdaSymbol{=}\AgdaSpace{}%
 \AgdaFunction{Ar.map}\AgdaSpace{}%
 \AgdaFunction{logisticʳ}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
 \AgdaBound{e}\AgdaSpace{}%
-\AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}\AgdaSymbol{)}\<%
+\AgdaOperator{\AgdaFunction{⟧}}\<%
 \\
 %
 \>[2]\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
@@ -1271,18 +1301,18 @@ when it is passed unchanged.
 \AgdaOperator{\AgdaInductiveConstructor{⊞}}\AgdaSpace{}%
 \AgdaBound{e₁}%
 \>[24]\AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}%
-\>[29]\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaSymbol{⦃}\AgdaSpace{}%
+\AgdaBound{ρ}\AgdaSpace{}%
+\AgdaSymbol{⦄}%
+\>[33]\AgdaSymbol{=}\AgdaSpace{}%
 \AgdaFunction{Ar.zipWith}\AgdaSpace{}%
 \AgdaOperator{\AgdaField{\AgdaUnderscore{}+\AgdaUnderscore{}}}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
 \AgdaBound{e}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}\AgdaSymbol{)}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
 \AgdaBound{e₁}\AgdaSpace{}%
-\AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}\AgdaSymbol{)}\<%
+\AgdaOperator{\AgdaFunction{⟧}}\<%
 \\
 %
 \>[2]\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
@@ -1290,18 +1320,18 @@ when it is passed unchanged.
 \AgdaOperator{\AgdaInductiveConstructor{⊠}}\AgdaSpace{}%
 \AgdaBound{e₁}%
 \>[24]\AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}%
-\>[29]\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaSymbol{⦃}\AgdaSpace{}%
+\AgdaBound{ρ}\AgdaSpace{}%
+\AgdaSymbol{⦄}%
+\>[33]\AgdaSymbol{=}\AgdaSpace{}%
 \AgdaFunction{Ar.zipWith}\AgdaSpace{}%
 \AgdaOperator{\AgdaField{\AgdaUnderscore{}*\AgdaUnderscore{}}}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
 \AgdaBound{e}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}\AgdaSymbol{)}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
 \AgdaBound{e₁}\AgdaSpace{}%
-\AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}\AgdaSymbol{)}\<%
+\AgdaOperator{\AgdaFunction{⟧}}\<%
 \\
 %
 \>[2]\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
@@ -1309,30 +1339,32 @@ when it is passed unchanged.
 \AgdaBound{n}\AgdaSpace{}%
 \AgdaBound{e}%
 \>[24]\AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}%
-\>[29]\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaSymbol{⦃}\AgdaSpace{}%
+\AgdaBound{ρ}\AgdaSpace{}%
+\AgdaSymbol{⦄}%
+\>[33]\AgdaSymbol{=}\AgdaSpace{}%
 \AgdaFunction{Ar.map}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaOperator{\AgdaField{\AgdaUnderscore{}÷}}\AgdaSpace{}%
 \AgdaField{fromℕ}\AgdaSpace{}%
 \AgdaBound{n}\AgdaSymbol{)}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
 \AgdaBound{e}\AgdaSpace{}%
-\AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}\AgdaSymbol{)}\<%
+\AgdaOperator{\AgdaFunction{⟧}}\<%
 \\
 %
 \>[2]\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
 \AgdaInductiveConstructor{minus}\AgdaSpace{}%
 \AgdaBound{e}%
 \>[24]\AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}%
-\>[29]\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaSymbol{⦃}\AgdaSpace{}%
+\AgdaBound{ρ}\AgdaSpace{}%
+\AgdaSymbol{⦄}%
+\>[33]\AgdaSymbol{=}\AgdaSpace{}%
 \AgdaFunction{Ar.map}\AgdaSpace{}%
 \AgdaOperator{\AgdaField{-\AgdaUnderscore{}}}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
 \AgdaBound{e}\AgdaSpace{}%
-\AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}\AgdaSymbol{)}\<%
+\AgdaOperator{\AgdaFunction{⟧}}\<%
 \\
 %
 \>[2]\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
@@ -1340,42 +1372,53 @@ when it is passed unchanged.
 \AgdaBound{e}\AgdaSpace{}%
 \AgdaBound{e₁}%
 \>[24]\AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}%
-\>[29]\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaSymbol{⦃}\AgdaSpace{}%
+\AgdaBound{ρ}\AgdaSpace{}%
+\AgdaSymbol{⦄}%
+\>[33]\AgdaSymbol{=}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
 \AgdaBound{e₁}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaBound{ρ}\AgdaSpace{}%
+\AgdaSymbol{⦃}\AgdaSpace{}%
+\AgdaBound{ρ}\AgdaSpace{}%
 \AgdaOperator{\AgdaInductiveConstructor{,}}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
 \AgdaBound{e}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
-\AgdaBound{ρ}\AgdaSymbol{)}\<%
+\AgdaSymbol{⦄}\<%
 \end{code}
-With the above definition we can better explain the choices of language constructors.
-The most important question to clarify is why do we have three array
-constructors/eliminators.  As the only conceptual datatype of our language is
-an array (of some shape), we do not have any direct way to talk about array elements.
-Therefore, we model the type of array elements (scalars) as arrays of a singleton shape.
-As can be seen, scalar selection \AC{selₛ} returns a singleton array
-(application of \AF{K}) where all the element(s) are equal to the element we are
-selecting.  The corresponding array constructor \AC{imapₛ} makes sure that if we
-compute \AB{s} elements of the shape \AF{unit}, we produce an array of shape \AB{s}
-(and not \AB{s} \AC{⊗} \AF{unit}).  This soves the problem of constructing arays
-from scalars, but how do we construct an array of a product shape?  Given that we
-have an expression in the context (\AB{Γ} \AC{▹} \AC{ix} \AB{s} \AC{▹} \AC{ix} \AB{p}),
-we need to produce an array of \AB{s} \AC{⊗} \AB{p}.  There are several ways how to
-solve this (\eg{} introducing nest/unnest or projections and pairing on indices),
-but it is clear that we need something more than just an \AC{imapₛ}.
-This is the reason to introduce \AC{imap}/\AC{sel} pair which operates on arrays
-of product shapes.  As average pooling operates on blocked arrays, we need
-a construction to express this in \AF{E}.  One could introduce explicit 
-\AF{block}/\AF{unblock}, but we merge blocking/unlocking action with
-imap/sel obtaining \AC{imapb}/\AC{selb}.  Our \AC{sum} constructor 
-gets an argument in the extended context which is summation index, so 
-conceptually we generate the values at every summation index before
-summing these values together.  As a result, we only need
-one instance of \AC{sum} which makes our expressions a little tidier.
+Mostly, the interpretation is a straightforward mapping into the \AF{Ar} constructors.
+In the \AC{imaps} case we can see how the implicit conversion from what would be a
+shape $s ⊗ \AF{unit}$ into $s$.  In case of \AC{imaps} we make a singleton array
+using \AF{K}. Note that \AF{sum} has explicit summation index like in a mathematical
+$\sum$-notation.
+
+
+% With the above definition we can better explain the choices of language constructors.
+% The most important question to clarify is why do we have three array
+% constructors/eliminators.  As the only conceptual datatype of our language is
+% an array (of some shape), we do not have any direct way to talk about array elements.
+% Therefore, we model the type of array elements (scalars) as arrays of a singleton shape.
+% As can be seen, scalar selection \AC{selₛ} returns a singleton array
+% (application of \AF{K}) where all the element(s) are equal to the element we are
+% selecting.  The corresponding array constructor \AC{imapₛ} makes sure that if we
+% compute \AB{s} elements of the shape \AF{unit}, we produce an array of shape \AB{s}
+% (and not \AB{s} \AC{⊗} \AF{unit}).  This soves the problem of constructing arays
+% from scalars, but how do we construct an array of a product shape?  Given that we
+% have an expression in the context (\AB{Γ} \AC{▹} \AC{ix} \AB{s} \AC{▹} \AC{ix} \AB{p}),
+% we need to produce an array of \AB{s} \AC{⊗} \AB{p}.  There are several ways how to
+% solve this (\eg{} introducing nest/unnest or projections and pairing on indices),
+% but it is clear that we need something more than just an \AC{imapₛ}.
+% This is the reason to introduce \AC{imap}/\AC{sel} pair which operates on arrays
+% of product shapes.  
+% As average pooling operates on blocked arrays, we need
+% a construction to express this in \AF{E}.  One could introduce explicit 
+% \AF{block}/\AF{unblock}, but we merge blocking/unlocking action with
+% imap/sel obtaining \AC{imapb}/\AC{selb}.  Our \AC{sum} constructor 
+% gets an argument in the extended context which is summation index, so 
+% conceptually we generate the values at every summation index before
+% summing these values together.  As a result, we only need
+% one instance of \AC{sum} which makes our expressions a little tidier.
 
 
 
@@ -2542,11 +2585,11 @@ under further binders.
 \\
 %
 \>[2]\AgdaFunction{Imap}%
-\>[1600I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[1593I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{∀}\AgdaSpace{}%
 \AgdaSymbol{\{}\AgdaBound{Γ}\AgdaSymbol{\}}\<%
 \\
-\>[.][@{}l@{}]\<[1600I]%
+\>[.][@{}l@{}]\<[1593I]%
 \>[7]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaFunction{GE}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{Γ}\AgdaSpace{}%
@@ -2594,11 +2637,11 @@ for \AC{let′}, providing a familiar let-like syntax.
 \begin{code}[hide]%
 %
 \>[2]\AgdaFunction{Sum}%
-\>[1637I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[1630I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{∀}\AgdaSpace{}%
 \AgdaSymbol{\{}\AgdaBound{Γ}\AgdaSymbol{\}}\<%
 \\
-\>[1637I][@{}l@{\AgdaIndent{0}}]%
+\>[1630I][@{}l@{\AgdaIndent{0}}]%
 \>[7]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaFunction{GE}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{Γ}\AgdaSpace{}%
@@ -2643,11 +2686,11 @@ for \AC{let′}, providing a familiar let-like syntax.
 \\[\AgdaEmptyExtraSkip]%
 %
 \>[2]\AgdaFunction{Imaps}%
-\>[1672I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[1665I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{∀}\AgdaSpace{}%
 \AgdaSymbol{\{}\AgdaBound{Γ}\AgdaSymbol{\}}\<%
 \\
-\>[.][@{}l@{}]\<[1672I]%
+\>[.][@{}l@{}]\<[1665I]%
 \>[8]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaFunction{GE}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{Γ}\AgdaSpace{}%
@@ -2692,11 +2735,11 @@ for \AC{let′}, providing a familiar let-like syntax.
 \\[\AgdaEmptyExtraSkip]%
 %
 \>[2]\AgdaFunction{Imapb}%
-\>[1707I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[1700I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{∀}\AgdaSpace{}%
 \AgdaSymbol{\{}\AgdaBound{Γ}\AgdaSymbol{\}}\<%
 \\
-\>[.][@{}l@{}]\<[1707I]%
+\>[.][@{}l@{}]\<[1700I]%
 \>[8]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{*}}\AgdaSpace{}%
@@ -3104,7 +3147,7 @@ For example, consider this expression:
 %
 \>[2]\AgdaSymbol{\AgdaUnderscore{}}\AgdaSpace{}%
 \AgdaSymbol{=}%
-\>[1957I]\AgdaFunction{Lcon}\AgdaSpace{}%
+\>[1950I]\AgdaFunction{Lcon}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaInductiveConstructor{ar}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaInductiveConstructor{ι}\AgdaSpace{}%
 \AgdaNumber{5}\AgdaSymbol{)}\AgdaSpace{}%
@@ -3121,7 +3164,7 @@ For example, consider this expression:
 \AgdaInductiveConstructor{[]}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaInductiveConstructor{ε}\<%
 \\
-\>[.][@{}l@{}]\<[1957I]%
+\>[.][@{}l@{}]\<[1950I]%
 \>[6]\AgdaSymbol{λ}\AgdaSpace{}%
 \AgdaBound{a}\AgdaSpace{}%
 \AgdaBound{b}\AgdaSpace{}%
@@ -3293,7 +3336,7 @@ running example in $E$.  We consider an example for the \AF{conv}-olution:
 \begin{code}%
 %
 \>[2]\AgdaFunction{conv}%
-\>[2074I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[2067I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{∀}\AgdaSpace{}%
 \AgdaSymbol{\{}\AgdaBound{Γ}\AgdaSymbol{\}}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
@@ -3322,7 +3365,7 @@ running example in $E$.  We consider an example for the \AF{conv}-olution:
 \AgdaGeneralizable{u}\AgdaSpace{}%
 \AgdaSymbol{⦄}\<%
 \\
-\>[.][@{}l@{}]\<[2074I]%
+\>[.][@{}l@{}]\<[2067I]%
 \>[7]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaDatatype{E}\AgdaSpace{}%
 \AgdaBound{Γ}\AgdaSpace{}%
@@ -3369,7 +3412,7 @@ running example in $E$.  We consider an example for the \AF{conv}-olution:
 %
 \>[2]\AgdaFunction{mconv}\AgdaSpace{}%
 \AgdaSymbol{:}%
-\>[2136I]\AgdaSymbol{⦃}\AgdaSpace{}%
+\>[2129I]\AgdaSymbol{⦃}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{+}}\AgdaSpace{}%
 \AgdaGeneralizable{p}\AgdaSpace{}%
@@ -3392,7 +3435,7 @@ running example in $E$.  We consider an example for the \AF{conv}-olution:
 \AgdaOperator{\AgdaFunction{⊗}}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSymbol{)))}\<%
 \\
-\>[.][@{}l@{}]\<[2136I]%
+\>[.][@{}l@{}]\<[2129I]%
 \>[10]\AgdaSymbol{(}\AgdaBound{bᵥ}\AgdaSpace{}%
 \AgdaSymbol{:}\AgdaSpace{}%
 \AgdaDatatype{E}\AgdaSpace{}%
@@ -3456,7 +3499,7 @@ running example in $E$.  We consider an example for the \AF{conv}-olution:
 \\[\AgdaEmptyExtraSkip]%
 %
 \>[2]\AgdaFunction{avgp₂}%
-\>[2209I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[2202I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{∀}\AgdaSpace{}%
 \AgdaBound{m}\AgdaSpace{}%
 \AgdaBound{n}\AgdaSpace{}%
@@ -3476,7 +3519,7 @@ running example in $E$.  We consider an example for the \AF{conv}-olution:
 \AgdaOperator{\AgdaInductiveConstructor{∷}}\AgdaSpace{}%
 \AgdaInductiveConstructor{[]}\AgdaSymbol{)))}\<%
 \\
-\>[.][@{}l@{}]\<[2209I]%
+\>[.][@{}l@{}]\<[2202I]%
 \>[8]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaDatatype{E}\AgdaSpace{}%
 \AgdaGeneralizable{Γ}\AgdaSpace{}%
@@ -3604,8 +3647,8 @@ Finally, the CNN embedded in $E$ is given as follows:
 %
 \>[2]\AgdaFunction{cnn}\AgdaSpace{}%
 \AgdaSymbol{=}%
-\>[2321I]\AgdaFunction{Lcon}%
-\>[2322I]\AgdaSymbol{(}%
+\>[2314I]\AgdaFunction{Lcon}%
+\>[2315I]\AgdaSymbol{(}%
 \>[16]\AgdaInductiveConstructor{ar}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaNumber{28}\AgdaSpace{}%
 \AgdaOperator{\AgdaInductiveConstructor{∷}}\AgdaSpace{}%
@@ -3622,7 +3665,7 @@ Finally, the CNN embedded in $E$ is given as follows:
 \AgdaOperator{\AgdaInductiveConstructor{∷}}\AgdaSpace{}%
 \AgdaInductiveConstructor{[]}\AgdaSymbol{)}\<%
 \\
-\>[2322I][@{}l@{\AgdaIndent{0}}]%
+\>[2315I][@{}l@{\AgdaIndent{0}}]%
 \>[14]\AgdaOperator{\AgdaInductiveConstructor{∷}}\AgdaSpace{}%
 \AgdaInductiveConstructor{ar}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaNumber{6}\AgdaSpace{}%
@@ -3684,12 +3727,12 @@ Finally, the CNN embedded in $E$ is given as follows:
 \>[14]\AgdaOperator{\AgdaInductiveConstructor{∷}}\AgdaSpace{}%
 \AgdaInductiveConstructor{[]}\AgdaSymbol{)}\<%
 \\
-\>[.][@{}l@{}]\<[2322I]%
+\>[.][@{}l@{}]\<[2315I]%
 \>[13]\AgdaSymbol{(}\AgdaInductiveConstructor{ar}\AgdaSpace{}%
 \AgdaInductiveConstructor{[]}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaInductiveConstructor{ε}\<%
 \\
-\>[.][@{}l@{}]\<[2321I]%
+\>[.][@{}l@{}]\<[2314I]%
 \>[8]\AgdaSymbol{λ}\AgdaSpace{}%
 \AgdaBound{inp}\AgdaSpace{}%
 \AgdaBound{k₁}\AgdaSpace{}%

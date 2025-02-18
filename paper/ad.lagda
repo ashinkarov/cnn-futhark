@@ -755,7 +755,7 @@ module Futhark where
   open import arrays 
   open import lang
   open import Function
-  open Array hiding (_++_; Ix)
+  open Array hiding (Ix)
   open Lang
 
   open import Effect.Monad.State

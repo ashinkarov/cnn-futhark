@@ -17,31 +17,24 @@ Any implementation of automatic differentiation has to decide which operations
 are supported.  Surely, it does not make sense to compute derivatives
 of a function that opens a file.  This choice, no matter how it is implemented,
 can be seen as a definition of an embedded language.
-Once we accept to identify an embedded language, the idea of embedding it in a way
-that facilitates extraction actually appears rather naturally and thus advances
-the approach that we propose in this paper.
+Once we accept the idea of embedded language, we can choose to use deep embedding
+which can serve two purposes.  We can implement both AD and extraction within the
+host lanugae without modifying the compiler.  This is particularly useful in the
+context of a theorem prover, as we can annotate our implementations with the
+correctness invariants of our choice.  This is the approach we are taking here.
 
-Coming back to our example, we have to choose the primitives that the embedded language
-should support. They need to be sufficient to express AD as well as to define CNNs.
-The main trade-off here is the choice of the level of abstraction of these primitives:
-low-level primitives are easier to differentiate, but they make the overall expressions
-more complex which also adds to the challenge of optimising code.
-Making this choice is difficult and, most likely, requires quite some adjustment 
-when striving for performance.
-Here we see a key benefit of the approach we propose in this paper:
-the use of a single framework for the embedding, the optimisation, and the extraction
-makes the implementation comparatively small, allowing for quick adjustments in the
-level of abstraction, code optimisation and its extraction.
-We start with a pragmatic approach; we include the primitives that are either shared
-by the model and the back-end
-or that can be easily implemented in the back-end language.
+The next challenge lies in identifying the primitives for the embedded language.
+These have to be sufficiently powerful to define CNNs and to express AD.
+Finding the right level of abstraction for the primitives is non-trivial,
+as it heavily depends on the capabilities of the backend language and the
+optimisations that we can perform locally.  However, keeping the DSL, optimisations
+and extraction within a single framewrok makes it possible to experiment
+with these choices easily.
 
-It turns out that it is possible to choose the primitives in a way that the derivatives 
-can be expressed in the very same embedded language. 
-While this at first glance may just seem to be just a nice coincidence, it turns out
-that this has several tangible benefits: high-order derivatives can be computed 
-by the same transformation and we can share all optimisations between the code itself
-and its derivatives.
+The primitives that we have chosen are easy to implement in the backend language
+and they guarantee that AD can be performed within this DSL.
+The latter is very useful as: we can do high-order derivatives within the
+same language and we can use optimisations for programs and their derivatives.
 \begin{code}[hide]
 module Lang where
   --open Array hiding (sum; slide; backslide)
@@ -55,12 +48,17 @@ module Lang where
 
 \end{code}
 
-As we operate within a dependently-typed proof-assistant, we can easily make our
-embedded language well-scoped and intrinsically typed (shaped in our case).  Our
-context \AF{Ctx} is a snoc-list of shapes where each shape has a tag indicating whether
-it is an index or an array.  We use de Bruijn variables given by the relation
-\AF{\_∈\_} in the usual way.  We also define variables \AB{v₁}, \AB{v₂}, \etc{}
-by iteratively applying \AC{vₛ} to \AC{v₀} (definition not shown).
+In Agda we can easily make our
+embedded language well-scoped and intrinsically typed (shaped).
+This is very useful as it eliminates a large class of errors that have to do
+with wrong variables uses and ill-typed expressions.
+Types of our language are given by \AD{IS}.  We distinguish between arrays of
+some shape $s$ (denoted by \AC{ar}) and indices of shape $s$
+(denoted by \AC{ix}).  Contexts are snoc-lists of \AF{IS}-es, and they are
+given by \AD{Ctx}.  We use de Bruijn variables given by the relation
+\AF{\_∈\_} in the usual way. 
+%We also define variables \AB{v₁}, \AB{v₂}, \etc{}
+%by iteratively applying \AC{vₛ} to \AC{v₀} (definition not shown).
 \begin{mathpar}
 \codeblock{\begin{code}
   data IS : Set where
@@ -85,29 +83,35 @@ by iteratively applying \AC{vₛ} to \AC{v₀} (definition not shown).
     vₛ  : is ∈ Γ → is ∈ (Γ ▹ ip)
 \end{code}}
 \end{mathpar}
-Note that while our contexts are non-dependent (\ie{} the shapes do not depend on the
-terms), we use non-trivial shape dependencies within the constructors.  The embedded
-language does not have a notion of shape as a value, therefore all the shape dependencies
-are handled by Agda, keeping our language simply typed (shaped).  This separation is
-very helpful when it comes to writing embedded programs.% XXX: more explanation? 
+Note that while our contexts are non-dependent (\ie{} types do not depend on the
+members of the context), we use non-trivial dependencies within constructors.
+The embedded language does not have a notion of shape as a value, therefore all
+the shape dependencies are handled by Agda, keeping our language simply
+typed (shaped).  This is very helpful when it comes to writing
+embedded programs.% XXX: more explanation? 
 \begin{code}[hide]
   --pattern v₀ = v₀
-  pattern v₁ = vₛ v₀
-  pattern v₂ = vₛ v₁
-  pattern v₃ = vₛ v₂
-  pattern v₄ = vₛ v₃
-  pattern v₅ = vₛ v₄
-  pattern v₆ = vₛ v₅
-  pattern v₇ = vₛ v₆
-  pattern v₈ = vₛ v₇
-  pattern v₉ = vₛ v₈
+--  pattern v₁ = vₛ v₀
+--  pattern v₂ = vₛ v₁
+--  pattern v₃ = vₛ v₂
+--  pattern v₄ = vₛ v₃
+--  pattern v₅ = vₛ v₄
+--  pattern v₆ = vₛ v₅
+--  pattern v₇ = vₛ v₆
+--  pattern v₈ = vₛ v₇
+--  pattern v₉ = vₛ v₈
 
   infixl 10 _⊞_
   infixl 15 _⊠_
 \end{code}
-We start with two helper definitions: a singleton shape that we call \AF{unit}
-and the type for binary operations that we support (for now only addition and
-multiplication).
+
+All arrays in our language are assumed to be arrays of reals.  This is why
+our contexts do not carry array element types.  However, we distinguish
+singleton arrays of shape \AF{unit} that always contain a single element.
+Such arrays are called scalars in the array literature and they are mapped
+into the type that represents real in the backend \eg{} double.
+We support two binary operstions in our langauge (addition and multiplication)
+that are given by \AD{Bop}.
 \begin{mathpar}
 \codeblock{\begin{code}
   unit : S
@@ -120,15 +124,18 @@ multiplication).
 \end{code}}
 \end{mathpar}
 
-The embedded language \AF{E} includes: variables \AC{var}; constants 0 and 1 given
-by \AC{zero} and \AC{one} correspondingly; three flavours of array constructor/eliminator
-pairs given by \AC{imapₛ}/\AC{selₛ}, \AC{imap}/\AC{sel} and \AC{imapb}/\AC{selb};
-summation \AC{sum}; conditional \AC{zero-but} where the predicate is fixed to equality
-of two indices and the else branch is zero; \AC{slide} and \AC{backslide} exactly
-as described before; and numerical operations.  The latter includes \AC{logistic},
-plus and multiplication, division by a constant \AC{scaledown}, and unary \AC{minus}.
+The embedded language \AF{E} includes: variables \AC{var}; constants 0 and 1
+(of arbitrary shape) given by \AC{zero} and \AC{one} correspondingly; three
+flavours of array constructor/eliminator pairs given by \AC{imaps}/\AC{sels},
+\AC{imap}/\AC{sel} and \AC{imapb}/\AC{selb}; summation \AC{sum}; conditional
+\AC{zero-but} where the predicate is fixed to equality of two indices and the
+else branch is zero; \AC{slide} and \AC{backslide} exactly as described before;
+numerical operations which includes \AC{logistic}, plus and
+multiplication, division by a constant \AC{scaledown}, and unary \AC{minus};
+and let bindings for arrays given by \AC{let′}.
 The definition of the embedded language \AF{E} follows.  We also introduce the
-syntax for infix plus and multiplication denoted \AC{⊞} and \AC{⊠} correspondingly.
+syntax for infix plus and multiplication denoted \AC{⊞} and \AC{⊠}
+correspondingly.
 %\begin{mathpar}
 %\codeblock{
 \begin{code}
@@ -161,23 +168,48 @@ syntax for infix plus and multiplication denoted \AC{⊞} and \AC{⊠} correspon
   pattern _⊠_ a b = bin mul a b
   pattern _⊞_ a b = bin plus a b
 \end{code}
-%}
-%\end{mathpar}
+Let us motivate the presence of three flavours of \AC{imap}/\AC{sel}
+constructors.  The difference between \AC{imap} and \AC{imapb} follows
+from the previous definitions: the former turns an $s$-shaped array
+of $p$-shaped arrays into a $(s ⊗ p)$-shaped array, whereas \AF{imapb}
+performs tiling based on the $s * p ≈ q$ equation.  Strictly speaking, 
+scalar version of imap, that we call \AC{imaps}, is not needed, because
+the same functionality can be achieved with \AC{imap}/\AC{sel}.
+However, if \AF{imap} computes a scalar in the body, its resulting shape 
+is $s ⊗ \AF{unit}$ which is not definitionally equal to $s$.  Using
+\AC{sel} for selecting a scalar from an $s$-shaped array requires
+casting the shape into $s ⊗ \AF{unit}$.  Hence every scalar imap or
+selection will require transporting over the $s ⊗ \AF{unit} ≡ s$ equality,
+This significantly clutters expressivity.  One could quotient the shape
+type by the above equality, but this requires switching to a more
+powerful type theory such as setoid- or cubical type theory.
 
-\subsection{Reals}
-\todo[inline]{Explain that this is our module for abstract reals with
-  operations and their properties and that we parametrise our
-  evaluator witht this module.}
 
-\begin{code}
+
+\subsection{Evaluation}
+
+We give semantics of our language by interpreting \AD{E} expressions
+into \AD{Ar} arrays using combinators that we define earlier.  Later
+we will use this semantics to prove that our optimisations preserve
+the meaning of programs.
+
+\subsubsection{Reals}
+We we parametrise our semantics with respect to the encoding of reals.
+This choice makes it possible to abstract away from the implementational
+details in the definition and gives the ability to instantiate this
+semantics to the preferred encoding of reals.  We define the set of
+reals and their basic operations as follows.
+\begin{mathpar}
+\codeblock{\begin{code}
 record Real : Set₁ where
   field
     R : Set
     fromℕ : ℕ → R
     _+_ _*_ _÷_ : R → R → R
     -_ e^_ : R → R
-\end{code}
-\begin{code}[hide]
+\end{code}}
+\and
+\codeblock{\begin{code}[hide]
   infixl 10 _+_ 
   infixl 15 _*_ 
   infixl 15 _÷_ 
@@ -185,11 +217,12 @@ record Real : Set₁ where
 \begin{code}
   logisticʳ : R → R
   logisticʳ x = fromℕ 1 ÷ (fromℕ 1 + e^ (- x))
-\end{code}
+\end{code}}
+\end{mathpar}
+We require arithmetic operations for real and the notion of zero and one that we
+define through \AF{fromℕ}.  With arithmetic operations in place, logistics function
+is a derived notion that we define within the \AM{Real} module for convenience.
 
-
-\subsection{Evaluation}
-\todo[inline]{The text in this section needs adjustment}
 \begin{code}[hide]
 module Eval (real : Real) where
   --open import Data.Float as F renaming (Float to ℝ) hiding (⌊_⌋)
@@ -204,7 +237,7 @@ module Eval (real : Real) where
   open Real real
 \end{code}
 
-We define the interpretation \AF{⟦\_⟧} for (\AF{E} \AB{Γ} \AB{is}) into the value
+We interpret expressions in \AF{E} \AB{Γ} \AB{is} into the value set of values
 (\AF{Val} \AB{is}) in the environment (\AF{Env} \AB{Γ}).  The values are either
 arrays or positions of the corresponding shape.  Environments for the given context
 \AB{Γ} are tuples of values of the corresponding shapes.  The \AF{lookup} function
@@ -229,59 +262,85 @@ translates variables within the context into variables within the environment.
 \end{code}}
 \end{mathpar}
 
-In the definition of \AF{⟦\_⟧} we wrap the environment argument into double braces.
-This is an Agda-specific syntax for instance arguments\footnote{%
-  For more details on instance arguments see:
-  \url{https://agda.readthedocs.io/en/v2.6.3/language/instance-arguments.html}}
-which behave similarly to hidden arguments, but they have a more powerful resolution
-algorithm.  As a result we can omit mentioning the environment in recursive calls
-when it is passed unchanged.
+Interpretation is given by \AF{⟦\_⟧} that is defined as follows.  Note that we pass
+the environment as instance argument\footnote{For more details on instance arguments
+refer to \url{https://agda.readthedocs.io/en/v2.7.0.1/language/instance-arguments.html}.}
+which allows us to omit mentioning the environment
+in recursive calls when it is passed unchanged.
+%  ⟦_⟧ : E Γ is → Env Γ → Val is
+%  ⟦ var x               ⟧ ρ  = lookup x ρ
+%  ⟦ zero                ⟧ ρ  = K (fromℕ 0)
+%  ⟦ one                 ⟧ ρ  = K (fromℕ 1)
+%  ⟦ imaps e             ⟧ ρ  = λ i → ⟦ e ⟧ (ρ , i) [] 
+%  ⟦ sels e e₁           ⟧ ρ  = K (⟦ e ⟧ ρ (⟦ e₁ ⟧ ρ))
+%  ⟦ imap e              ⟧ ρ  = unnest λ i → ⟦ e ⟧ (ρ , i)
+%  ⟦ sel e e₁            ⟧ ρ  = nest (⟦ e ⟧ ρ) (⟦ e₁ ⟧ ρ)
+%  ⟦ imapb m e           ⟧ ρ  = Ar.imapb (λ i → ⟦ e ⟧ (ρ , i)) m
+%  ⟦ selb m e e₁         ⟧ ρ  = Ar.selb (⟦ e ⟧ ρ) m (⟦ e₁ ⟧ ρ)
+%  ⟦ sum e               ⟧ ρ  = Ar.sum (Ar.zipWith _+_) (K (fromℕ 0)) (λ i → ⟦ e ⟧ (ρ , i))
+%  ⟦ zero-but i j e      ⟧ ρ  = if ⌊ ⟦ i ⟧ ρ ≟ₚ ⟦ j ⟧ ρ ⌋ then ⟦ e ⟧ ρ else K (fromℕ 0)
+%  ⟦ slide e p e₁ s      ⟧ ρ  = Ar.slide (⟦ e ⟧ ρ) p (⟦ e₁ ⟧ ρ) s
+%  ⟦ backslide e e₁ s p  ⟧ ρ  = Ar.backslide (⟦ e ⟧ ρ) (⟦ e₁ ⟧ ρ) s (fromℕ 0) p
+%  ⟦ logistic e          ⟧ ρ  = Ar.map logisticʳ (⟦ e ⟧ ρ)
+%  ⟦ e ⊞ e₁              ⟧ ρ  = Ar.zipWith _+_ (⟦ e ⟧ ρ) (⟦ e₁ ⟧ ρ)
+%  ⟦ e ⊠ e₁              ⟧ ρ  = Ar.zipWith _*_ (⟦ e ⟧ ρ) (⟦ e₁ ⟧ ρ)
+%  ⟦ scaledown n e       ⟧ ρ  = Ar.map (_÷ fromℕ n) (⟦ e ⟧ ρ) 
+%  ⟦ minus e             ⟧ ρ  = Ar.map -_ (⟦ e ⟧ ρ)
+%  ⟦ let′ e e₁           ⟧ ρ  = ⟦ e₁ ⟧ (ρ , ⟦ e ⟧ ρ)
 \begin{code}
-  ⟦_⟧ : E Γ is → Env Γ → Val is
-  ⟦ var x               ⟧ ρ  = lookup x ρ
-  ⟦ zero                ⟧ ρ  = K (fromℕ 0)
-  ⟦ one                 ⟧ ρ  = K (fromℕ 1)
-  ⟦ imaps e             ⟧ ρ  = λ i → ⟦ e ⟧ (ρ , i) [] 
-  ⟦ sels e e₁           ⟧ ρ  = K (⟦ e ⟧ ρ (⟦ e₁ ⟧ ρ))
-  ⟦ imap e              ⟧ ρ  = unnest λ i → ⟦ e ⟧ (ρ , i)
-  ⟦ sel e e₁            ⟧ ρ  = nest (⟦ e ⟧ ρ) (⟦ e₁ ⟧ ρ)
-  ⟦ imapb m e           ⟧ ρ  = Ar.imapb (λ i → ⟦ e ⟧ (ρ , i)) m
-  ⟦ selb m e e₁         ⟧ ρ  = Ar.selb (⟦ e ⟧ ρ) m (⟦ e₁ ⟧ ρ)
-  ⟦ sum e               ⟧ ρ  = Ar.sum (Ar.zipWith _+_) (K (fromℕ 0)) (λ i → ⟦ e ⟧ (ρ , i))
-  ⟦ zero-but i j e      ⟧ ρ  = if ⌊ ⟦ i ⟧ ρ ≟ₚ ⟦ j ⟧ ρ ⌋ then ⟦ e ⟧ ρ else K (fromℕ 0)
-  ⟦ slide e p e₁ s      ⟧ ρ  = Ar.slide (⟦ e ⟧ ρ) p (⟦ e₁ ⟧ ρ) s
-  ⟦ backslide e e₁ s p  ⟧ ρ  = Ar.backslide (⟦ e ⟧ ρ) (⟦ e₁ ⟧ ρ) s (fromℕ 0) p
-  ⟦ logistic e          ⟧ ρ  = Ar.map logisticʳ (⟦ e ⟧ ρ)
-  ⟦ e ⊞ e₁              ⟧ ρ  = Ar.zipWith _+_ (⟦ e ⟧ ρ) (⟦ e₁ ⟧ ρ)
-  ⟦ e ⊠ e₁              ⟧ ρ  = Ar.zipWith _*_ (⟦ e ⟧ ρ) (⟦ e₁ ⟧ ρ)
-  ⟦ scaledown n e       ⟧ ρ  = Ar.map (_÷ fromℕ n) (⟦ e ⟧ ρ) 
-  ⟦ minus e             ⟧ ρ  = Ar.map -_ (⟦ e ⟧ ρ)
-  ⟦ let′ e e₁           ⟧ ρ  = ⟦ e₁ ⟧ (ρ , ⟦ e ⟧ ρ)
+  ⟦_⟧ : E Γ is → ⦃ Env Γ ⦄ → Val is
+  ⟦ var x               ⟧ ⦃ ρ ⦄  = lookup x ρ
+  ⟦ zero                ⟧ ⦃ ρ ⦄  = Ar.K (fromℕ 0)
+  ⟦ one                 ⟧ ⦃ ρ ⦄  = Ar.K (fromℕ 1)
+  ⟦ imaps e             ⟧ ⦃ ρ ⦄  = λ i → ⟦ e ⟧ ⦃ ρ , i ⦄ [] 
+  ⟦ sels e e₁           ⟧ ⦃ ρ ⦄  = Ar.K (⟦ e ⟧ ⟦ e₁ ⟧)
+  ⟦ imap e              ⟧ ⦃ ρ ⦄  = Ar.unnest λ i → ⟦ e ⟧ ⦃ ρ , i ⦄
+  ⟦ sel e e₁            ⟧ ⦃ ρ ⦄  = Ar.nest ⟦ e ⟧ ⟦ e₁ ⟧
+  ⟦ imapb m e           ⟧ ⦃ ρ ⦄  = Ar.imapb (λ i → ⟦ e ⟧ ⦃ ρ , i ⦄) m
+  ⟦ selb m e e₁         ⟧ ⦃ ρ ⦄  = Ar.selb ⟦ e ⟧ m ⟦ e₁ ⟧
+  ⟦ sum e               ⟧ ⦃ ρ ⦄  = Ar.sum (Ar.zipWith _+_) (Ar.K (fromℕ 0)) (λ i → ⟦ e ⟧ ⦃ ρ , i ⦄)
+  ⟦ zero-but i j e      ⟧ ⦃ ρ ⦄  = if ⌊ ⟦ i ⟧ ≟ₚ ⟦ j ⟧ ⌋ then ⟦ e ⟧ else Ar.K (fromℕ 0)
+  ⟦ slide e p e₁ s      ⟧ ⦃ ρ ⦄  = Ar.slide ⟦ e ⟧ p ⟦ e₁ ⟧ s
+  ⟦ backslide e e₁ s p  ⟧ ⦃ ρ ⦄  = Ar.backslide ⟦ e ⟧ ⟦ e₁ ⟧ s (fromℕ 0) p
+  ⟦ logistic e          ⟧ ⦃ ρ ⦄  = Ar.map logisticʳ ⟦ e ⟧
+  ⟦ e ⊞ e₁              ⟧ ⦃ ρ ⦄  = Ar.zipWith _+_ ⟦ e ⟧ ⟦ e₁ ⟧
+  ⟦ e ⊠ e₁              ⟧ ⦃ ρ ⦄  = Ar.zipWith _*_ ⟦ e ⟧ ⟦ e₁ ⟧
+  ⟦ scaledown n e       ⟧ ⦃ ρ ⦄  = Ar.map (_÷ fromℕ n) ⟦ e ⟧
+  ⟦ minus e             ⟧ ⦃ ρ ⦄  = Ar.map -_ ⟦ e ⟧
+  ⟦ let′ e e₁           ⟧ ⦃ ρ ⦄  = ⟦ e₁ ⟧ ⦃ ρ , ⟦ e ⟧ ⦄
 \end{code}
-With the above definition we can better explain the choices of language constructors.
-The most important question to clarify is why do we have three array
-constructors/eliminators.  As the only conceptual datatype of our language is
-an array (of some shape), we do not have any direct way to talk about array elements.
-Therefore, we model the type of array elements (scalars) as arrays of a singleton shape.
-As can be seen, scalar selection \AC{selₛ} returns a singleton array
-(application of \AF{K}) where all the element(s) are equal to the element we are
-selecting.  The corresponding array constructor \AC{imapₛ} makes sure that if we
-compute \AB{s} elements of the shape \AF{unit}, we produce an array of shape \AB{s}
-(and not \AB{s} \AC{⊗} \AF{unit}).  This soves the problem of constructing arays
-from scalars, but how do we construct an array of a product shape?  Given that we
-have an expression in the context (\AB{Γ} \AC{▹} \AC{ix} \AB{s} \AC{▹} \AC{ix} \AB{p}),
-we need to produce an array of \AB{s} \AC{⊗} \AB{p}.  There are several ways how to
-solve this (\eg{} introducing nest/unnest or projections and pairing on indices),
-but it is clear that we need something more than just an \AC{imapₛ}.
-This is the reason to introduce \AC{imap}/\AC{sel} pair which operates on arrays
-of product shapes.  As average pooling operates on blocked arrays, we need
-a construction to express this in \AF{E}.  One could introduce explicit 
-\AF{block}/\AF{unblock}, but we merge blocking/unlocking action with
-imap/sel obtaining \AC{imapb}/\AC{selb}.  Our \AC{sum} constructor 
-gets an argument in the extended context which is summation index, so 
-conceptually we generate the values at every summation index before
-summing these values together.  As a result, we only need
-one instance of \AC{sum} which makes our expressions a little tidier.
+Mostly, the interpretation is a straightforward mapping into the \AF{Ar} constructors.
+In the \AC{imaps} case we can see how the implicit conversion from what would be a
+shape $s ⊗ \AF{unit}$ into $s$.  In case of \AC{imaps} we make a singleton array
+using \AF{K}. Note that \AF{sum} has explicit summation index like in a mathematical
+$\sum$-notation.
+
+
+% With the above definition we can better explain the choices of language constructors.
+% The most important question to clarify is why do we have three array
+% constructors/eliminators.  As the only conceptual datatype of our language is
+% an array (of some shape), we do not have any direct way to talk about array elements.
+% Therefore, we model the type of array elements (scalars) as arrays of a singleton shape.
+% As can be seen, scalar selection \AC{selₛ} returns a singleton array
+% (application of \AF{K}) where all the element(s) are equal to the element we are
+% selecting.  The corresponding array constructor \AC{imapₛ} makes sure that if we
+% compute \AB{s} elements of the shape \AF{unit}, we produce an array of shape \AB{s}
+% (and not \AB{s} \AC{⊗} \AF{unit}).  This soves the problem of constructing arays
+% from scalars, but how do we construct an array of a product shape?  Given that we
+% have an expression in the context (\AB{Γ} \AC{▹} \AC{ix} \AB{s} \AC{▹} \AC{ix} \AB{p}),
+% we need to produce an array of \AB{s} \AC{⊗} \AB{p}.  There are several ways how to
+% solve this (\eg{} introducing nest/unnest or projections and pairing on indices),
+% but it is clear that we need something more than just an \AC{imapₛ}.
+% This is the reason to introduce \AC{imap}/\AC{sel} pair which operates on arrays
+% of product shapes.  
+% As average pooling operates on blocked arrays, we need
+% a construction to express this in \AF{E}.  One could introduce explicit 
+% \AF{block}/\AF{unblock}, but we merge blocking/unlocking action with
+% imap/sel obtaining \AC{imapb}/\AC{selb}.  Our \AC{sum} constructor 
+% gets an argument in the extended context which is summation index, so 
+% conceptually we generate the values at every summation index before
+% summing these values together.  As a result, we only need
+% one instance of \AC{sum} which makes our expressions a little tidier.
 
 
 
