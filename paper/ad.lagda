@@ -684,12 +684,12 @@ a programming language that can produce efficient code.  This
 section describes extraction process into Futhark.
 
 Futhark is a functional language with automatic memory management and
-built-in type for arrays.  Futhark provides key array combinators such as
-map and reduce, which makes translation process straight-forward.
-The only boilerplate code we are requiring from Futhark in order
+a built-in type for arrays.  Futhark provides key array combinators such as
+map and reduce, which makes the translation process straightforward.
+The only boilerplate code we require from Futhark in order
 to run the generated code is: implementations of operation on reals
 from \AM{Real} (these are mapped into 32-bit floating point operations);
-and rank-$n$ versions of imap and sum combinators.  The latter is defined
+and rank-$n$ versions of the imap and sum combinators.  The latter is defined
 as follows:
 \begin{Verbatim}
 def imap1 'a : (n: i64) -> (i64 -> a) -> [n]a =
@@ -706,27 +706,26 @@ def isum2 : (m: i64) -> (n: i64)
 \end{Verbatim}
 
 
-\paragraph{Static Ranks} We have to redefine imap and sum per array rank,
-as Futharks requires that all arrays have static rank. This also means that
+\paragraph{Static Ranks} As Futhark does not support rank polymorphism, we must define imap and sum variants for every needed array rank. This also means that
 it is not possible to translate an arbitrary expression in \AF{E} into
 Futhark, because \AF{E} can define a function that abstracts over shapes
-(which, in turn, means abstraction over ranks).  For the purposes of
+(which, in turn, means abstraction over ranks).  For the purpose of
 extraction, we assume that all the ranks are known statically, and we
 resolve possible shape abstractions during extraction.  The assumption about
 static ranks holds for many numerical applications including our
 running example.  Relaxing this assumption is an interesting future work.
 
 \paragraph{Normalisation} Consider translating an expression like
-\AC{sel} (\AC{imap} λ i → \AB{e}) \AB{u}.  If you were to treat arrays
+\AC{sel} (\AC{imap} λ i → \AB{e}) \AB{u}.  If we were to treat arrays
 as functions and selections as applications, then the above expression
-can be normalised into $e[i := u]$.  One could hope that Furhark could do
+could be normalised into $e[i := u]$.  One could hope that Futhark could do
 such a $\beta$-reduction on the generated code, but this is not the case.
 The intuition for this choice is that in Futhark arrays are tabulated
-functions, and inlnining arbitrary evaluation of array elements may
+functions, and inlining arbitrary evaluation of array elements may
 have a significant performance cost.  For example, in the expression
 \texttt{let a = imap \textbackslash i -> }$e$ \texttt{in imap \textbackslash j -> a[f j]}, Futhark
-allocates memory for $a$ and computes all the values, an within the
-body of the let, selection actually looks up the elements.  If we were
+allocates memory for $a$ and manifests elements in memory, and within the
+body of the let, selection fetches from memory.  If we were
 to inline $a$ by replacing $a[f\ j]$ with $e[i := f\ j]$, we loose sharing
 by potentially recomputing $e$ much more often than needed
 (e.g. assume that $i$ ranges over 10 elements, but $j$ over $10^5$).
@@ -735,10 +734,10 @@ therefore Futhark (and many other array languages) do not inline
 computation of array elements.  For our running example, naive translation
 results in too many cases when arrays are constructed just to select
 an element from them.  Therefore, we need some notion of normalisation
-prior extraction.
+prior to extraction.
 
 
-We are going to combine normalisation and extraction in a single step,
+We combine normalisation and extraction in a single step,
 resulting in an approach that is similar to normalisation by evaluation.
 We model Futhark arrays as Agda functions, which makes it
 easy to encode normalisation steps.
