@@ -19,7 +19,7 @@ of a function that opens a file.  This choice, no matter how it is implemented,
 can be seen as a definition of an embedded language.
 Once we accept the idea of embedded language, we can choose to use deep embedding
 which can serve two purposes.  We can implement both AD and extraction within the
-host lanugae without modifying the compiler.  This is particularly useful in the
+host language without modifying the compiler.  This is particularly useful in the
 context of a theorem prover, as we can annotate our implementations with the
 correctness invariants of our choice.  This is the approach we are taking here.
 
@@ -28,7 +28,7 @@ These have to be sufficiently powerful to define CNNs and to express AD.
 Finding the right level of abstraction for the primitives is non-trivial,
 as it heavily depends on the capabilities of the backend language and the
 optimisations that we can perform locally.  However, keeping the DSL, optimisations
-and extraction within a single framewrok makes it possible to experiment
+and extraction within a single framework makes it possible to experiment
 with these choices easily.
 
 The primitives that we have chosen are easy to implement in the backend language
@@ -110,7 +110,7 @@ our contexts do not carry array element types.  However, we distinguish
 singleton arrays of shape \AF{unit} that always contain a single element.
 Such arrays are called scalars in the array literature and they are mapped
 into the type that represents real in the backend \eg{} double.
-We support two binary operstions in our langauge (addition and multiplication)
+We support two binary operations in our langauge (addition and multiplication)
 that are given by \AD{Bop}.
 \begin{mathpar}
 \codeblock{\begin{code}
@@ -502,88 +502,164 @@ be used later to define some of our optimisations.
 \end{code}}
 \end{mathpar}
 
-\paragraph{Syntax}
-\todo[inline]{Explain that we want to simplify the life of programers by
-introducing HOAS-like syntax, which is difficult, as our DSL is intrinsically-typed.}
+\subsection{Syntax}
+Deeply-embedded DSLs with intrinsic de-Bruijn indices guarantee well-scopedness,
+but they are far not intuitive for programmers.  This section proposes a mechanism
+to overcome the encoding burden by providing HOAS-like syntactic wrappers over
+our embedding.  Some of the ideas we are using here can be found in~\cite{},
+but in this work they are applied in the context of the actual intrinsic language.
 
-\begin{code}[hide]
+Our goal is to replace de-Bruijn indices with Agda's variables.  One immediate
+difficulty with this approach is that whenever we go under binders such as 
+\AC{imap} or \AC{let′}, all the old variables/expressions have to be lifted
+into extended context.  We tackle this problem by defining generalised expressions
+and generalised variables that can be lifted automatically into any extensions of
+the context that they were originally defined in.  This lifting will be performed
+automatically by (ab)using Agda's instance resolution mechanism.
+
+Firstly we observed, that we only ever need to lift expressions/variables into
+contexts where a certain number of variables were added at the end, \ie{} the
+prefix of the extended context always correspond to the context of the original
+expression.  Therefore we define a binary relation \AF{Prefix} \AB{Γ} \AB{Δ}
+that determines whether the \AB{Γ} is a prefix of \AB{Δ}.  We annotate
+constructors of \AF{Prefix} with the \AK{instance} keyword, and we also wrap
+the argument of the \AC{suc} constructor into double braces, turning this into
+an instance argument:
+\begin{mathpar}
+\codeblock{\begin{code}[hide]
 module Syntax where
   open Lang
   open import Data.List as L using (List; []; _∷_)
   open Array hiding (sum)
+  open WkSub
 \end{code}
 \begin{code}
   data Prefix : (Γ Δ : Ctx) → Set where
     instance
       zero : Prefix Γ Γ
       suc  : ⦃ Prefix Γ Δ ⦄ → Prefix Γ (Δ ▹ is)
+\end{code}}
+\and
+\codeblock{\begin{code}
+  prefix-⊆ : Prefix Γ Δ → Γ ⊆ Δ
+  prefix-⊆ zero         = ⊆-eq
+  prefix-⊆ (suc ⦃ p ⦄)  = skip (prefix-⊆ p)
+\end{code}}
+\end{mathpar}
 
-  -- A term that can be lifted into larger contexts
+As a result, Agda will be able to construct a witness for cases like
+\AC{Prefix} \AB{Γ} (\AB{Γ} \AC{▹} \AB{is} ▹ \AB{ip} ▹ \AB{iq}).  Similarly
+to hidden arguments, there is no guarantee that Agda will find a solution
+in all cases, and it will report an error in case of failure.
+
+Secondly, we define a notion of generalised variables and expressions that
+are defined in context \AB{Γ} but can be lifted into any context \AB{Δ}, given
+that \AB{Γ} is a prefix of \AB{Δ}.  The trick here is that both types define
+a function of two hidden arguments that Agda will be able to fill-in automatically.
+\begin{mathpar}
+\codeblock{\begin{code}
   GE : Ctx → IS → Set
   GE Γ is = ∀ {Δ} → ⦃ Prefix Γ Δ ⦄ → E Δ is
-
-  -- A variable that can be lifted into larger contexts
+\end{code}}
+\and
+\codeblock{\begin{code}
   GVar : Ctx → IS → Set
   GVar Γ is = ∀ {Δ} → ⦃ p : Prefix Γ Δ ⦄ → is ∈ Δ
-
-  -- Lift var
-  V : is ∈ Γ → GVar Γ is
-  V v ⦃ p = zero ⦄ = v
-  V v ⦃ p = suc  ⦄ = vₛ (V v)
-\end{code}
-We can implement HOAS operators that will allow to use bound variables
-under further binders.
+\end{code}}
+\end{mathpar}
+We can lift expressions into generalised expressions by translating prefixes
+into \AC{⊆} with later application of weakening.
+\begin{mathpar}
+\codeblock{\begin{code}
+  ⟨_⟩ : E Γ is → GE Γ is
+  ⟨_⟩ t {Δ} ⦃ p ⦄ = wk (prefix-⊆ p) t
+\end{code}}
+\and
+\codeblock{\begin{code}
+  ⟨_⟩ᵛ : is ∈ Γ → GVar Γ is
+  ⟨_⟩ᵛ v ⦃ p ⦄ = wkv (prefix-⊆ p) v
+\end{code}}
+\end{mathpar}
+Now we are ready to define HOAS-like wrappers for the constructors of \AF{E}
+that bind variables (\eg{} \AC{imap} family, \AC{sum}, \AC{let′}).  Consider
+a wrapper for \AC{imap} defined as follows.
 \begin{code}
-  -- Use GE GVar and V to define HOAS-style imap, imaps, and impab
-  Imap : ∀ {Γ}
-       → (GE (Γ ▹ ix s) (ix s) → E (Γ ▹ ix s) (ar p))
-       → E Γ (ar (s ⊗ p))
-  Imap f = imap (f λ {Δ} ⦃ p ⦄ → var (V v₀))
+  Imap : (GE (Γ ▹ ix s) (ix s) → E (Γ ▹ ix s) (ar p)) → E Γ (ar (s ⊗ p))
+  Imap f = imap (f (var ⟨ v₀ ⟩ᵛ))
 \end{code}
-We do the same wrappers for \AC{sum}, \AC{imaps}, \AC{imapb}, and the one
-for \AC{let′}, providing a familiar let-like syntax.
+The first argument is a function in Agda's function space where the
+argument is a generalised expression of type $\AC{ix}\ s$ in the context
+extended by $\AC{ix}\ s$ (the imap index), and the return type is the array
+expression that will be computed in the body of the imap.  The implementation
+of the wrapper simply constructs an \AC{imap} lifting the index variable
+$v₀$ in the context \AB{Γ} \AC{▹} $\AC{ix}\ s$ into the context that is determined
+by the hidden/instance arguments of $f$.  This means that within the body of $f$
+we can use the argument under further binders, allowing us to write something
+like:
+\begin{code}
+  _ : E ε _ 
+  _ = Imap {s = ι 5} λ i → Imap {s = ι 5} λ j → sels (sel one j) i
+\end{code}
+The code for wrappers for \AC{sum}, \AC{imaps}, \AC{imapb} looks very similar
+so we omit it here.  However, when defining a wrapper for \AC{let′} we will
+use Agda's \AK{syntax} feature\footnote{} to define the actual syntax for
+let bindings in \AF{E}.
 \begin{code}[hide]
   Sum : ∀ {Γ}
        → (GE (Γ ▹ ix s) (ix s) → E (Γ ▹ ix s) (ar p))
        → E Γ (ar p)
-  Sum f = sum (f λ {Δ} ⦃ p ⦄ → var (V v₀))
+  Sum f = sum (f λ {Δ} ⦃ p ⦄ → var ⟨ v₀ ⟩ᵛ)
 
   Imaps : ∀ {Γ}
         → (GE (Γ ▹ ix s) (ix s) → E (Γ ▹ ix s) (ar unit))
         → E Γ (ar s)
-  Imaps f = imaps (f λ {Δ} ⦃ p ⦄ → var (V v₀))
+  Imaps f = imaps (f λ {Δ} ⦃ p ⦄ → var ⟨ v₀ ⟩ᵛ)
 
   Imapb : ∀ {Γ}
         → s * p ≈ q 
         → (GE (Γ ▹ ix s) (ix s) → E (Γ ▹ ix s) (ar p)) 
         → E Γ (ar q)
-  Imapb p f = imapb p (f λ {Δ} ⦃ p ⦄ → var (V v₀))
+  Imapb p f = imapb p (f λ {Δ} ⦃ p ⦄ → var ⟨ v₀ ⟩ᵛ)
 \end{code}
 \begin{code}
-  Let-syntax : ∀ {Γ}
-      → (E Γ (ar s))
-      → (GE (Γ ▹ (ar s)) (ar s) → E (Γ ▹ (ar s)) (ar p))
-      → E Γ (ar p)
-  Let-syntax x f = let′ x (f λ {Δ} ⦃ p ⦄ → var (V v₀))
+  Let-syntax : E Γ (ar s) → (GE (Γ ▹ (ar s)) (ar s) → E (Γ ▹ (ar s)) (ar p)) → E Γ (ar p)
+  Let-syntax x f = let′ x (f (var ⟨ v₀ ⟩ᵛ))
   
   syntax Let-syntax e (λ x → e') = Let x := e In e'
 \end{code}
-
-The final convenience operator that we are missing is the ability
-to represent contexts in the HOAS style.
-\begin{code}[hide]
+Wit these definitions we can write expressions like:
+\begin{code}
+  _ : E ε (ar [])
+  _ = Let x := one In Let y := x ⊞ one In (x ⊞ y) ⊠ x  
+\end{code}
+One final syntactical convenience is the ability to
+represent contexts in the HOAS style.
+First of all, we define a helper function \AF{ext} that appends a list of \AF{IS}
+at the end of some context \AF{Γ}.
+Secondly, we define \AF{lfun} that for the given list of \AF{IS}-es
+(l = [is₁, \dots, isₙ]), some context \AF{Γ} and some \AF{IS}
+ip computes an Agda function of type (\AF{GE} (\AF{ext} \AF{Γ} l) is₁ →
+\dots → \AF{GE} (\AF{ext} \AF{Γ} l) isₙ → \AD{E} (\AF{ext} Γ l) ip).
+The function \AF{lvar} lifts a variable in some context Γ into
+the \AF{ext}ended context.
+\begin{mathpar}
+\codeblock{\begin{code}[hide]
   infixl 3 Let-syntax
 
   -- Extend context with a list of types
   -- (List is a context that grows to the left)
 \end{code}
-First of all, we define a helper function that appends a list of \AF{IS}
-at the end of some context \AF{Γ}:
 \begin{code}
   ext : Ctx → List IS → Ctx
-  ext Γ [] = Γ
+  ext Γ []      = Γ
   ext Γ (x ∷ l) = ext (Γ ▹ x) l
-\end{code}
+\end{code}}
+\and
+\codeblock{\begin{code}
+  lfun : (l : List IS)  (Γ : Ctx) (is : IS) → Set
+  lvar : ∀ l → is ∈ Γ → GE (ext Γ l) is
+\end{code}}
+\end{mathpar}
 \begin{code}[hide]
   -- Turn the list of IS into the following function:
   --   l = [a, b, c]
@@ -601,32 +677,18 @@ at the end of some context \AF{Γ}:
   --   is = is
   --   ---------------------------------------------
   --   GE (ext Γ l) a → GE (ext Γ l) → E (ext Γ l) is
-\end{code}
-Then, we define \AF{lfun} that for the given list of \AF{IS}-es
-(l = [is₁, \dots, isₙ]), some context \AF{Γ} and some \AF{IS}
-ip computes an Agda function of type (\AF{GE} (\AF{ext} \AF{Γ} l) is₁ →
-\dots → \AF{GE} (\AF{ext} \AF{Γ} l) isₙ → \AD{E} (\AF{ext} Γ l) ip).
-The function \AF{lvar} lifts a variable in some context Γ into
-an extended context.
-\begin{code}
-  lfun : (l : List IS)  (Γ : Ctx) (is : IS) → Set
-  lvar : ∀ l → is ∈ Γ → GE (ext Γ l) is
-\end{code}
-\begin{code}[hide]
   lfun l Γ τ = lfunh l (E (ext Γ l) τ) (ext Γ l)
-  lvar [] v = var (V v)
+  lvar [] v = var ⟨ v ⟩ᵛ
   lvar (x ∷ l) v = lvar l (vₛ v)
-
-  -- Apply function to the corresponding variables of the context
 \end{code}
-With these helper functions we define the \AF{Lcon} helper that
+With these helper functions we define the \AF{Lcon} that
 for the given list of types $l$, resulting type \AB{is}, the initial
 context Γ and the function of type \AF{lfun} l Γ \AB{is} computes
 the expression in the context \AF{ext} Γ l.
 \begin{code}
   Lcon : ∀ l is Γ → (f : lfun l Γ is) → E (ext Γ l) is
-  Lcon []      is Γ f = f
-  Lcon (x ∷ l) is Γ f = Lcon l is (Γ ▹ x) (f (lvar l v₀))
+  Lcon []      is Γ f  = f
+  Lcon (x ∷ l) is Γ f  = Lcon l is (Γ ▹ x) (f (lvar l v₀))
 \end{code}
 This means that we can bind the last $n$ elements of the
 context to Agda variables and use them safely under binders.
@@ -642,9 +704,9 @@ expression in the context (ε ▹ 5 ∷ [] ▹ 5 ∷ 5 ∷ []).
 
 
 
-\paragraph{Primitives}
-We are defining primitives that are needed for expresison our
-running example in $E$.  We consider an example for the \AF{conv}-olution:
+\subsection{Primitives}
+We are defining primitives that are needed for expression our
+running example in $E$.  We consider an example for the \AF{conv}olution:
 \begin{code}[hide]
 module Primitives where
 
@@ -657,31 +719,18 @@ module Primitives where
   open WkSub
   open Lang
 
-  fromPrefix : Prefix Γ Δ → Γ ⊆ Δ
-  fromPrefix zero = ⊆-eq
-  fromPrefix (suc ⦃ p ⦄) = skip (fromPrefix p)
-  
-  wkp : Prefix Γ Δ → E Γ is → E Δ is
-  wkp p = wk (fromPrefix p)
-
-  ⟨_⟩ : E Γ is → GE Γ is
-  ⟨_⟩ t {Δ} ⦃ p ⦄ = wkp p t
+ 
 \end{code}
 \begin{code}
-  conv : ∀ {Γ} → E Γ (ar r) → ⦃ s + p ≈ r ⦄ → E Γ (ar s) → ⦃ suc p ≈ u ⦄ 
-       → E Γ (ar u)
-  conv f ⦃ s+p ⦄ g ⦃ ss ⦄ 
-    = Sum λ i → (slide i s+p ⟨ f ⟩ ss) ⊠ Imaps λ j → sels ⟨ g ⟩ i
+  conv : E Γ (ar r) → ⦃ s + p ≈ r ⦄ → E Γ (ar s) → ⦃ suc p ≈ u ⦄ → E Γ (ar u)
+  conv f ⦃ s+p ⦄ g ⦃ ss ⦄ = Sum λ i → (slide i s+p ⟨ f ⟩ ss) ⊠ Imaps λ j → sels ⟨ g ⟩ i
 
   mconv : ⦃ s + p ≈ r ⦄ → (inp : E Γ (ar r)) (ws : E Γ (ar (u ⊗ s)))
           (bᵥ : E Γ (ar u)) → ⦃ suc p ≈ w ⦄ → E Γ (ar (u ⊗ w))
-  mconv ⦃ sp ⦄ inp wᵥ bᵥ ⦃ su ⦄ = 
-    Imap λ i → conv ⟨ inp ⟩ (sel ⟨ wᵥ ⟩ i) ⊞ Imaps λ _ → sels ⟨ bᵥ ⟩ i
+  mconv ⦃ sp ⦄ inp wᵥ bᵥ ⦃ su ⦄ = Imap λ i → conv ⟨ inp ⟩ (sel ⟨ wᵥ ⟩ i) ⊞ Imaps λ _ → sels ⟨ bᵥ ⟩ i
 
-  avgp₂ : ∀ m n → (a : E Γ (ar (m ℕ.* 2 ∷ n ℕ.* 2 ∷ []))) 
-        → E Γ (ar (m ∷ n ∷ []))
-  avgp₂ m n a =
-    Imaps λ i → scaledown 4 $ Sum λ j → sels (selb it ⟨ a ⟩ i) j
+  avgp₂ : ∀ m n → (a : E Γ (ar (m ℕ.* 2 ∷ n ℕ.* 2 ∷ []))) → E Γ (ar (m ∷ n ∷ []))
+  avgp₂ m n a = Imaps λ i → scaledown 4 $ Sum λ j → sels (selb it ⟨ a ⟩ i) j
 
   sqerr : (r o : E Γ (ar [])) → E Γ (ar [])
   sqerr r o = scaledown 2 ((r ⊞ (minus o)) ⊠ (r ⊞ (minus o)))
@@ -689,9 +738,6 @@ module Primitives where
   meansqerr : (r o : E Γ (ar s)) → E Γ (ar [])
   meansqerr r o = Sum λ i → sqerr (sels ⟨ r ⟩ i) (sels ⟨ o ⟩ i) 
 \end{code}
-where \AF{⟨\_⟩} lifts an expression into a generalised expression
-simply by applying weakening according to the prefix.
-
 Finally, the CNN embedded in $E$ is given as follows:
 \begin{code}
   cnn : E _ _

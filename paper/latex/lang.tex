@@ -54,7 +54,7 @@ of a function that opens a file.  This choice, no matter how it is implemented,
 can be seen as a definition of an embedded language.
 Once we accept the idea of embedded language, we can choose to use deep embedding
 which can serve two purposes.  We can implement both AD and extraction within the
-host lanugae without modifying the compiler.  This is particularly useful in the
+host language without modifying the compiler.  This is particularly useful in the
 context of a theorem prover, as we can annotate our implementations with the
 correctness invariants of our choice.  This is the approach we are taking here.
 
@@ -63,7 +63,7 @@ These have to be sufficiently powerful to define CNNs and to express AD.
 Finding the right level of abstraction for the primitives is non-trivial,
 as it heavily depends on the capabilities of the backend language and the
 optimisations that we can perform locally.  However, keeping the DSL, optimisations
-and extraction within a single framewrok makes it possible to experiment
+and extraction within a single framework makes it possible to experiment
 with these choices easily.
 
 The primitives that we have chosen are easy to implement in the backend language
@@ -282,7 +282,7 @@ our contexts do not carry array element types.  However, we distinguish
 singleton arrays of shape \AF{unit} that always contain a single element.
 Such arrays are called scalars in the array literature and they are mapped
 into the type that represents real in the backend \eg{} double.
-We support two binary operstions in our langauge (addition and multiplication)
+We support two binary operations in our langauge (addition and multiplication)
 that are given by \AD{Bop}.
 \begin{mathpar}
 \codeblock{\begin{code}%
@@ -2405,11 +2405,31 @@ be used later to define some of our optimisations.
 \end{code}}
 \end{mathpar}
 
-\paragraph{Syntax}
-\todo[inline]{Explain that we want to simplify the life of programers by
-introducing HOAS-like syntax, which is difficult, as our DSL is intrinsically-typed.}
+\subsection{Syntax}
+Deeply-embedded DSLs with intrinsic de-Bruijn indices guarantee well-scopedness,
+but they are far not intuitive for programmers.  This section proposes a mechanism
+to overcome the encoding burden by providing HOAS-like syntactic wrappers over
+our embedding.  Some of the ideas we are using here can be found in~\cite{},
+but in this work they are applied in the context of the actual intrinsic language.
 
-\begin{code}[hide]%
+Our goal is to replace de-Bruijn indices with Agda's variables.  One immediate
+difficulty with this approach is that whenever we go under binders such as 
+\AC{imap} or \AC{let′}, all the old variables/expressions have to be lifted
+into extended context.  We tackle this problem by defining generalised expressions
+and generalised variables that can be lifted automatically into any extensions of
+the context that they were originally defined in.  This lifting will be performed
+automatically by (ab)using Agda's instance resolution mechanism.
+
+Firstly we observed, that we only ever need to lift expressions/variables into
+contexts where a certain number of variables were added at the end, \ie{} the
+prefix of the extended context always correspond to the context of the original
+expression.  Therefore we define a binary relation \AF{Prefix} \AB{Γ} \AB{Δ}
+that determines whether the \AB{Γ} is a prefix of \AB{Δ}.  We annotate
+constructors of \AF{Prefix} with the \AK{instance} keyword, and we also wrap
+the argument of the \AC{suc} constructor into double braces, turning this into
+an instance argument:
+\begin{mathpar}
+\codeblock{\begin{code}[hide]%
 \>[0]\AgdaKeyword{module}\AgdaSpace{}%
 \AgdaModule{Syntax}\AgdaSpace{}%
 \AgdaKeyword{where}\<%
@@ -2434,6 +2454,10 @@ introducing HOAS-like syntax, which is difficult, as our DSL is intrinsically-ty
 \AgdaModule{Array}\AgdaSpace{}%
 \AgdaKeyword{hiding}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaFunction{sum}\AgdaSymbol{)}\<%
+\\
+%
+\>[2]\AgdaKeyword{open}\AgdaSpace{}%
+\AgdaModule{WkSub}\<%
 \end{code}
 \begin{code}%
 %
@@ -2472,12 +2496,50 @@ introducing HOAS-like syntax, which is difficult, as our DSL is intrinsically-ty
 \AgdaSymbol{(}\AgdaGeneralizable{Δ}\AgdaSpace{}%
 \AgdaOperator{\AgdaInductiveConstructor{▹}}\AgdaSpace{}%
 \AgdaGeneralizable{is}\AgdaSymbol{)}\<%
+\end{code}}
+\and
+\codeblock{\begin{code}%
+%
+\>[2]\AgdaFunction{prefix-⊆}\AgdaSpace{}%
+\AgdaSymbol{:}\AgdaSpace{}%
+\AgdaDatatype{Prefix}\AgdaSpace{}%
+\AgdaGeneralizable{Γ}\AgdaSpace{}%
+\AgdaGeneralizable{Δ}\AgdaSpace{}%
+\AgdaSymbol{→}\AgdaSpace{}%
+\AgdaGeneralizable{Γ}\AgdaSpace{}%
+\AgdaOperator{\AgdaDatatype{⊆}}\AgdaSpace{}%
+\AgdaGeneralizable{Δ}\<%
 \\
 %
-\\[\AgdaEmptyExtraSkip]%
-%
-\>[2]\AgdaComment{--\ A\ term\ that\ can\ be\ lifted\ into\ larger\ contexts}\<%
+\>[2]\AgdaFunction{prefix-⊆}\AgdaSpace{}%
+\AgdaInductiveConstructor{zero}%
+\>[24]\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaFunction{⊆-eq}\<%
 \\
+%
+\>[2]\AgdaFunction{prefix-⊆}\AgdaSpace{}%
+\AgdaSymbol{(}\AgdaInductiveConstructor{suc}\AgdaSpace{}%
+\AgdaSymbol{⦃}\AgdaSpace{}%
+\AgdaBound{p}\AgdaSpace{}%
+\AgdaSymbol{⦄)}%
+\>[24]\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaInductiveConstructor{skip}\AgdaSpace{}%
+\AgdaSymbol{(}\AgdaFunction{prefix-⊆}\AgdaSpace{}%
+\AgdaBound{p}\AgdaSymbol{)}\<%
+\end{code}}
+\end{mathpar}
+
+As a result, Agda will be able to construct a witness for cases like
+\AC{Prefix} \AB{Γ} (\AB{Γ} \AC{▹} \AB{is} ▹ \AB{ip} ▹ \AB{iq}).  Similarly
+to hidden arguments, there is no guarantee that Agda will find a solution
+in all cases, and it will report an error in case of failure.
+
+Secondly, we define a notion of generalised variables and expressions that
+are defined in context \AB{Γ} but can be lifted into any context \AB{Δ}, given
+that \AB{Γ} is a prefix of \AB{Δ}.  The trick here is that both types define
+a function of two hidden arguments that Agda will be able to fill-in automatically.
+\begin{mathpar}
+\codeblock{\begin{code}%
 %
 \>[2]\AgdaFunction{GE}\AgdaSpace{}%
 \AgdaSymbol{:}\AgdaSpace{}%
@@ -2504,12 +2566,9 @@ introducing HOAS-like syntax, which is difficult, as our DSL is intrinsically-ty
 \AgdaDatatype{E}\AgdaSpace{}%
 \AgdaBound{Δ}\AgdaSpace{}%
 \AgdaBound{is}\<%
-\\
-%
-\\[\AgdaEmptyExtraSkip]%
-%
-\>[2]\AgdaComment{--\ A\ variable\ that\ can\ be\ lifted\ into\ larger\ contexts}\<%
-\\
+\end{code}}
+\and
+\codeblock{\begin{code}%
 %
 \>[2]\AgdaFunction{GVar}\AgdaSpace{}%
 \AgdaSymbol{:}\AgdaSpace{}%
@@ -2538,14 +2597,40 @@ introducing HOAS-like syntax, which is difficult, as our DSL is intrinsically-ty
 \AgdaBound{is}\AgdaSpace{}%
 \AgdaOperator{\AgdaDatatype{∈}}\AgdaSpace{}%
 \AgdaBound{Δ}\<%
+\end{code}}
+\end{mathpar}
+We can lift expressions into generalised expressions by translating prefixes
+into \AC{⊆} with later application of weakening.
+\begin{mathpar}
+\codeblock{\begin{code}%
+%
+\>[2]\AgdaOperator{\AgdaFunction{⟨\AgdaUnderscore{}⟩}}\AgdaSpace{}%
+\AgdaSymbol{:}\AgdaSpace{}%
+\AgdaDatatype{E}\AgdaSpace{}%
+\AgdaGeneralizable{Γ}\AgdaSpace{}%
+\AgdaGeneralizable{is}\AgdaSpace{}%
+\AgdaSymbol{→}\AgdaSpace{}%
+\AgdaFunction{GE}\AgdaSpace{}%
+\AgdaGeneralizable{Γ}\AgdaSpace{}%
+\AgdaGeneralizable{is}\<%
 \\
 %
-\\[\AgdaEmptyExtraSkip]%
+\>[2]\AgdaOperator{\AgdaFunction{⟨\AgdaUnderscore{}⟩}}\AgdaSpace{}%
+\AgdaBound{t}\AgdaSpace{}%
+\AgdaSymbol{\{}\AgdaBound{Δ}\AgdaSymbol{\}}\AgdaSpace{}%
+\AgdaSymbol{⦃}\AgdaSpace{}%
+\AgdaBound{p}\AgdaSpace{}%
+\AgdaSymbol{⦄}\AgdaSpace{}%
+\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaFunction{wk}\AgdaSpace{}%
+\AgdaSymbol{(}\AgdaFunction{prefix-⊆}\AgdaSpace{}%
+\AgdaBound{p}\AgdaSymbol{)}\AgdaSpace{}%
+\AgdaBound{t}\<%
+\end{code}}
+\and
+\codeblock{\begin{code}%
 %
-\>[2]\AgdaComment{--\ Lift\ var}\<%
-\\
-%
-\>[2]\AgdaFunction{V}\AgdaSpace{}%
+\>[2]\AgdaOperator{\AgdaFunction{⟨\AgdaUnderscore{}⟩ᵛ}}\AgdaSpace{}%
 \AgdaSymbol{:}\AgdaSpace{}%
 \AgdaGeneralizable{is}\AgdaSpace{}%
 \AgdaOperator{\AgdaDatatype{∈}}\AgdaSpace{}%
@@ -2556,45 +2641,27 @@ introducing HOAS-like syntax, which is difficult, as our DSL is intrinsically-ty
 \AgdaGeneralizable{is}\<%
 \\
 %
-\>[2]\AgdaFunction{V}\AgdaSpace{}%
+\>[2]\AgdaOperator{\AgdaFunction{⟨\AgdaUnderscore{}⟩ᵛ}}\AgdaSpace{}%
 \AgdaBound{v}\AgdaSpace{}%
 \AgdaSymbol{⦃}\AgdaSpace{}%
-\AgdaArgument{p}\AgdaSpace{}%
-\AgdaSymbol{=}\AgdaSpace{}%
-\AgdaInductiveConstructor{zero}\AgdaSpace{}%
+\AgdaBound{p}\AgdaSpace{}%
 \AgdaSymbol{⦄}\AgdaSpace{}%
 \AgdaSymbol{=}\AgdaSpace{}%
+\AgdaFunction{wkv}\AgdaSpace{}%
+\AgdaSymbol{(}\AgdaFunction{prefix-⊆}\AgdaSpace{}%
+\AgdaBound{p}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaBound{v}\<%
-\\
-%
-\>[2]\AgdaFunction{V}\AgdaSpace{}%
-\AgdaBound{v}\AgdaSpace{}%
-\AgdaSymbol{⦃}\AgdaSpace{}%
-\AgdaArgument{p}\AgdaSpace{}%
-\AgdaSymbol{=}\AgdaSpace{}%
-\AgdaInductiveConstructor{suc}%
-\>[17]\AgdaSymbol{⦄}\AgdaSpace{}%
-\AgdaSymbol{=}\AgdaSpace{}%
-\AgdaInductiveConstructor{vₛ}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaFunction{V}\AgdaSpace{}%
-\AgdaBound{v}\AgdaSymbol{)}\<%
-\end{code}
-We can implement HOAS operators that will allow to use bound variables
-under further binders.
+\end{code}}
+\end{mathpar}
+Now we are ready to define HOAS-like wrappers for the constructors of \AF{E}
+that bind variables (\eg{} \AC{imap} family, \AC{sum}, \AC{let′}).  Consider
+a wrapper for \AC{imap} defined as follows.
 \begin{code}%
 %
-\>[2]\AgdaComment{--\ Use\ GE\ GVar\ and\ V\ to\ define\ HOAS-style\ imap,\ imaps,\ and\ impab}\<%
-\\
-%
-\>[2]\AgdaFunction{Imap}%
-\>[1579I]\AgdaSymbol{:}\AgdaSpace{}%
-\AgdaSymbol{∀}\AgdaSpace{}%
-\AgdaSymbol{\{}\AgdaBound{Γ}\AgdaSymbol{\}}\<%
-\\
-\>[.][@{}l@{}]\<[1579I]%
-\>[7]\AgdaSymbol{→}\AgdaSpace{}%
+\>[2]\AgdaFunction{Imap}\AgdaSpace{}%
+\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaFunction{GE}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaBound{Γ}\AgdaSpace{}%
+\AgdaSymbol{(}\AgdaGeneralizable{Γ}\AgdaSpace{}%
 \AgdaOperator{\AgdaInductiveConstructor{▹}}\AgdaSpace{}%
 \AgdaInductiveConstructor{ix}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSymbol{)}\AgdaSpace{}%
@@ -2602,17 +2669,15 @@ under further binders.
 \AgdaGeneralizable{s}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
 \AgdaDatatype{E}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaBound{Γ}\AgdaSpace{}%
+\AgdaSymbol{(}\AgdaGeneralizable{Γ}\AgdaSpace{}%
 \AgdaOperator{\AgdaInductiveConstructor{▹}}\AgdaSpace{}%
 \AgdaInductiveConstructor{ix}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaInductiveConstructor{ar}\AgdaSpace{}%
-\AgdaGeneralizable{p}\AgdaSymbol{))}\<%
-\\
-%
-\>[7]\AgdaSymbol{→}\AgdaSpace{}%
+\AgdaGeneralizable{p}\AgdaSymbol{))}\AgdaSpace{}%
+\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaDatatype{E}\AgdaSpace{}%
-\AgdaBound{Γ}\AgdaSpace{}%
+\AgdaGeneralizable{Γ}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaInductiveConstructor{ar}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaGeneralizable{s}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{⊗}}\AgdaSpace{}%
@@ -2624,26 +2689,65 @@ under further binders.
 \AgdaSymbol{=}\AgdaSpace{}%
 \AgdaInductiveConstructor{imap}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{f}\AgdaSpace{}%
-\AgdaSymbol{λ}\AgdaSpace{}%
-\AgdaSymbol{\{}\AgdaBound{Δ}\AgdaSymbol{\}}\AgdaSpace{}%
-\AgdaSymbol{⦃}\AgdaSpace{}%
-\AgdaBound{p}\AgdaSpace{}%
-\AgdaSymbol{⦄}\AgdaSpace{}%
-\AgdaSymbol{→}\AgdaSpace{}%
-\AgdaInductiveConstructor{var}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaFunction{V}\AgdaSpace{}%
-\AgdaInductiveConstructor{v₀}\AgdaSymbol{))}\<%
+\AgdaSymbol{(}\AgdaInductiveConstructor{var}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{⟨}}\AgdaSpace{}%
+\AgdaInductiveConstructor{v₀}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{⟩ᵛ}}\AgdaSymbol{))}\<%
 \end{code}
-We do the same wrappers for \AC{sum}, \AC{imaps}, \AC{imapb}, and the one
-for \AC{let′}, providing a familiar let-like syntax.
+The first argument is a function in Agda's function space where the
+argument is a generalised expression of type $\AC{ix}\ s$ in the context
+extended by $\AC{ix}\ s$ (the imap index), and the return type is the array
+expression that will be computed in the body of the imap.  The implementation
+of the wrapper simply constructs an \AC{imap} lifting the index variable
+$v₀$ in the context \AB{Γ} \AC{▹} $\AC{ix}\ s$ into the context that is determined
+by the hidden/instance arguments of $f$.  This means that within the body of $f$
+we can use the argument under further binders, allowing us to write something
+like:
+\begin{code}%
+%
+\>[2]\AgdaFunction{\AgdaUnderscore{}}\AgdaSpace{}%
+\AgdaSymbol{:}\AgdaSpace{}%
+\AgdaDatatype{E}\AgdaSpace{}%
+\AgdaInductiveConstructor{ε}\AgdaSpace{}%
+\AgdaSymbol{\AgdaUnderscore{}}\<%
+\\
+%
+\>[2]\AgdaSymbol{\AgdaUnderscore{}}\AgdaSpace{}%
+\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaFunction{Imap}\AgdaSpace{}%
+\AgdaSymbol{\{}\AgdaArgument{s}\AgdaSpace{}%
+\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaInductiveConstructor{ι}\AgdaSpace{}%
+\AgdaNumber{5}\AgdaSymbol{\}}\AgdaSpace{}%
+\AgdaSymbol{λ}\AgdaSpace{}%
+\AgdaBound{i}\AgdaSpace{}%
+\AgdaSymbol{→}\AgdaSpace{}%
+\AgdaFunction{Imap}\AgdaSpace{}%
+\AgdaSymbol{\{}\AgdaArgument{s}\AgdaSpace{}%
+\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaInductiveConstructor{ι}\AgdaSpace{}%
+\AgdaNumber{5}\AgdaSymbol{\}}\AgdaSpace{}%
+\AgdaSymbol{λ}\AgdaSpace{}%
+\AgdaBound{j}\AgdaSpace{}%
+\AgdaSymbol{→}\AgdaSpace{}%
+\AgdaInductiveConstructor{sels}\AgdaSpace{}%
+\AgdaSymbol{(}\AgdaInductiveConstructor{sel}\AgdaSpace{}%
+\AgdaInductiveConstructor{one}\AgdaSpace{}%
+\AgdaBound{j}\AgdaSymbol{)}\AgdaSpace{}%
+\AgdaBound{i}\<%
+\end{code}
+The code for wrappers for \AC{sum}, \AC{imaps}, \AC{imapb} looks very similar
+so we omit it here.  However, when defining a wrapper for \AC{let′} we will
+use Agda's \AK{syntax} feature\footnote{} to define the actual syntax for
+let bindings in \AF{E}.
 \begin{code}[hide]%
 %
 \>[2]\AgdaFunction{Sum}%
-\>[1616I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[1664I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{∀}\AgdaSpace{}%
 \AgdaSymbol{\{}\AgdaBound{Γ}\AgdaSymbol{\}}\<%
 \\
-\>[1616I][@{}l@{\AgdaIndent{0}}]%
+\>[1664I][@{}l@{\AgdaIndent{0}}]%
 \>[7]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaFunction{GE}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{Γ}\AgdaSpace{}%
@@ -2681,18 +2785,19 @@ for \AC{let′}, providing a familiar let-like syntax.
 \AgdaSymbol{⦄}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
 \AgdaInductiveConstructor{var}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaFunction{V}\AgdaSpace{}%
-\AgdaInductiveConstructor{v₀}\AgdaSymbol{))}\<%
+\AgdaOperator{\AgdaFunction{⟨}}\AgdaSpace{}%
+\AgdaInductiveConstructor{v₀}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{⟩ᵛ}}\AgdaSymbol{)}\<%
 \\
 %
 \\[\AgdaEmptyExtraSkip]%
 %
 \>[2]\AgdaFunction{Imaps}%
-\>[1651I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[1700I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{∀}\AgdaSpace{}%
 \AgdaSymbol{\{}\AgdaBound{Γ}\AgdaSymbol{\}}\<%
 \\
-\>[.][@{}l@{}]\<[1651I]%
+\>[.][@{}l@{}]\<[1700I]%
 \>[8]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaFunction{GE}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{Γ}\AgdaSpace{}%
@@ -2730,18 +2835,19 @@ for \AC{let′}, providing a familiar let-like syntax.
 \AgdaSymbol{⦄}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
 \AgdaInductiveConstructor{var}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaFunction{V}\AgdaSpace{}%
-\AgdaInductiveConstructor{v₀}\AgdaSymbol{))}\<%
+\AgdaOperator{\AgdaFunction{⟨}}\AgdaSpace{}%
+\AgdaInductiveConstructor{v₀}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{⟩ᵛ}}\AgdaSymbol{)}\<%
 \\
 %
 \\[\AgdaEmptyExtraSkip]%
 %
 \>[2]\AgdaFunction{Imapb}%
-\>[1686I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[1736I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{∀}\AgdaSpace{}%
 \AgdaSymbol{\{}\AgdaBound{Γ}\AgdaSymbol{\}}\<%
 \\
-\>[.][@{}l@{}]\<[1686I]%
+\>[.][@{}l@{}]\<[1736I]%
 \>[8]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{*}}\AgdaSpace{}%
@@ -2789,27 +2895,21 @@ for \AC{let′}, providing a familiar let-like syntax.
 \AgdaSymbol{⦄}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
 \AgdaInductiveConstructor{var}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaFunction{V}\AgdaSpace{}%
-\AgdaInductiveConstructor{v₀}\AgdaSymbol{))}\<%
+\AgdaOperator{\AgdaFunction{⟨}}\AgdaSpace{}%
+\AgdaInductiveConstructor{v₀}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{⟩ᵛ}}\AgdaSymbol{)}\<%
 \end{code}
 \begin{code}%
 %
 \>[2]\AgdaFunction{Let-syntax}\AgdaSpace{}%
 \AgdaSymbol{:}\AgdaSpace{}%
-\AgdaSymbol{∀}\AgdaSpace{}%
-\AgdaSymbol{\{}\AgdaBound{Γ}\AgdaSymbol{\}}\<%
-\\
-\>[2][@{}l@{\AgdaIndent{0}}]%
-\>[6]\AgdaSymbol{→}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaDatatype{E}\AgdaSpace{}%
-\AgdaBound{Γ}\AgdaSpace{}%
+\AgdaDatatype{E}\AgdaSpace{}%
+\AgdaGeneralizable{Γ}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaInductiveConstructor{ar}\AgdaSpace{}%
-\AgdaGeneralizable{s}\AgdaSymbol{))}\<%
-\\
-%
-\>[6]\AgdaSymbol{→}\AgdaSpace{}%
+\AgdaGeneralizable{s}\AgdaSymbol{)}\AgdaSpace{}%
+\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaFunction{GE}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaBound{Γ}\AgdaSpace{}%
+\AgdaSymbol{(}\AgdaGeneralizable{Γ}\AgdaSpace{}%
 \AgdaOperator{\AgdaInductiveConstructor{▹}}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaInductiveConstructor{ar}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSymbol{))}\AgdaSpace{}%
@@ -2817,17 +2917,15 @@ for \AC{let′}, providing a familiar let-like syntax.
 \AgdaGeneralizable{s}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
 \AgdaDatatype{E}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaBound{Γ}\AgdaSpace{}%
+\AgdaSymbol{(}\AgdaGeneralizable{Γ}\AgdaSpace{}%
 \AgdaOperator{\AgdaInductiveConstructor{▹}}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaInductiveConstructor{ar}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSymbol{))}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaInductiveConstructor{ar}\AgdaSpace{}%
-\AgdaGeneralizable{p}\AgdaSymbol{))}\<%
-\\
-%
-\>[6]\AgdaSymbol{→}\AgdaSpace{}%
+\AgdaGeneralizable{p}\AgdaSymbol{))}\AgdaSpace{}%
+\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaDatatype{E}\AgdaSpace{}%
-\AgdaBound{Γ}\AgdaSpace{}%
+\AgdaGeneralizable{Γ}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaInductiveConstructor{ar}\AgdaSpace{}%
 \AgdaGeneralizable{p}\AgdaSymbol{)}\<%
 \\
@@ -2839,15 +2937,10 @@ for \AC{let′}, providing a familiar let-like syntax.
 \AgdaInductiveConstructor{let′}\AgdaSpace{}%
 \AgdaBound{x}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{f}\AgdaSpace{}%
-\AgdaSymbol{λ}\AgdaSpace{}%
-\AgdaSymbol{\{}\AgdaBound{Δ}\AgdaSymbol{\}}\AgdaSpace{}%
-\AgdaSymbol{⦃}\AgdaSpace{}%
-\AgdaBound{p}\AgdaSpace{}%
-\AgdaSymbol{⦄}\AgdaSpace{}%
-\AgdaSymbol{→}\AgdaSpace{}%
-\AgdaInductiveConstructor{var}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaFunction{V}\AgdaSpace{}%
-\AgdaInductiveConstructor{v₀}\AgdaSymbol{))}\<%
+\AgdaSymbol{(}\AgdaInductiveConstructor{var}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{⟨}}\AgdaSpace{}%
+\AgdaInductiveConstructor{v₀}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{⟩ᵛ}}\AgdaSymbol{))}\<%
 \\
 \>[0]\<%
 \\
@@ -2867,10 +2960,49 @@ for \AC{let′}, providing a familiar let-like syntax.
 \AgdaFunction{In}\AgdaSpace{}%
 \AgdaBound{e'}\<%
 \end{code}
-
-The final convenience operator that we are missing is the ability
-to represent contexts in the HOAS style.
-\begin{code}[hide]%
+Wit these definitions we can write expressions like:
+\begin{code}%
+%
+\>[2]\AgdaFunction{\AgdaUnderscore{}}\AgdaSpace{}%
+\AgdaSymbol{:}\AgdaSpace{}%
+\AgdaDatatype{E}\AgdaSpace{}%
+\AgdaInductiveConstructor{ε}\AgdaSpace{}%
+\AgdaSymbol{(}\AgdaInductiveConstructor{ar}\AgdaSpace{}%
+\AgdaInductiveConstructor{[]}\AgdaSymbol{)}\<%
+\\
+%
+\>[2]\AgdaSymbol{\AgdaUnderscore{}}\AgdaSpace{}%
+\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaFunction{Let}\AgdaSpace{}%
+\AgdaBound{x}\AgdaSpace{}%
+\AgdaFunction{:=}\AgdaSpace{}%
+\AgdaInductiveConstructor{one}\AgdaSpace{}%
+\AgdaFunction{In}\AgdaSpace{}%
+\AgdaFunction{Let}\AgdaSpace{}%
+\AgdaBound{y}\AgdaSpace{}%
+\AgdaFunction{:=}\AgdaSpace{}%
+\AgdaBound{x}\AgdaSpace{}%
+\AgdaOperator{\AgdaInductiveConstructor{⊞}}\AgdaSpace{}%
+\AgdaInductiveConstructor{one}\AgdaSpace{}%
+\AgdaFunction{In}\AgdaSpace{}%
+\AgdaSymbol{(}\AgdaBound{x}\AgdaSpace{}%
+\AgdaOperator{\AgdaInductiveConstructor{⊞}}\AgdaSpace{}%
+\AgdaBound{y}\AgdaSymbol{)}\AgdaSpace{}%
+\AgdaOperator{\AgdaInductiveConstructor{⊠}}\AgdaSpace{}%
+\AgdaBound{x}\<%
+\end{code}
+One final syntactical convenience is the ability to
+represent contexts in the HOAS style.
+First of all, we define a helper function \AF{ext} that appends a list of \AF{IS}
+at the end of some context \AF{Γ}.
+Secondly, we define \AF{lfun} that for the given list of \AF{IS}-es
+(l = [is₁, \dots, isₙ]), some context \AF{Γ} and some \AF{IS}
+ip computes an Agda function of type (\AF{GE} (\AF{ext} \AF{Γ} l) is₁ →
+\dots → \AF{GE} (\AF{ext} \AF{Γ} l) isₙ → \AD{E} (\AF{ext} Γ l) ip).
+The function \AF{lvar} lifts a variable in some context Γ into
+the \AF{ext}ended context.
+\begin{mathpar}
+\codeblock{\begin{code}[hide]%
 %
 \>[2]\AgdaKeyword{infixl}\AgdaSpace{}%
 \AgdaNumber{3}\AgdaSpace{}%
@@ -2884,8 +3016,6 @@ to represent contexts in the HOAS style.
 %
 \>[2]\AgdaComment{--\ (List\ is\ a\ context\ that\ grows\ to\ the\ left)}\<%
 \end{code}
-First of all, we define a helper function that appends a list of \AF{IS}
-at the end of some context \AF{Γ}:
 \begin{code}%
 %
 \>[2]\AgdaFunction{ext}\AgdaSpace{}%
@@ -2900,8 +3030,8 @@ at the end of some context \AF{Γ}:
 %
 \>[2]\AgdaFunction{ext}\AgdaSpace{}%
 \AgdaBound{Γ}\AgdaSpace{}%
-\AgdaInductiveConstructor{[]}\AgdaSpace{}%
-\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaInductiveConstructor{[]}%
+\>[16]\AgdaSymbol{=}\AgdaSpace{}%
 \AgdaBound{Γ}\<%
 \\
 %
@@ -2916,7 +3046,42 @@ at the end of some context \AF{Γ}:
 \AgdaOperator{\AgdaInductiveConstructor{▹}}\AgdaSpace{}%
 \AgdaBound{x}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaBound{l}\<%
-\end{code}
+\end{code}}
+\and
+\codeblock{\begin{code}%
+%
+\>[2]\AgdaFunction{lfun}\AgdaSpace{}%
+\AgdaSymbol{:}\AgdaSpace{}%
+\AgdaSymbol{(}\AgdaBound{l}\AgdaSpace{}%
+\AgdaSymbol{:}\AgdaSpace{}%
+\AgdaDatatype{List}\AgdaSpace{}%
+\AgdaDatatype{IS}\AgdaSymbol{)}%
+\>[24]\AgdaSymbol{(}\AgdaBound{Γ}\AgdaSpace{}%
+\AgdaSymbol{:}\AgdaSpace{}%
+\AgdaDatatype{Ctx}\AgdaSymbol{)}\AgdaSpace{}%
+\AgdaSymbol{(}\AgdaBound{is}\AgdaSpace{}%
+\AgdaSymbol{:}\AgdaSpace{}%
+\AgdaDatatype{IS}\AgdaSymbol{)}\AgdaSpace{}%
+\AgdaSymbol{→}\AgdaSpace{}%
+\AgdaPrimitive{Set}\<%
+\\
+%
+\>[2]\AgdaFunction{lvar}\AgdaSpace{}%
+\AgdaSymbol{:}\AgdaSpace{}%
+\AgdaSymbol{∀}\AgdaSpace{}%
+\AgdaBound{l}\AgdaSpace{}%
+\AgdaSymbol{→}\AgdaSpace{}%
+\AgdaGeneralizable{is}\AgdaSpace{}%
+\AgdaOperator{\AgdaDatatype{∈}}\AgdaSpace{}%
+\AgdaGeneralizable{Γ}\AgdaSpace{}%
+\AgdaSymbol{→}\AgdaSpace{}%
+\AgdaFunction{GE}\AgdaSpace{}%
+\AgdaSymbol{(}\AgdaFunction{ext}\AgdaSpace{}%
+\AgdaGeneralizable{Γ}\AgdaSpace{}%
+\AgdaBound{l}\AgdaSymbol{)}\AgdaSpace{}%
+\AgdaGeneralizable{is}\<%
+\end{code}}
+\end{mathpar}
 \begin{code}[hide]%
 %
 \>[2]\AgdaComment{--\ Turn\ the\ list\ of\ IS\ into\ the\ following\ function:}\<%
@@ -2996,47 +3161,7 @@ at the end of some context \AF{Γ}:
 \\
 %
 \>[2]\AgdaComment{--\ \ \ GE\ (ext\ Γ\ l)\ a\ →\ GE\ (ext\ Γ\ l)\ →\ E\ (ext\ Γ\ l)\ is}\<%
-\end{code}
-Then, we define \AF{lfun} that for the given list of \AF{IS}-es
-(l = [is₁, \dots, isₙ]), some context \AF{Γ} and some \AF{IS}
-ip computes an Agda function of type (\AF{GE} (\AF{ext} \AF{Γ} l) is₁ →
-\dots → \AF{GE} (\AF{ext} \AF{Γ} l) isₙ → \AD{E} (\AF{ext} Γ l) ip).
-The function \AF{lvar} lifts a variable in some context Γ into
-an extended context.
-\begin{code}%
-%
-\>[2]\AgdaFunction{lfun}\AgdaSpace{}%
-\AgdaSymbol{:}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaBound{l}\AgdaSpace{}%
-\AgdaSymbol{:}\AgdaSpace{}%
-\AgdaDatatype{List}\AgdaSpace{}%
-\AgdaDatatype{IS}\AgdaSymbol{)}%
-\>[24]\AgdaSymbol{(}\AgdaBound{Γ}\AgdaSpace{}%
-\AgdaSymbol{:}\AgdaSpace{}%
-\AgdaDatatype{Ctx}\AgdaSymbol{)}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaBound{is}\AgdaSpace{}%
-\AgdaSymbol{:}\AgdaSpace{}%
-\AgdaDatatype{IS}\AgdaSymbol{)}\AgdaSpace{}%
-\AgdaSymbol{→}\AgdaSpace{}%
-\AgdaPrimitive{Set}\<%
 \\
-%
-\>[2]\AgdaFunction{lvar}\AgdaSpace{}%
-\AgdaSymbol{:}\AgdaSpace{}%
-\AgdaSymbol{∀}\AgdaSpace{}%
-\AgdaBound{l}\AgdaSpace{}%
-\AgdaSymbol{→}\AgdaSpace{}%
-\AgdaGeneralizable{is}\AgdaSpace{}%
-\AgdaOperator{\AgdaDatatype{∈}}\AgdaSpace{}%
-\AgdaGeneralizable{Γ}\AgdaSpace{}%
-\AgdaSymbol{→}\AgdaSpace{}%
-\AgdaFunction{GE}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaFunction{ext}\AgdaSpace{}%
-\AgdaGeneralizable{Γ}\AgdaSpace{}%
-\AgdaBound{l}\AgdaSymbol{)}\AgdaSpace{}%
-\AgdaGeneralizable{is}\<%
-\end{code}
-\begin{code}[hide]%
 %
 \>[2]\AgdaFunction{lfun}\AgdaSpace{}%
 \AgdaBound{l}\AgdaSpace{}%
@@ -3060,8 +3185,9 @@ an extended context.
 \AgdaBound{v}\AgdaSpace{}%
 \AgdaSymbol{=}\AgdaSpace{}%
 \AgdaInductiveConstructor{var}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaFunction{V}\AgdaSpace{}%
-\AgdaBound{v}\AgdaSymbol{)}\<%
+\AgdaOperator{\AgdaFunction{⟨}}\AgdaSpace{}%
+\AgdaBound{v}\AgdaSpace{}%
+\AgdaOperator{\AgdaFunction{⟩ᵛ}}\<%
 \\
 %
 \>[2]\AgdaFunction{lvar}\AgdaSpace{}%
@@ -3074,13 +3200,8 @@ an extended context.
 \AgdaBound{l}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaInductiveConstructor{vₛ}\AgdaSpace{}%
 \AgdaBound{v}\AgdaSymbol{)}\<%
-\\
-%
-\\[\AgdaEmptyExtraSkip]%
-%
-\>[2]\AgdaComment{--\ Apply\ function\ to\ the\ corresponding\ variables\ of\ the\ context}\<%
 \end{code}
-With these helper functions we define the \AF{Lcon} helper that
+With these helper functions we define the \AF{Lcon} that
 for the given list of types $l$, resulting type \AB{is}, the initial
 context Γ and the function of type \AF{lfun} l Γ \AB{is} computes
 the expression in the context \AF{ext} Γ l.
@@ -3111,8 +3232,8 @@ the expression in the context \AF{ext} Γ l.
 \AgdaInductiveConstructor{[]}%
 \>[15]\AgdaBound{is}\AgdaSpace{}%
 \AgdaBound{Γ}\AgdaSpace{}%
-\AgdaBound{f}\AgdaSpace{}%
-\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaBound{f}%
+\>[23]\AgdaSymbol{=}\AgdaSpace{}%
 \AgdaBound{f}\<%
 \\
 %
@@ -3122,8 +3243,8 @@ the expression in the context \AF{ext} Γ l.
 \AgdaBound{l}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaBound{is}\AgdaSpace{}%
 \AgdaBound{Γ}\AgdaSpace{}%
-\AgdaBound{f}\AgdaSpace{}%
-\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaBound{f}%
+\>[23]\AgdaSymbol{=}\AgdaSpace{}%
 \AgdaFunction{Lcon}\AgdaSpace{}%
 \AgdaBound{l}\AgdaSpace{}%
 \AgdaBound{is}\AgdaSpace{}%
@@ -3149,7 +3270,7 @@ For example, consider this expression:
 %
 \>[2]\AgdaSymbol{\AgdaUnderscore{}}\AgdaSpace{}%
 \AgdaSymbol{=}%
-\>[1936I]\AgdaFunction{Lcon}\AgdaSpace{}%
+\>[2003I]\AgdaFunction{Lcon}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaInductiveConstructor{ar}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaInductiveConstructor{ι}\AgdaSpace{}%
 \AgdaNumber{5}\AgdaSymbol{)}\AgdaSpace{}%
@@ -3166,7 +3287,7 @@ For example, consider this expression:
 \AgdaInductiveConstructor{[]}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaInductiveConstructor{ε}\<%
 \\
-\>[.][@{}l@{}]\<[1936I]%
+\>[.][@{}l@{}]\<[2003I]%
 \>[6]\AgdaSymbol{λ}\AgdaSpace{}%
 \AgdaBound{a}\AgdaSpace{}%
 \AgdaBound{b}\AgdaSpace{}%
@@ -3191,9 +3312,9 @@ expression in the context (ε ▹ 5 ∷ [] ▹ 5 ∷ 5 ∷ []).
 
 
 
-\paragraph{Primitives}
-We are defining primitives that are needed for expresison our
-running example in $E$.  We consider an example for the \AF{conv}-olution:
+\subsection{Primitives}
+We are defining primitives that are needed for expression our
+running example in $E$.  We consider an example for the \AF{conv}olution:
 \begin{code}[hide]%
 \>[0]\AgdaKeyword{module}\AgdaSpace{}%
 \AgdaModule{Primitives}\AgdaSpace{}%
@@ -3257,93 +3378,14 @@ running example in $E$.  We consider an example for the \AF{conv}-olution:
 \\
 %
 \\[\AgdaEmptyExtraSkip]%
-%
-\>[2]\AgdaFunction{fromPrefix}\AgdaSpace{}%
-\AgdaSymbol{:}\AgdaSpace{}%
-\AgdaDatatype{Prefix}\AgdaSpace{}%
-\AgdaGeneralizable{Γ}\AgdaSpace{}%
-\AgdaGeneralizable{Δ}\AgdaSpace{}%
-\AgdaSymbol{→}\AgdaSpace{}%
-\AgdaGeneralizable{Γ}\AgdaSpace{}%
-\AgdaOperator{\AgdaDatatype{⊆}}\AgdaSpace{}%
-\AgdaGeneralizable{Δ}\<%
-\\
-%
-\>[2]\AgdaFunction{fromPrefix}\AgdaSpace{}%
-\AgdaInductiveConstructor{zero}\AgdaSpace{}%
-\AgdaSymbol{=}\AgdaSpace{}%
-\AgdaFunction{⊆-eq}\<%
-\\
-%
-\>[2]\AgdaFunction{fromPrefix}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaInductiveConstructor{suc}\AgdaSpace{}%
-\AgdaSymbol{⦃}\AgdaSpace{}%
-\AgdaBound{p}\AgdaSpace{}%
-\AgdaSymbol{⦄)}\AgdaSpace{}%
-\AgdaSymbol{=}\AgdaSpace{}%
-\AgdaInductiveConstructor{skip}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaFunction{fromPrefix}\AgdaSpace{}%
-\AgdaBound{p}\AgdaSymbol{)}\<%
-\\
 \>[0]\<%
-\\
-%
-\>[2]\AgdaFunction{wkp}\AgdaSpace{}%
-\AgdaSymbol{:}\AgdaSpace{}%
-\AgdaDatatype{Prefix}\AgdaSpace{}%
-\AgdaGeneralizable{Γ}\AgdaSpace{}%
-\AgdaGeneralizable{Δ}\AgdaSpace{}%
-\AgdaSymbol{→}\AgdaSpace{}%
-\AgdaDatatype{E}\AgdaSpace{}%
-\AgdaGeneralizable{Γ}\AgdaSpace{}%
-\AgdaGeneralizable{is}\AgdaSpace{}%
-\AgdaSymbol{→}\AgdaSpace{}%
-\AgdaDatatype{E}\AgdaSpace{}%
-\AgdaGeneralizable{Δ}\AgdaSpace{}%
-\AgdaGeneralizable{is}\<%
-\\
-%
-\>[2]\AgdaFunction{wkp}\AgdaSpace{}%
-\AgdaBound{p}\AgdaSpace{}%
-\AgdaSymbol{=}\AgdaSpace{}%
-\AgdaFunction{wk}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaFunction{fromPrefix}\AgdaSpace{}%
-\AgdaBound{p}\AgdaSymbol{)}\<%
-\\
-%
-\\[\AgdaEmptyExtraSkip]%
-%
-\>[2]\AgdaOperator{\AgdaFunction{⟨\AgdaUnderscore{}⟩}}\AgdaSpace{}%
-\AgdaSymbol{:}\AgdaSpace{}%
-\AgdaDatatype{E}\AgdaSpace{}%
-\AgdaGeneralizable{Γ}\AgdaSpace{}%
-\AgdaGeneralizable{is}\AgdaSpace{}%
-\AgdaSymbol{→}\AgdaSpace{}%
-\AgdaFunction{GE}\AgdaSpace{}%
-\AgdaGeneralizable{Γ}\AgdaSpace{}%
-\AgdaGeneralizable{is}\<%
-\\
-%
-\>[2]\AgdaOperator{\AgdaFunction{⟨\AgdaUnderscore{}⟩}}\AgdaSpace{}%
-\AgdaBound{t}\AgdaSpace{}%
-\AgdaSymbol{\{}\AgdaBound{Δ}\AgdaSymbol{\}}\AgdaSpace{}%
-\AgdaSymbol{⦃}\AgdaSpace{}%
-\AgdaBound{p}\AgdaSpace{}%
-\AgdaSymbol{⦄}\AgdaSpace{}%
-\AgdaSymbol{=}\AgdaSpace{}%
-\AgdaFunction{wkp}\AgdaSpace{}%
-\AgdaBound{p}\AgdaSpace{}%
-\AgdaBound{t}\<%
 \end{code}
 \begin{code}%
-%
-\>[2]\AgdaFunction{conv}%
-\>[2053I]\AgdaSymbol{:}\AgdaSpace{}%
-\AgdaSymbol{∀}\AgdaSpace{}%
-\AgdaSymbol{\{}\AgdaBound{Γ}\AgdaSymbol{\}}\AgdaSpace{}%
-\AgdaSymbol{→}\AgdaSpace{}%
+\>[0][@{}l@{\AgdaIndent{1}}]%
+\>[2]\AgdaFunction{conv}\AgdaSpace{}%
+\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaDatatype{E}\AgdaSpace{}%
-\AgdaBound{Γ}\AgdaSpace{}%
+\AgdaGeneralizable{Γ}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaInductiveConstructor{ar}\AgdaSpace{}%
 \AgdaGeneralizable{r}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
@@ -3356,7 +3398,7 @@ running example in $E$.  We consider an example for the \AF{conv}-olution:
 \AgdaSymbol{⦄}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
 \AgdaDatatype{E}\AgdaSpace{}%
-\AgdaBound{Γ}\AgdaSpace{}%
+\AgdaGeneralizable{Γ}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaInductiveConstructor{ar}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
@@ -3365,12 +3407,10 @@ running example in $E$.  We consider an example for the \AF{conv}-olution:
 \AgdaGeneralizable{p}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{≈}}\AgdaSpace{}%
 \AgdaGeneralizable{u}\AgdaSpace{}%
-\AgdaSymbol{⦄}\<%
-\\
-\>[.][@{}l@{}]\<[2053I]%
-\>[7]\AgdaSymbol{→}\AgdaSpace{}%
+\AgdaSymbol{⦄}\AgdaSpace{}%
+\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaDatatype{E}\AgdaSpace{}%
-\AgdaBound{Γ}\AgdaSpace{}%
+\AgdaGeneralizable{Γ}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaInductiveConstructor{ar}\AgdaSpace{}%
 \AgdaGeneralizable{u}\AgdaSymbol{)}\<%
 \\
@@ -3383,10 +3423,8 @@ running example in $E$.  We consider an example for the \AF{conv}-olution:
 \AgdaBound{g}\AgdaSpace{}%
 \AgdaSymbol{⦃}\AgdaSpace{}%
 \AgdaBound{ss}\AgdaSpace{}%
-\AgdaSymbol{⦄}\<%
-\\
-\>[2][@{}l@{\AgdaIndent{0}}]%
-\>[4]\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaSymbol{⦄}\AgdaSpace{}%
+\AgdaSymbol{=}\AgdaSpace{}%
 \AgdaFunction{Sum}\AgdaSpace{}%
 \AgdaSymbol{λ}\AgdaSpace{}%
 \AgdaBound{i}\AgdaSpace{}%
@@ -3414,7 +3452,7 @@ running example in $E$.  We consider an example for the \AF{conv}-olution:
 %
 \>[2]\AgdaFunction{mconv}\AgdaSpace{}%
 \AgdaSymbol{:}%
-\>[2115I]\AgdaSymbol{⦃}\AgdaSpace{}%
+\>[2128I]\AgdaSymbol{⦃}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{+}}\AgdaSpace{}%
 \AgdaGeneralizable{p}\AgdaSpace{}%
@@ -3437,7 +3475,7 @@ running example in $E$.  We consider an example for the \AF{conv}-olution:
 \AgdaOperator{\AgdaFunction{⊗}}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSymbol{)))}\<%
 \\
-\>[.][@{}l@{}]\<[2115I]%
+\>[.][@{}l@{}]\<[2128I]%
 \>[10]\AgdaSymbol{(}\AgdaBound{bᵥ}\AgdaSpace{}%
 \AgdaSymbol{:}\AgdaSpace{}%
 \AgdaDatatype{E}\AgdaSpace{}%
@@ -3470,10 +3508,8 @@ running example in $E$.  We consider an example for the \AF{conv}-olution:
 \AgdaSymbol{⦃}\AgdaSpace{}%
 \AgdaBound{su}\AgdaSpace{}%
 \AgdaSymbol{⦄}\AgdaSpace{}%
-\AgdaSymbol{=}\<%
-\\
-\>[2][@{}l@{\AgdaIndent{0}}]%
-\>[4]\AgdaFunction{Imap}\AgdaSpace{}%
+\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaFunction{Imap}\AgdaSpace{}%
 \AgdaSymbol{λ}\AgdaSpace{}%
 \AgdaBound{i}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
@@ -3500,8 +3536,8 @@ running example in $E$.  We consider an example for the \AF{conv}-olution:
 %
 \\[\AgdaEmptyExtraSkip]%
 %
-\>[2]\AgdaFunction{avgp₂}%
-\>[2188I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[2]\AgdaFunction{avgp₂}\AgdaSpace{}%
+\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{∀}\AgdaSpace{}%
 \AgdaBound{m}\AgdaSpace{}%
 \AgdaBound{n}\AgdaSpace{}%
@@ -3519,10 +3555,8 @@ running example in $E$.  We consider an example for the \AF{conv}-olution:
 \AgdaOperator{\AgdaPrimitive{ℕ.*}}\AgdaSpace{}%
 \AgdaNumber{2}\AgdaSpace{}%
 \AgdaOperator{\AgdaInductiveConstructor{∷}}\AgdaSpace{}%
-\AgdaInductiveConstructor{[]}\AgdaSymbol{)))}\<%
-\\
-\>[.][@{}l@{}]\<[2188I]%
-\>[8]\AgdaSymbol{→}\AgdaSpace{}%
+\AgdaInductiveConstructor{[]}\AgdaSymbol{)))}\AgdaSpace{}%
+\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaDatatype{E}\AgdaSpace{}%
 \AgdaGeneralizable{Γ}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaInductiveConstructor{ar}\AgdaSpace{}%
@@ -3537,10 +3571,8 @@ running example in $E$.  We consider an example for the \AF{conv}-olution:
 \AgdaBound{m}\AgdaSpace{}%
 \AgdaBound{n}\AgdaSpace{}%
 \AgdaBound{a}\AgdaSpace{}%
-\AgdaSymbol{=}\<%
-\\
-\>[2][@{}l@{\AgdaIndent{0}}]%
-\>[4]\AgdaFunction{Imaps}\AgdaSpace{}%
+\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaFunction{Imaps}\AgdaSpace{}%
 \AgdaSymbol{λ}\AgdaSpace{}%
 \AgdaBound{i}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
@@ -3634,9 +3666,6 @@ running example in $E$.  We consider an example for the \AF{conv}-olution:
 \AgdaOperator{\AgdaFunction{⟩}}\AgdaSpace{}%
 \AgdaBound{i}\AgdaSymbol{)}\<%
 \end{code}
-where \AF{⟨\_⟩} lifts an expression into a generalised expression
-simply by applying weakening according to the prefix.
-
 Finally, the CNN embedded in $E$ is given as follows:
 \begin{code}%
 %
@@ -3649,8 +3678,8 @@ Finally, the CNN embedded in $E$ is given as follows:
 %
 \>[2]\AgdaFunction{cnn}\AgdaSpace{}%
 \AgdaSymbol{=}%
-\>[2300I]\AgdaFunction{Lcon}%
-\>[2301I]\AgdaSymbol{(}%
+\>[2316I]\AgdaFunction{Lcon}%
+\>[2317I]\AgdaSymbol{(}%
 \>[16]\AgdaInductiveConstructor{ar}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaNumber{28}\AgdaSpace{}%
 \AgdaOperator{\AgdaInductiveConstructor{∷}}\AgdaSpace{}%
@@ -3667,7 +3696,7 @@ Finally, the CNN embedded in $E$ is given as follows:
 \AgdaOperator{\AgdaInductiveConstructor{∷}}\AgdaSpace{}%
 \AgdaInductiveConstructor{[]}\AgdaSymbol{)}\<%
 \\
-\>[2301I][@{}l@{\AgdaIndent{0}}]%
+\>[2317I][@{}l@{\AgdaIndent{0}}]%
 \>[14]\AgdaOperator{\AgdaInductiveConstructor{∷}}\AgdaSpace{}%
 \AgdaInductiveConstructor{ar}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaNumber{6}\AgdaSpace{}%
@@ -3729,12 +3758,12 @@ Finally, the CNN embedded in $E$ is given as follows:
 \>[14]\AgdaOperator{\AgdaInductiveConstructor{∷}}\AgdaSpace{}%
 \AgdaInductiveConstructor{[]}\AgdaSymbol{)}\<%
 \\
-\>[.][@{}l@{}]\<[2301I]%
+\>[.][@{}l@{}]\<[2317I]%
 \>[13]\AgdaSymbol{(}\AgdaInductiveConstructor{ar}\AgdaSpace{}%
 \AgdaInductiveConstructor{[]}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaInductiveConstructor{ε}\<%
 \\
-\>[.][@{}l@{}]\<[2300I]%
+\>[.][@{}l@{}]\<[2316I]%
 \>[8]\AgdaSymbol{λ}\AgdaSpace{}%
 \AgdaBound{inp}\AgdaSpace{}%
 \AgdaBound{k₁}\AgdaSpace{}%

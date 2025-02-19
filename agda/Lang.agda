@@ -380,7 +380,8 @@ module Syntax where
   Imap : ∀ {Γ}
        → (GE (Γ ▹ ix s) (ix s) → E (Γ ▹ ix s) (ar p))
        → E Γ (ar (s ⊗ p))
-  Imap f = imap (f λ {Δ} ⦃ p ⦄ → var (V v₀))
+  --Imap f = imap (f λ {Δ} ⦃ p ⦄ → var (V v₀))
+  Imap f = imap (f (var (V v₀)))
 
   Sum : ∀ {Γ}
        → (GE (Γ ▹ ix s) (ix s) → E (Γ ▹ ix s) (ar p))
