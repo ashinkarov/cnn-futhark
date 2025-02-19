@@ -18,41 +18,43 @@ module Array where
   open import Data.Product as Prod using (∃; _,_; _×_; uncurry)
 \end{code}
 
-The central data structures of our case study are multi-dimensional
-arrays.  This section is dedicated to defining a minimalist array theory
-in Agda which is well-suited for a specification of CNNs.
+The central data structure of our case study is a multi-dimensional array (ML
+uses the term \emph{tensor}).  This section presents a minimalist array theory in Agda
+which is well-suited for specifying numerical applications such as CNNs.
 
-We assume that the reader is sufficiently familiar with Agda's syntax.
+The work in the rest of the paper is presented in Agda and we assume some
+familiarity with its syntax.
 For gentle introductions we refer to one of the tutorials that are freely available
 online\footnote{See \url{https://agda.readthedocs.io/en/v2.6.3/getting-started/tutorial-list.html}.}.
 
-The conciseness of the specification
+The conciseness of the CNN specification
 in~\cite{cnn-array} relies on rank-polymorphism, which is the ability to operate
-on arrays of arbitrary rank.  We capture this feature in in our array theory.
+on arrays of arbitrary ranks.  We ensure that our array theory is rank polymorphic
+which distinguishes it form many existing approaches.
 The central consideration when working with dependent types is how to represent data.
 Some encodings are better suited for reasoning, others are more efficient
 at runtime.  Due to our two-language setup, our choice of representation is
 driven by proof considerations only.
-This enables us to represent arrays as functions from indices to values.
+This is why we represent arrays as functions from indices to values.
 
-An absence of out-of-bound errors requires that all array indices fall within
+Absence of out-of-bound errors means that all array indices fall within
 the shapes of the arrays that they are selecting from.
-The shape of an array describes the extent of each of its axes.  We represent
-shapes lists of natural numbers using the data type \AD{S}.
-Empty shapes \AC{[]} correspond to singleton arrays (often called
-scalars in array langauges).  The cons operation \AC{\_∷\_} prepends
-the axis to the left of the shape.
-Note that underscores in \AC{\_∷\_} specify the position where arguments
-go, therefore \AC{∷} is an infix binary operation.
+The shape of array describes the extent of each of its axes.  We represent
+shapes as lists of natural numbers using the data type \AD{S}.
+The \AC{[]} shape describes an array of rank zero that contains one
+element (array languages often call arrays of such shape \emph{scalars}).
+The cons operation \AC{\_∷\_} prepends the axis to the left of the shape.
+Note on the notation: underscores in \AC{\_∷\_} specify positions where
+arguments go turning \AC{∷} into an infix binary operation.
 
 Array positions (indices) are given by the dependent type \AD{P} which
-is indexed by shapes.  A position within an array of shape \AB{s} has exactly the
-same tree structure as \AB{s}, but the leaves are natural numbers that
-are bounded by the corresponding shape elements.
+is indexed by shapes \AD{S}.  A position within an array of shape \AB{s}
+is a list of natural numbers of the same length as $s$ where all elements
+are less than the corresponding elements of $s$.
 
-Arrays are given by the data type \AF{Ar} which is indexed by a shape
-and an element type.  The formal definitions of \AF{S}, \AF{P} and \AF{Ar} are
-as follows:
+Arrays are given by the type \AF{Ar} \AB{s} \AB{X} where $s$ is a shape of
+the array and $X$ is the type of array elements.  Formal definitions of
+\AF{S}, \AF{P} and \AF{Ar} are as follows:
 \begin{mathpar}
 \codeblock{\begin{code}
   data S : Set where
@@ -78,7 +80,7 @@ as follows:
 \end{code}}
 \end{mathpar}
 As arrays are functions, selections are function applications and
-array construction is a function definition (\eg{} via $\lambda$-abstraction).
+array constructor is a function definition (\eg{} via $\lambda$-abstraction).
 
 \paragraph{Array Combinators} It is helpful to invest a little time
 in defining array combinators.  First, we can observe that \AD{Ar} of
@@ -109,8 +111,8 @@ Array shapes can be concatenated as lists.  We call this operation
 correspond to the shape of tensor product).  Positions of sub-shapes
 can be joined into a position of a product shape using the \AF{\_⊗ₚ\_}
 operation.  Dually, positions of a product shape can be split into
-positions of the corresponding subshapes using \AF{split}.  Here are
-the types of these three operations:
+positions of the corresponding subshapes using \AF{split}.  The types
+of these three operations are as follows.
 \begin{mathpar}
 \codeblock{\begin{code}
   _⊗_ : S → S → S
@@ -163,8 +165,8 @@ achieve this are named \AF{nest} and \AF{unnest} and their definitions are:
 
 \paragraph{Reduction} We implement reduction of the binary operations
 over arrays in two steps.  Firstly, we define 1-d reductions  that
-we call \AD{sum₁} which is very similar to right fold on lists.
-The arrays of higher ranks iterate \AF{sum₁} bottom-up.  The definition
+we call \AD{sum₁} which is similar to right fold on lists.
+Arrays of higher ranks iterate \AF{sum₁} bottom-up.  The definition
 of the primitives are as follows:
 \begin{mathpar}
 \codeblock{\begin{code}
@@ -188,8 +190,8 @@ of the primitives are as follows:
 \end{mathpar}
 
 Note that our reduction forces the types of the arguments of the binary
-operation to be the same, which is different from the usual foldr definition.
-While we do not need this functionality for our example,
+operation to be the same, which is different from usual definitions of foldr.
+While this generality is not required for our example,
 it is worth noting that the standard behaviour can be recovered\footnote{
 We recover regular fold behaviour by running \AD{sum} over function composition:
 \begin{code}
@@ -282,12 +284,12 @@ We recover regular fold behaviour by running \AD{sum} over function composition:
 
 \section{CNN Building Blocks\label{sec:cnn}}
 
-With the array theory from the previous section we can define the actual primitives 
-that are required for our case study.
+Using the array theory and combinators from the previous section we
+define the primitives that are need for the CNN.
 
 \subsection{One-dimensional convolution}
-We start with plus and minus operations for 1-d indices which will
-be used in the definition of convolution:
+We start with plus and minus operations for 1-d indices which are
+prerequisites for defining convolution:
 \begin{code}[hide]
   inject-left : Fin (suc m) → Fin (suc (n + m))
   inject-left {m} {n} i rewrite +-comm n m  = inject+ _ i
@@ -355,7 +357,7 @@ be used in the definition of convolution:
   --                                    ; (suc k , ()) }
   -- minusx {suc m} {suc n} (suc i) (suc j) = ? 
 \end{code}
-While the definitions look very innocent, their types carry non-trivial
+While the definitions look innocent, their types carry non-trivial
 information.  Consider \AF{\_⊕\_} which is addition of bounded $i$ and $j$.
 However, the type says:
 \begin{mathpar}
@@ -364,26 +366,27 @@ However, the type says:
     {i+j < m + n}
 \end{mathpar}
 This looks a little surprising, but this indeed holds for natural numbers.
-A reader may convince herself by considering the maximum value that $i$ and $j$
-can possibly take.  The \AF{\_⊕\_} have partial inverses making it possible
+Readers may convince themselves by considering the maximum value that $i$ and $j$
+can possibly take.  The \AF{\_⊕\_} operation have partial inverses making it possible
 to define left and right subtraction.  We consider left subtraction \AF{\_⊝\_}.
 Its type says that there exists a decision procedure for finding $k$ of type
 \AF{Fin} (1 + \AB{n}) together with the proof that $k$ is an inverse.
 In some sense \AF{Dec} is similar to \AF{Maybe} type, except it forces one
 to prove why the value does not exist as opposed to just returning \AC{nothing}.
-This happens to be very useful, as it is really easy to introduce off-by-one
-errors otherwise.
+Here dependent types come very useful, as we eliminate the possibility of
+introducing off-by-one errors in the definition of \AF{⊝}.
 
 
-With the above definitions we can define convolution for 1-dimensional
-cases.  A side note for mathematically inclined readers.  We use the term
+Now we are ready to define a 1-dimensional convolution.
+A side note for mathematically inclined readers: we use the term
 \emph{convolution} in the way it is used in machine learning.  Technically,
 we compute a cross-correlation, because the array of weights is not flipped.
 However, in practice this is not a problem, as we assume that weights are
 stored flipped in memory.
 
-We define a handy shortcut \AF{Vec} and \AF{Ix} which are \AF{Ar} and \AF{P}
-for 1-dimensional cases.\begin{mathpar}
+We define type synonyms \AF{Vec} and \AF{Ix} which are 1-dimensional versions
+of \AF{Ar} and \AF{P}.
+\begin{mathpar}
 \codeblock{\begin{code}
   Vec : ℕ → Set → Set
   Vec m X = Ar (ι m) X
@@ -409,30 +412,36 @@ and then sum it up.
 \end{mathpar}
 
 \subsection{Generalisation\label{sec:general-ix-ops}}
-We want to define convolution for arrays of higher ranks.  The first thing
-to do is to express $m + n$ and $1 + n$ where $m$ and $n$ become arbitrary
-shapes.  In case of addition, we need a witness that both shapes
-have the same length.  If they do, we can simply add their nodes point-wise.
-We define the three-way relation \AF{\_+\_≈\_} that combines the witness and
+Now we generalise 1-dimensional slide for arrays of higher ranks.
+This requires generalising vector shapes $m + n$ and $1 + n$ for the cases
+when $m$ and $n$ for arbitrary shapes.  In case of addition, we need a witness
+that both shapes
+have the same length.  If they do, their components are added point-wise.
+We define a three-way relation \AF{\_+\_≈\_} that combines the witness and
 the action.  That is, the type \AB{p} \AF{+} \AB{q} \AF{≈} \AB{r} says that
 $p$ and $q$ have the same length and that $q$ is a point-wise addition
-of $p$ and $q$.  We introduce a similar relation \AF{suc\_≈\_} for $1 + n$
-case, and we introduce the relation \AF{\_*\_≈\_} that witnesses point-wise
-multiplication that will be needed for blocking.  We define these relation
-in two steps.  Firstly, we give a generalised pointwise-relation for binary
+of $p$ and $q$.  A similar relation \AF{suc\_≈\_} is introduced for $1 + n$
+case, and \AF{\_*\_≈\_} witnesses point-wise
+multiplication that will be needed for blocking.  We define these relations
+in two steps.  Firstly, we give a generalised pointwise relations for binary
 and trenary relations on natural numbers:
-\begin{code}
-  data Pointw₂ (R : (a b : ℕ) → Set) : (a b : S) → Set where
-    instance
-      []    : Pointw₂ R [] []
-      cons  : ⦃ R m n ⦄ → ⦃ Pointw₂ R s p ⦄ → Pointw₂ R (m ∷ s) (n ∷ p) 
-\end{code}
-\begin{code}
-  data Pointw₃ (R : (a b c : ℕ) → Set) : (a b c : S) → Set where
-    instance
-      []    : Pointw₃ R [] [] []
-      cons  : ⦃ R m n k ⦄ → ⦃ Pointw₃ R s p q ⦄ → Pointw₃ R (m ∷ s) (n ∷ p) (k ∷ q)
-\end{code}
+\begin{mathpar}
+\codeblock{\begin{code}
+  data Pw₂ (R : (a b : ℕ) → Set) 
+       : (a b : S) → Set where instance
+      []    : Pw₂ R [] []
+      cons  : ⦃ R m n ⦄ → ⦃ Pw₂ R s p ⦄
+            → Pw₂ R (m ∷ s) (n ∷ p) 
+\end{code}}
+\and
+\codeblock{\begin{code}
+  data Pw₃ (R : (a b c : ℕ) → Set) 
+       : (a b c : S) → Set where instance
+      []    : Pw₃ R [] [] []
+      cons  : ⦃ R m n k ⦄ → ⦃ Pw₃ R s p q ⦄
+            → Pw₃ R (m ∷ s) (n ∷ p) (k ∷ q)
+\end{code}}
+\end{mathpar}
 While the definition is straight-forward, note that we mark constructors
 with the keyword \AK{instance} and we turn the arguments of \AC{cons}
 into instance arguments\footnote{See \url{https://agda.readthedocs.io/en/v2.7.0.1/language/instance-arguments.html} for more details.}.  These arguments
@@ -447,28 +456,30 @@ a larger number of cases when compared to hidden arguments.
   infixl 8 _⊝ₚ_
 \end{code}
 
-Definition of the actual relations are:
+The second step is to define the actual relations.  With the help of composition
+combinators ($f$ \AF{∘} $g$ = λ x → f (g x)) and ($f$ \AF{∘₂} $g$ = λ x y → f (g x y))
+the definitions are as follows.
 \begin{mathpar}
 \codeblock{\begin{code}
   _+_≈_ : (s p q : S) → Set
-  s + p ≈ q = Pointw₃ (λ x y z → x + y ≡ z) s p q
+  _+_≈_ = Pw₃ (_≡_ ∘₂ _+_)
 \end{code}}
 \and
 \codeblock{\begin{code}
   _*_≈_ : (s p q : S) → Set
-  s * p ≈ q = Pointw₃ (λ x y z → x * y ≡ z) s p q
+  _*_≈_ = Pw₃ (_≡_ ∘₂ _*_)
 \end{code}}
 \and
 \codeblock{\begin{code}
   suc_≈_ : (s p : S) → Set
-  suc s ≈ p = Pointw₂ (λ x y → suc x ≡ y) s p
+  suc_≈_ = Pw₂ (_≡_ ∘ suc)
 \end{code}}
 \end{mathpar}
 
-With these relations in place, how do we define generalised convolution?  One
-possible way is to use the \AF{sum} approach where we recurse over the shape
-tree and perform one operation at a time.  However, there is a good point made
-in~\cite{cnn-array} that we can shift the shape recursion into index computation.
+With these relations in place, we could define generalised convolution
+similarly to \AF{sum} where we recurse over the shape, performing one
+operation at a time.  However, there is a good point made
+in~\cite{cnn-array} about shifting the shape recursion into index computation.
 % Talk about mental model of runtime where arrays are flat and indices are offsets
 Therefore we define \AF{\_⊕ₚ\_} and \AF{\_⊝ₚ\_} which generalise \AF{\_⊕\_} and
 \AF{\_⊝\_} for higher ranks.  Once again, \AD{Dec} type forces \AF{⊝ₚ} to justify
@@ -476,18 +487,17 @@ the cases when the inverse does not exist.
 \begin{mathpar}
 \codeblock{\begin{code}
   _⊕ₚ_ : P s → P u → suc p ≈ u → s + p ≈ r → P r
+  _⊝ₚ_ : (i : P r) (j : P s) (su : suc p ≈ u) (sp : s + p ≈ r) → Dec (∃ λ k → (j ⊕ₚ k) su sp ≡ i)
+\end{code}}
+\end{mathpar}
+The implementation of \AF{⊕ₚ} and \AF{⊝ₚ} simply apply \AF{⊕} and \AF{⊝}
+In the \AF{⊝} case a little plumbing is required when constructing the
+proof of (non-)existence of the inverse.
+\begin{code}[hide]
   (i ⊕ₚ j) [] [] = j
   ((i ∷ is) ⊕ₚ (j ∷ js)) (cons ⦃ refl ⦄ ⦃ sp ⦄) (cons ⦃ refl ⦄ ⦃ s+p ⦄)
     = (i ⊕ j) ∷ (is ⊕ₚ js) sp s+p
 
-  _⊝ₚ_ : (i : P r) (j : P s) (su : suc p ≈ u) (sp : s + p ≈ r) → Dec (∃ λ k → (j ⊕ₚ k) su sp ≡ i)
-\end{code}}
-\end{mathpar}
-We do not show the implementation of the \AF{⊝ₚ}, but it very much follows the
-structure of \AF{⊕ₚ}: we apply \AF{⊝} on the leaves and we recurse on the product
-shape with a little bit plumbing to construct the proof of (non-)existence of the
-inverse.
-\begin{code}[hide]
   ([] ⊝ₚ j) [] [] = yes ([] , refl)
   ((i ∷ is) ⊝ₚ (j ∷ js)) (cons ⦃ refl ⦄ ⦃ sp ⦄) (cons ⦃ refl ⦄ ⦃ s+p ⦄) 
         with i ⊝ j
@@ -497,11 +507,11 @@ inverse.
   ... | yes (ks , q) = yes (k ∷ ks , cong₂ _∷_ p q)
 \end{code}
 
-Our generalised \AF{slide} looks very much the same as its 1-dimensional
-counterpart.  All the difference lies in the index computation.  We also
-introduce a section of the slide that we call \AF{backslide} which embed
-a $(1+p)$-dimensional array into a $(s+p)$-dimensional one at offset $i$
-using some the provided default element \AB{def}.
+Generalised \AF{slide} looks very similar to its 1-dimensional
+counterpart, except that \AF{⊕} is replaced with \AF{⊕ₚ}
+We also introduce a section of \AF{slide} that we call \AF{backslide}.
+It embeds a $(1+p)$-dimensional array into a $(s+p)$-dimensional
+one at the offset $i$ using \AB{def} to fill the outer region.
 \begin{mathpar}
 \codeblock{\begin{code}
   slide : P s → s + p ≈ r → Ar r X → suc p ≈ u → Ar u X
@@ -514,15 +524,15 @@ using some the provided default element \AB{def}.
 \end{code}}
 \end{mathpar}
 
-\subsection{Remaining primitives}
-In the rest of this section we implement the remaining CNN-specific primitives.
-We are going to use the builtin Float type that we call \AD{ℝ} so that we can
-run our specification with concrete values.  However, all we require from \AD{R}
-is a set of standard arithmetic operations.  Therefore, \AD{ℝ} can be abstracted
-out as a parameter.
+\subsection{CNN primitives}
+Now we implement CNN-specific primitives which operate on arrays of reals.
+Here we use builtin Agda floats that we refer to as \AD{ℝ} so that we can
+run our specification with concrete values.
+Later we are going to abstract over concrete implementation of
+\AD{ℝ}.
 
 Generalised convolution is given by \AF{conv}, and it is almost identical to its
-1-dimensional counterpart (except it used \AF{slide} instead of \AF{slide₁}).
+1-dimensional counterpart (except it uses \AF{slide} instead of \AF{slide₁}).
 The \AF{mconv} runs $u$ \AF{conv}s adds biases to each of them from the array $b$.
 \begin{code}[hide]
 module CNN where
@@ -553,12 +563,14 @@ One of the steps of the machine learning algorithm is average pooling which
 splits an array into sub-blocks and computes the average for every such
 block.  Implementing this pattern generally is tricky as we have to
 preserve local neighbourhood within the blocks.  Working with a
-pre-blocked array woudl be inconvenient as the blocked shaped
-does not go well with \AF{slides}.  We solvet this by introducing
+pre-blocked array would be inconvenient as the blocked shaped
+does not go well with \AF{slides}.  We solve this by introducing
 blocked selections into arrays of shape $(s * p)$ as well
-and blocked array constructor \AF{imapb} that builds an array of
+as blocked array constructor \AF{imapb} that builds an array of
 shape $(s * p)$ out of $s$ blocks of shape $p$.  Defining these
-operations we require pairing and projections of the blocked indices:
+operations we require pairing and projections of the blocked indices
+which is achieved by applying division and modulo operation on the
+components.  The types of these operations are as follows:
 \begin{mathpar}
 \codeblock{\begin{code}
   ix-div : P q → s * p ≈ q → P s
@@ -599,10 +611,8 @@ are:
   imapb a p i = a (ix-div i p) (ix-mod i p)
 \end{code}}
 \end{mathpar}
-
-
-Finally we define an average pooling that is specialised to the
-2-dimensional case, that is needed in our running example.
+We define an average pooling that is specialised to
+2-dimensional cases as needed per our running example.
 \begin{mathpar}
 \codeblock{\begin{code}
   avgp₂ : (m n : ℕ) → Ar (m ℕ.* 2 ∷ n ℕ.* 2 ∷ []) ℝ → Ar (m ∷ n ∷ []) ℝ
@@ -610,12 +620,17 @@ Finally we define an average pooling that is specialised to the
 \end{code}}
 \end{mathpar}
 
-We are now ready to provide the implementation of the forward part of the CNN
+With these primitives we implement forward part of the CNN
 as follows.  The \AB{inp} argument is the image of a hand-written digit, all
 the other arguments are weights, and the function returns the 10-element vector
-with probabilities which digit that is.
-\begin{mathpar}
-\codeblock{\begin{code}
+with probabilities which digit that is.  Note that type annotations in let are
+purely for documentation --- Agda infers them automatically and these lines
+can be removed.  Note also that all the \AF{mconv} applications do not require
+explicit proofs as Agda can compute them from the shape information provided
+in types.
+%\begin{mathpar}
+%\codeblock{
+\begin{code}
   forward : (inp  :  Ar (28 ∷ 28 ∷ []) ℝ) → (k₁ : Ar (6 ∷ 5 ∷ 5 ∷ []) ℝ)
           → (b₁   :  Ar (6  ∷ []) ℝ)      → (k₂ : Ar (12 ∷ 6 ∷ 5 ∷ 5 ∷ []) ℝ)
           → (b₂   :  Ar (12 ∷ []) ℝ)      → (fc : Ar (10 ∷ 12 ∷ 1 ∷ 4 ∷ 4 ∷ []) ℝ)
@@ -635,6 +650,7 @@ with probabilities which digit that is.
 
       r = logistic $ mconv s₂ fc b 
     in r
-\end{code}}
-\end{mathpar}
+\end{code}
+%}
+%\end{mathpar}
 
