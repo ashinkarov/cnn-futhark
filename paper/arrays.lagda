@@ -29,8 +29,8 @@ online\footnote{See \url{https://agda.readthedocs.io/en/v2.6.3/getting-started/t
 
 The conciseness of the CNN specification
 in~\cite{cnn-array} relies on rank-polymorphism, which is the ability to operate
-on arrays of arbitrary ranks.  We ensure that our array theory is rank polymorphic
-which distinguishes it form many existing approaches.
+on arrays of arbitrary ranks.  Our array theory is rank polymorphic
+which distinguishes it from most existing approaches.
 The central consideration when working with dependent types is how to represent data.
 Some encodings are better suited for reasoning, others are more efficient
 at runtime.  Due to our two-language setup, our choice of representation is
@@ -45,7 +45,7 @@ The \AC{[]} shape describes an array of rank zero that contains one
 element (array languages often call arrays of such shape \emph{scalars}).
 The cons operation \AC{\_∷\_} prepends the axis to the left of the shape.
 Note on the notation: underscores in \AC{\_∷\_} specify positions where
-arguments go turning \AC{∷} into an infix binary operation.
+arguments go, turning \AC{∷} into an infix binary operation.
 
 Array positions (indices) are given by the dependent type \AD{P} which
 is indexed by shapes \AD{S}.  A position within an array of shape \AB{s}
