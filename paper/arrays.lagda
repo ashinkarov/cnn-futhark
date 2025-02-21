@@ -305,6 +305,20 @@ prerequisites for defining convolution:
   inj₁₂ : {A B : Set}{x : A}{y : B} → inj₁ x ≡ inj₂ y → ⊥
   inj₁₂ ()
 \end{code}
+\todo[inline]{A comment from the reviewer 2 (2004) (fucking idiot...): The
+'bounded addition' and subtraction operations seemed odd to me. Usually,
+functions involving Fin (n + m) invoke the isomorphism between this type and
+Either (Fin n) (Fin m). The paper seems to be leaving out the subtraction
+invocations, leading to a Dec type that requires extra pattern matching. Could
+this be expressed more elegantly as a view?}
+\todo[inline]{
+reviewer 3: I think that more explanations are required on the left
+subtraction: only after analysing the \texttt{backslide} implementation
+did I realize that not only is \(k = i - j >= 0\) ensured, but also
+\(k = i - j < 1 + n\). Similarly, the explanation of \texttt{backslide} in Section 4.2 is
+very expeditive: I had to make a drawing on paper to understand what
+\texttt{backslide} is doing and deduct how its implementation works.
+}
 \begin{mathpar}
 \codeblock{\begin{code}
   _⊕_ : Fin m → Fin (1 + n) → Fin (m + n)
@@ -410,8 +424,18 @@ and then sum it up.
   conv₁ a w = sum (zipWith _+_) (K 0) (λ i → map (w i *_) (slide₁ i a))
 \end{code}}
 \end{mathpar}
+\todo[inline]{reviewer 2 (2004): I would appreciate a bit more specification
+or description of conv₁}
 
 \subsection{Generalisation\label{sec:general-ix-ops}}
+\todo[inline]{reviewer 2 (2004) (fucking idiot): I can't help but wonder if
+there is no simpler definition of operations such as slide and backslide that
+don't rely on such heavy manipulation of individual indices (and the proofs
+that guarantee things remain in bounds). Richard Bird coined the phrase
+'wholemeal programming' -- where the definitions tend to avoid index
+manipulation in favour of manipulating entire arrays at once, claiming that the
+functional wholemeal style is easier to reason about and verify.}
+
 Now we generalise 1-dimensional slide for arrays of higher ranks.
 This requires generalising vector shapes $m + n$ and $1 + n$ for the cases
 when $m$ and $n$ for arbitrary shapes.  In case of addition, we need a witness
@@ -525,6 +549,7 @@ one at the offset $i$ using \AB{def} to fill the outer region.
 \end{mathpar}
 
 \subsection{CNN primitives}
+\todo[inline]{mention that we are doing MNIST stuff here}
 Now we implement CNN-specific primitives which operate on arrays of reals.
 Here we use builtin Agda floats that we refer to as \AD{ℝ} so that we can
 run our specification with concrete values.
@@ -534,6 +559,9 @@ Later we are going to abstract over concrete implementation of
 Generalised convolution is given by \AF{conv}, and it is almost identical to its
 1-dimensional counterpart (except it uses \AF{slide} instead of \AF{slide₁}).
 The \AF{mconv} runs $u$ \AF{conv}s adds biases to each of them from the array $b$.
+\todo[inline]{reviewer 3 suggested rephrase: Besides the typo, this explanation
+is hard to follow: it might be helpful to clarify that these convolutions and
+biases are run in parallel, and simply batched in an outer array dimension.}
 \begin{code}[hide]
 module CNN where
   open import Data.Nat as ℕ using (ℕ)
@@ -619,6 +647,16 @@ We define an average pooling that is specialised to
   avgp₂ m n a = map ((_÷ fromℕ 4) ∘ sum _+_ 0.0) (selb a it)
 \end{code}}
 \end{mathpar}
+\todo[inline]{
+In the definition of \texttt{avgp2}, it seems that the block size is
+implicitly inferred from the shape of the input array \texttt{a}? Would
+this definition still work if the input shape would use
+e.g.~\texttt{2\ *\ m} instead of \texttt{m\ *\ 2}? If not, it would be
+useful to clarify that the block size is heavily syntax-directed --
+also, does this not make using the blocking function counter-intuitive
+and error-prone? I can imagine accidentally blocking by \texttt{m},
+\texttt{n} instead of \texttt{2}, \texttt{2} with the wrong input
+type.}
 
 With these primitives we implement forward part of the CNN
 as follows.  The \AB{inp} argument is the image of a hand-written digit, all

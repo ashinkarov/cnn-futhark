@@ -1,7 +1,11 @@
 \section{Conclusions\label{sec:conclusions}}
 
 The paper demonstrates a technique of developing high performance applications with
-strong correctness guarantees.  The key insight lies in using a proof assistant
+strong correctness guarantees.
+\todo[inline]{reviewer 3 (2024): remind the reader of which ones (1205-1206
+comes a bit late) (this is mentioned below, just lift it here)}
+
+The key insight lies in using a proof assistant
 in cooperation with a high-performance language of choice.  This gives a clear
 separation of concerns that is very difficult to achieve within a single
 language.  The proof assistant is used to design a specification, prove
@@ -12,6 +16,8 @@ effort, but correctness \emph{is} demanding!
 Having a trusted specification as well as entire code-generation pipeline
 within a single dependently-typed framework is incredibly powerful.
 As we have demonstrated at the example of the neural network, we can introduce domain-specific
+\todo[inline]{reviewer 3 (2024): which ones? are we talking about the array
+domain or the CNN domain?}
 optimisations and even swap the backend in case its performance is unsatisfying.
 For our example, the entire framework that includes array theory, DSL,
 optimisations and extraction is about 2000 lines of Agda code.  We managed
@@ -37,4 +43,5 @@ comes to application design.  Therefore, such a cooperation between
 correctness-oriented and performance-oriented tools is likely to
 persist.  With this work we demonstrate that such cooperation
 is feasible in practice.
+\todo[inline]{reviewer 3 (2024): Was this not already shown by prior work?}
 

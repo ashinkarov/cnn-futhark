@@ -1061,6 +1061,7 @@ Finally, we can extend the environment by adding \AC{zero} as the top element wi
 \AgdaBound{δ}\<%
 \end{code}
 
+\todo[inline]{Discuss whether it is inefficient to use env-zero in Σ∇}
 We define\footnote{Agda does not recognise that the definition of \AF{∇} that
 we give here terminates.  We fix this in the supplementary materials by choosing
 an inductively decreasing invariant.  However we keep this definition in the
@@ -1557,6 +1558,18 @@ rules are straight-forward application of rules of symbolic differentiation.
 The \AC{slide}/\AC{backslide}
 pair forms a satisfying \AF{∇}-symmetry.  Finally, \AC{scaledown}, \AC{minus} and
 \AC{logistic} follow the rules of differentiation.
+\todo[inline]{reviewer 3 (2024): I was surprised that the backpropagation of
+imaps was defined through selections, is there no way to define it as a
+whole-array operation with less temporary values (i.e. how does it compare to
+other definitions of AD on array languages)? if this is unnecessary due to the
+later optimizations, it might be useful to mention this briefly at this stage.
+
+I was surprised to see that AD is defined with backpropagation on a context,
+rather than adjoint functions. Does this mean that the AD process needs to know
+the global context and is not compositional (can the results from AD on
+multiple sub-expressions or functions be easily combined together), or am I
+mistaken?
+}
 
 \paragraph{Let expressions} The rules for the let case look complicated due to
 encoding, but it is easy to understand what is going on from the following example.
@@ -1603,7 +1616,12 @@ and share the seed by introducing a new variable.
  
  
 \subsection{Optimisation\label{sec:opt}}
-
+\todo[inline]{reviewer 3 (2024): optimizations are performed by normalization
+(assuming that all peep-hole optimizations are always beneficial), however ML
+frameworks typically explore optimization spaces with complex trade-offs (e.g.
+sometimes not fusing a computation and keeping a temporary array may be a
+better choice), have you considered how to deal with this difficulty? clarify
+this}
 Our rule-based AD algorithm from the previous section guarantees that its
 output preserves correct shapes and that all the variables are well-scoped.
 However, direct compilation of the AD-generated expressions may be

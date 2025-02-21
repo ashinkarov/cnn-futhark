@@ -29,7 +29,9 @@ PyTorch~\cite{ad-pytorch}, MXNet~\cite{ad-mxnet} and many more.
 While in particular the dedicated frameworks tend to find widespread 
 acceptance by practitioners, both, correctness and performance leave
 two open questions: (i) how is it possible to
-ensure that the AD algorithm is implemented correctly? (ii) if the
+ensure that the AD algorithm is implemented correctly?
+\todo[inline]{reviewer 3 (2024) notices: This paper does not really answer this question besides enforcing consistency of shapes and accesses? Besides, final extraction could break these properties?  this is correct, we have to clarify this.}
+(ii) if the
 language or the framework do not perform as expected, what are the
 options to solve this?  Unfortunately, for many cases the answer to
 both questions is unsatisfying.  Most of the languages/frameworks do not

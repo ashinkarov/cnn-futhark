@@ -14,7 +14,9 @@ module _ where
 \section{Embedded DSL \label{sec:edsl}}
 
 Any implementation of automatic differentiation has to decide which operations
-are supported.  Surely, it does not make sense to compute derivatives
+are supported.
+\todo[inline]{reviewer 3 notices: I do not think this is true, some languages allow extending differentiable operations through traits or typeclasses. In this paper, it seems that deciding on the support operations makes optimization easier, since the set of operations to optimize for is known. this is true --- rephrase}
+Surely, it does not make sense to compute derivatives
 of a function that opens a file.  This choice, no matter how it is implemented,
 can be seen as a definition of an embedded language.
 Once we accept the idea of embedded language, we can choose to use deep embedding
@@ -314,6 +316,11 @@ In the \AC{imaps} case we can see how the implicit conversion from what would be
 shape $s ⊗ \AF{unit}$ into $s$.  In case of \AC{imaps} we make a singleton array
 using \AF{K}. Note that \AF{sum} has explicit summation index like in a mathematical
 $\sum$-notation.
+\todo[inline]{
+reviewer 3 (2024): why is the default value of \texttt{backslide} fixed
+to 0.0 for the DSL?
+}
+
 
 
 % With the above definition we can better explain the choices of language constructors.
