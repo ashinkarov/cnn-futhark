@@ -11,7 +11,7 @@ open import Data.Empty
 open import arrays
 module _ where
 \end{code}
-\section{Embedded DSL}
+\section{Embedded DSL \label{sec:edsl}}
 
 Any implementation of automatic differentiation has to decide which operations
 are supported.  Surely, it does not make sense to compute derivatives
