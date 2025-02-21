@@ -38,7 +38,7 @@ Within this framework, we encode the CNN from~\cite{cnn-array} and lift it
 into an embedded DSL.  We implement AD
 (reverse mode) and domain-specific optimisations for expressions in that DSL.
 Finally, we implement an extraction 
-into SaC (functional array language) and C (low-level imperative language).
+into Futhark (a functional array language) and compare performance with TensorFlow.
 
 As a result, we demonstrate an approach where the entire specification,
 optimiser, AD and code generation are available to us within a proof
@@ -54,7 +54,7 @@ The contributions of this paper are as follows:
   \item a rank-polymorphic array theory in Agda;
   \item an implementation of the CNN from~\cite{cnn-array} in Agda;
   \item an embedded DSL in Agda which supports AD (reverse mode);
-  \item an extraction mechanism for generating SaC or C code from the DSL; and
+  \item an extraction mechanism for generating Futhark code from the DSL; and
   \item an experimental evaluation of the generated codes.
 \end{enumerate}
 
