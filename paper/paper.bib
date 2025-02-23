@@ -1083,3 +1083,20 @@ keywords = {APL, Naperian functor, applicative functor, array, rank polymorphism
 location = {Nara, Japan},
 series = {TyDe 2016}
 }
+
+@inproceedings{10.1145/292540.292560,
+author = {Xi, Hongwei and Pfenning, Frank},
+title = {Dependent types in practical programming},
+year = {1999},
+isbn = {1581130953},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/292540.292560},
+doi = {10.1145/292540.292560},
+abstract = {We present an approach to enriching the type system of ML with a restricted form of dependent types, where type index objects are drawn from a constraint domain C, leading to the DML(C) language schema. This allows specification and inference of significantly more precise type information, facilitating program error detection and compiler optimization. A major complication resulting from introducing dependent types is that pure type inference for the enriched system is no longer possible, but we show that type-checking a sufficiently annotated program in DML(C) can be reduced to constraint satisfaction in the constraint domain C. We exhibit the unobtrusiveness of our approach through practical examples and prove that DML(C) is conservative over ML. The main contribution of the paper lies in our language design, including the formulation of type-checking rules which makes the approach practical. To our knowledge, no previous type system for a general purpose programming language such as ML has combined dependent types with features including datatype declarations, higher-order functions, general recursions, let-polymorphism, mutable references, and exceptions. In addition, we have finished a prototype implementation of DML(C) for an integer constraint domain C, where constraints are linear inequalities (Xi and Pfenning 1998).},
+booktitle = {Proceedings of the 26th ACM SIGPLAN-SIGACT Symposium on Principles of Programming Languages},
+pages = {214–227},
+numpages = {14},
+location = {San Antonio, Texas, USA},
+series = {POPL '99}
+}
