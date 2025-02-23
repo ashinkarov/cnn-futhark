@@ -1065,3 +1065,21 @@ articleno = {84},
 numpages = {30},
 keywords = {Domain-specific Languages, Formal semantics, Polyhedral Compilers, Tensor Compilers, Validation}
 }
+
+@inproceedings{10.1145/2976022.2976023,
+author = {Gibbons, Jeremy},
+title = {APLicative programming with Naperian functors (extended abstract)},
+year = {2016},
+isbn = {9781450344357},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/2976022.2976023},
+doi = {10.1145/2976022.2976023},
+abstract = {A lot of the expressive power of array-oriented languages such as Iverson's APL and J comes from their implicit lifting of scalar operations to act on higher-ranked data, for example to add a value to each element of a vector, or to add two compatible matrices pointwise. But it is a shape error to attempt to combine arguments of incompatible shape, such as a 3-vector with a 4-vector. APL and J are dynamically typed, so such shape errors are caught only at run-time. Recent work by Slepak et al. develops a custom static type system for an array-oriented language. We show here that such a custom language design is unnecessary; the requisite compatibility checks can already be captured in modern expressive type systems, as found for example in Haskell, and moreover, generative type-driven programming can use that static type information constructively to automatically induce the appropriate liftings. We show also that the structure of multi-dimensional data is inherently a matter of Naperian applicative functors - lax monoidal functors, with strength, commutative up to isomorphism under composition.},
+booktitle = {Proceedings of the 1st International Workshop on Type-Driven Development},
+pages = {13–14},
+numpages = {2},
+keywords = {APL, Naperian functor, applicative functor, array, rank polymorphism},
+location = {Nara, Japan},
+series = {TyDe 2016}
+}

@@ -10,6 +10,7 @@
 % - Jax
 % - Remora
 
+\paragraph{Automatic Differentiation}
 Automatic differentiation has been around for many decades~\cite{early-ad1, early-ad2},
 so it is well-understood at a conceptual level.  However,
 a number of questions related to bringing AD into the context of
@@ -69,12 +70,21 @@ Also, correctness guarantees are inevitably restricted by the
 Haskell type system, so we are likely to find invariants that
 are inexpressible in that setup.
 
-Verified high-performance computing is an area of active research, and
-one line of research is based on the idea of separating the high level
-\emph{specification} of a problem from the \emph{schedule} that
-describe how it is to be executed. Verifying that such schedules are
-semantics-preserving is the topic of several recent
+\paragraph{Verified high performance computing}
+One popular line of research is based on the idea of separating the
+high level \emph{specification} of a problem from the \emph{schedule}
+that describe how it is to be executed. Verifying that such schedules
+are semantics-preserving is the topic of several recent
 publications~\cite{10.1145/3527328,10.1145/3498717}. Our approach
 differs by not using a scheduling language, and instead focuses on
 verifying the specification itself, and also by having a particularly
 expressive specification language.
+
+\paragraph{Typed rank polymorphism}
+Gibbons showed how to express a form of rank polymorphism in Haskell,
+through the use of \emph{Naperian
+  functors}~\cite{10.1145/2976022.2976023}. This form of rank
+polymorphism is somewhat more limited than ours; in particular, it
+imposes static ranks. Further, Gibbons' work focused solely on the
+embedding in Haskell, while our system also supports code extraction
+and demonstrates good real-world performance.
