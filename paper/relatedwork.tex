@@ -1,5 +1,11 @@
 \section{Related Work\label{sec:relatedwork}}
 
+In the following we relate the specifics of our contribution to prior
+work. One important distinction however, which is easily obscured by
+this detail-oriented comparison, is that our work combines many parts
+that have been subject to prior work, but are not commonly found
+together.
+
 % - "Verified Tensor-Program Optimization Via High-level Scheduling Rewrites"
 % - "Efficient Differentiable Programming in a Functional Array-Processing Language"
 % - "Verified tensor-program optimization via high-level scheduling rewrites"
@@ -81,13 +87,18 @@ verifying the specification itself, and also by having a particularly
 expressive specification language.
 
 \paragraph{Type systems}
-Verifying array indexing is a common application of dependent
-types, as seen in for example Dependent ML~\cite{10.1145/292540.292560}.
+Verifying index operations is a classic application of dependent
+types, as seen in for example Dependent
+ML~\cite{10.1145/292540.292560}, although most work assumes static
+ranks. Our target language, Futhark, supports size-dependent
+types~\cite{10.1145/3609024.3609412}, but this information is used
+only to ensure shape conformance (e.g., that the operands to a matrix
+multiplication have the same size), not to ensure the correctness of
+array indexing.
 
-Gibbons showed how to express a form of rank polymorphism in Haskell,
-through the use of \emph{Naperian
-  functors}~\cite{10.1145/2976022.2976023}. This form of rank
-polymorphism is somewhat more limited than ours; in particular, it
-imposes static ranks. Further, Gibbons' work focused solely on the
-embedding in Haskell, while our system also supports code extraction
-and demonstrates good real-world performance.
+Gibbons showed how to express rank polymorphism in Haskell, through
+the use of \emph{Naperian functors}~\cite{10.1145/2976022.2976023}.
+This form of rank polymorphism is somewhat more limited than ours; in
+particular, it imposes static ranks. Further, Gibbons' work focused
+solely on the embedding in Haskell, while our system also supports
+code extraction and demonstrates good real-world performance.

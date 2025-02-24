@@ -12,7 +12,7 @@ all: paper.pdf
 paper.tex : latex/arrays.tex latex/lang.tex latex/ad.tex latex/performance.tex
 
 latex/%.tex : %.lagda
-	agda --latex $< #--only-scope-checking $<
+	agda --latex -l standard-library -i . $< #--only-scope-checking $<
 
 paper.pdf: $(SRC)
 	TEXINPUTS=./latex:$$TEXINPUTS latexmk -pdf -f -pdflatex='pdflatex -halt-on-error' $<
