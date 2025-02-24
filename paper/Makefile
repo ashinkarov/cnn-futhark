@@ -9,7 +9,7 @@ all: paper.pdf
 
 
 .PHONY: paper.tex
-paper.tex : latex/arrays.tex latex/lang.tex latex/ad.tex latex/performance.tex
+paper.tex : latex/arrays.tex latex/lang.tex latex/ad.tex
 
 latex/%.tex : %.lagda
 	agda --latex -l standard-library -i . $< #--only-scope-checking $<
