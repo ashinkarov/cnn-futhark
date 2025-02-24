@@ -51,6 +51,17 @@ corresponding to the convolutional layers. These are also the layers
 where cuDNN's implementation is significantly better than what the
 Futhark compiler can produce.
 
+Closing this performance gap could be done by improving the Futhark
+compiler to match cuDNN's performance, although this is perhaps not
+realistic. Another approach could be to extract TensorFlow instead of
+Futhark from our DSL, although this will also require us to add new
+builtin primitives to perform e.g. convolutions, as our index-oriented
+array operations are not a good fit for TensorFlow's programming
+model. Although not difficult to do, and it would result in better
+performance for the specific case of CNNs, it would result in a more
+restricted language, which is less interesting from a research
+perspective.
+
 \begin{table}
 \begin{tabular}{crrr}
 \textbf{Size of training set} & \multicolumn{2}{c}{\textbf{Runtime}} & \textbf{Ratio} \\
