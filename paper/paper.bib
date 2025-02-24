@@ -1119,3 +1119,30 @@ numpages = {14},
 location = {San Antonio, Texas, USA},
 series = {POPL '99}
 }
+
+@inproceedings{thiemann2013agda,
+  title={Agda meets {Accelerate}},
+  author={Thiemann, Peter and Chakravarty, Manuel MT},
+  booktitle={Implementation and Application of Functional Languages: 24th International Symposium, IFL 2012, Oxford, UK, August 30-September 1, 2012, Revised Selected Papers 24},
+  pages={174--189},
+  year={2013},
+  organization={Springer}
+}
+
+@inproceedings{10.1145/1926354.1926358,
+author = {Chakravarty, Manuel M.T. and Keller, Gabriele and Lee, Sean and McDonell, Trevor L. and Grover, Vinod},
+title = {Accelerating {Haskell} array codes with multicore {GPU}s},
+year = {2011},
+isbn = {9781450304863},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/1926354.1926358},
+doi = {10.1145/1926354.1926358},
+abstract = {Current GPUs are massively parallel multicore processors optimised for workloads with a large degree of SIMD parallelism. Good performance requires highly idiomatic programs, whose development is work intensive and requires expert knowledge.To raise the level of abstraction, we propose a domain-specific high-level language of array computations that captures appropriate idioms in the form of collective array operations. We embed this purely functional array language in Haskell with an online code generator for NVIDIA's CUDA GPGPU programming environment. We regard the embedded language's collective array operations as algorithmic skeletons; our code generator instantiates CUDA implementations of those skeletons to execute embedded array programs.This paper outlines our embedding in Haskell, details the design and implementation of the dynamic code generator, and reports on initial benchmark results. These results suggest that we can compete with moderately optimised native CUDA code, while enabling much simpler source programs.},
+booktitle = {Proceedings of the Sixth Workshop on Declarative Aspects of Multicore Programming},
+pages = {3–14},
+numpages = {12},
+keywords = {skeletons, haskell, gpgpu, dynamic compilation, data parallelism, arrays},
+location = {Austin, Texas, USA},
+series = {DAMP '11}
+}

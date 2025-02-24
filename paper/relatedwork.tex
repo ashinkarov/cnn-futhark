@@ -2,9 +2,8 @@
 
 In the following we relate the specifics of our contribution to prior
 work. One important distinction however, which is easily obscured by
-this detail-oriented comparison, is that our work combines many parts
-that have been subject to prior work, but are not commonly found
-together.
+this detail-oriented comparison, is that our work combines parts that
+have been subject to prior work, but are not commonly found together.
 
 % - "Verified Tensor-Program Optimization Via High-level Scheduling Rewrites"
 % - "Efficient Differentiable Programming in a Functional Array-Processing Language"
@@ -16,7 +15,8 @@ together.
 % - Jax
 % - Remora
 
-\paragraph{Automatic Differentiation}
+\subsection{Automatic Differentiation}
+
 Automatic differentiation has been around for many decades~\cite{early-ad1, early-ad2},
 so it is well-understood at a conceptual level.  However,
 a number of questions related to bringing AD into the context of
@@ -76,7 +76,8 @@ Also, correctness guarantees are inevitably restricted by the
 Haskell type system, so we are likely to find invariants that
 are inexpressible in that setup.
 
-\paragraph{Verified high performance computing}
+\subsection{Verified high performance computing}
+
 One popular line of research is based on the idea of separating the
 high level \emph{specification} of a problem from the \emph{schedule}
 that describe how it is to be executed. Verifying that such schedules
@@ -86,7 +87,17 @@ differs by not using a scheduling language, and instead focuses on
 verifying the specification itself, and also by having a particularly
 expressive specification language.
 
-\paragraph{Type systems}
+Thiemann and Chakravarty demonstrated a prototype embedding of
+Accelerate~\cite{10.1145/1926354.1926358} (a Haskell library for
+accelerator programming) in Agda~\cite{thiemann2013agda}. Their
+approach was based on dynamic code generation by invoking Accelerate
+through Agda's foreign function interface, which posed various
+unresolved implementation challenges. Even though our for support rank
+polymorphism results in having even more complicated types, our code
+extraction, which is essentially ahead-of-time compilation, is fairly
+unproblematic.
+
+\subsection{Type systems}
 Verifying index operations is a classic application of dependent
 types, as seen in for example Dependent
 ML~\cite{10.1145/292540.292560}, although most work assumes static
