@@ -98,6 +98,7 @@ extraction, which is essentially ahead-of-time compilation, is fairly
 unproblematic.
 
 \subsection{Type systems}
+
 Verifying index operations is a classic application of dependent
 types, as seen in for example Dependent
 ML~\cite{10.1145/292540.292560}, although most work assumes static
@@ -105,7 +106,9 @@ ranks. Our target language, Futhark, supports size-dependent
 types~\cite{10.1145/3609024.3609412}, but this information is used
 only to ensure shape conformance (e.g., that the operands to a matrix
 multiplication have the same size), not to ensure the correctness of
-array indexing.
+array indexing. Single-Assignment C~\cite{sac2} (SaC) is a statically
+typed language with support for rank polymorphism, including dynamic
+ranks, but it does not guarantee that absence of indexing errors.
 
 Gibbons showed how to express rank polymorphism in Haskell, through
 the use of \emph{Naperian functors}~\cite{10.1145/2976022.2976023}.
@@ -113,3 +116,5 @@ This form of rank polymorphism is somewhat more limited than ours; in
 particular, it imposes static ranks. Further, Gibbons' work focused
 solely on the embedding in Haskell, while our system also supports
 code extraction and demonstrates good real-world performance.
+Similarly, Remora~\cite{rank-poly} is a dependently typed
+rank-polymorphic language that also supports only static ranks.
