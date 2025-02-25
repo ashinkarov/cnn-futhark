@@ -101,19 +101,32 @@ $\frac{\partial z}{\partial x} = \cos (xy + x)(y + 1)$ and
 $\frac{\partial z}{\partial y} = \cos (xy + x)x$.
 
 
-In the implementation of the AD for \AF{E} in some context \AB{Γ}, we would like to obtain
-all the partial derivatives with respect to the variables in context \AB{Γ}.  Each partial
-derivative is itself an expression \AF{E} in context \AF{Γ}.  Therefore, we need to define
-a data type for an environment of \AB{Γ}-many expressions in context \AB{Γ}.  We call this
-environment \AF{Env} which is defined below.  This is a standard construction that is
+\subsection{AD for \AD{E}}
+
+We implement reverse mode AD for the embedded language \AD{E}.  Opposed to
+the above description, we are not going to introduce temporary
+variables for all sub-expressions, instead we rely on existing
+let bindings.  We traverse the expression with the given adjoint and
+we collect partial derivatives for each variable within the context that
+the expression is defined in.  When we compute derivatives for let
+bindings, we share the adjoints and the binding by means of introducing
+new variable.
+ 
+Technically, if some expression \AF{E} is defined in some context \AB{Γ},
+we need a structure that stores all the partial derivatives with respect
+to the variables in \AB{Γ}.  Each partial
+derivative is an expression \AF{E} in context \AF{Γ}.  We call this
+structure \emph{environment} which is a \AB{Γ}-long list of expressions
+in context \AB{Γ} and it is given by \AF{Env}.
+This  construction is
 similar to our parallel substitution \AF{Sub}, except we ignore the values of index
-types --- they never contribute to the computation of values, so we do not need to
-compute partial derivatives for them.  However, the presence of lets in \AF{E}
-means that the let-bound expressions may be shared by several partial derivative
-expressions.  While we could replicate the let binding for every partial derivative
-that needs it, this leads to unnecessary code duplication which in turn leads to
-inefficient performance.  As a solution, we allow let bindings for the entire \AF{Env},
-which is achieved by the \AF{EE} type defined as follows.
+types --- they never contribute to the computation of derivatives, so we do not need to
+keep any information in the environment for them.  However, the presence of lets in \AF{E}
+means that the let-bound expressions may be shared by several partial derivatives.
+Replication of let bindings for every partial derivative
+may lead to unnecessary code duplication which in turn results in
+poor performance.  As a solution, we allow let bindings for the entire \AF{Env},
+which is given by the \AF{EE} structure as follows.
 \begin{mathpar}
 \codeblock{\begin{code}[hide]%
 \>[0]\AgdaKeyword{module}\AgdaSpace{}%
@@ -247,21 +260,23 @@ which is achieved by the \AF{EE} type defined as follows.
 \end{code}}
 \end{mathpar}
 
-We briefly explain a few useful combinators that manipulate (let-extended) environments.
+We briefly explain some of the combinators that manipulate (let-extended) environments.
 We can weaken environments in two ways: \AF{ee-wk} weakens each element of the environment;
-whereas \AF{ee-wk-zero} extends the length of the environment by inserting \AC{zero}
+\AF{ee-wk-zero} extends the length of the environment by inserting \AC{zero}
 elements according to the \AF{⊆}-argument.  We can add two environments with \AF{ee-plus}
-which adds elements of the environments point-wise combines two let chains into a single
-one.  For the environment where elements are in the context where zero-th variable
-is some (\AC{ix} s), \AF{ee-map-sum} applies \AF{sum} to all its elements.  Note that
+which: (i) adds elements of the environments point-wise; (ii) combines two \AF{EE} let
+chains into a single one.  For the environment where elements are in the context
+where zero-th variable
+is some (\AC{ix} s), \AF{ee-map-sum} applies \AF{sum} to all the elements.  Note that
 here we inline let-bindings of the environment into the elements, because the bindings
 may refer to the index.  This potentially leads to code duplication, but for now, we
 assume that further optimisations will be able to deal with this.  We may reconsider
-this choice later.  We can create an empty environment where all the elements are
-\AC{zero} using \AF{ee-zero}.  We remove the top element of the environment with
-\AF{ee-tail}.  We use \AF{ee-update+} \AB{ρ} \AB{i} \AB{e} to add to the $i$-th
-element of the environment (this returns the new environment with the updated element).
-Finally, we can extend the environment by adding \AC{zero} as the top element with
+this choice later.  Empty environments where all the elements are
+\AC{zero} are created with \AF{ee-zero}.  The top element of the environment can
+be removed with \AF{ee-tail}.  We use \AF{ee-update+} \AB{ρ} \AB{i} \AB{e} to add
+$e$ to the $i$-th element of the environment $ρ$ (this returns a new environment 
+with the updated $i$-th position).
+Finally, we extend the environment by adding \AC{zero} at the top with
 \AF{\_▹𝟘}.
 \begin{mathpar}
 \codeblock{\begin{code}%
@@ -341,7 +356,7 @@ Finally, we can extend the environment by adding \AC{zero} as the top element wi
 \AgdaGeneralizable{Δ}\<%
 \\
 %
-\>[2]\AgdaFunction{zero-ee}%
+\>[2]\AgdaFunction{ee-zero}%
 \>[14]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaDatatype{EE}\AgdaSpace{}%
 \AgdaGeneralizable{Γ}\AgdaSpace{}%
@@ -695,7 +710,7 @@ Finally, we can extend the environment by adding \AC{zero} as the top element wi
 %
 \\[\AgdaEmptyExtraSkip]%
 %
-\>[2]\AgdaFunction{zero-ee}\AgdaSpace{}%
+\>[2]\AgdaFunction{ee-zero}\AgdaSpace{}%
 \AgdaSymbol{=}\AgdaSpace{}%
 \AgdaInductiveConstructor{env}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaFunction{zero-env}\AgdaSymbol{)}\<%
@@ -1061,15 +1076,15 @@ Finally, we can extend the environment by adding \AC{zero} as the top element wi
 \AgdaBound{δ}\<%
 \end{code}
 
-\todo[inline]{Discuss whether it is inefficient to use env-zero in Σ∇}
 We define\footnote{Agda does not recognise that the definition of \AF{∇} that
 we give here terminates.  We fix this in the supplementary materials by choosing
 an inductively decreasing invariant.  However we keep this definition in the
 paper for readability.} the function \AF{∇} that takes an expression \AF{E}
 and the seed (initially set to one) and we compute a function that
 updates the environment of partial derivatives (initial environment is \AF{ee-zero}).
-We use two helper functions: \AF{∇Σ} for summing up environments and \AF{∇}
-for dealing with the derivative of let expressions.  The code is presented
+We use two helper functions: (i) \AF{∇Σ} which applies \AF{sum} to all
+the elements of the environment returned by the \AF{∇} call in the empty environment;
+(ii) \AF{∇ₗ} which deals with the derivative of let expressions.  The code is presented
 below and the explanation of how it works follow.
 \begin{code}[hide]%
 %
@@ -1478,7 +1493,7 @@ below and the explanation of how it works follow.
 \AgdaSymbol{(}\AgdaFunction{∇}\AgdaSpace{}%
 \AgdaBound{e}\AgdaSpace{}%
 \AgdaBound{s}\AgdaSpace{}%
-\AgdaFunction{zero-ee}\AgdaSymbol{)}\<%
+\AgdaFunction{ee-zero}\AgdaSymbol{)}\<%
 \\
 %
 \\[\AgdaEmptyExtraSkip]%
@@ -1523,71 +1538,71 @@ below and the explanation of how it works follow.
 \AgdaSymbol{(}\AgdaInductiveConstructor{skip}\AgdaSpace{}%
 \AgdaFunction{⊆-eq}\AgdaSymbol{))))}\<%
 \end{code}
-Derivative of constants (\AC{zero} and \AC{one})
+\paragraph{Constants and variables} Derivative of constants (\AC{zero} and \AC{one})
 is zero, so nothing needs to be updated in the environment.  Index variables are
 not stored in the environment, so no updates are needed either.  If we differentiate
 the variable $x$ with some seed \AB{s}, we update the $x$-th position in the environment
 by adding \AB{s} to it.
 
-Differentiation of \AC{imap}s proceeds as follows: if we inline \AF{∇Σ}, we
-recursively apply \AF{∇} to $e$ 
-with the element of the original seed \AB{s} selected at the top variable in
-the \AF{ee-zero} environment.  Recall that $s$ is an array of the shape that
-corresponds to the result of \AC{imap} computation, and $e$ is defined in
-the context of shape (\AB{Γ} \AC{▹} (\AC{ix} \AB{p})).  Then we apply \AF{sum}
-to all the elements of the resulting environment (\ie{} we sum-up all the
-changes to the environment caused by computations of the individual array
-elements).  Finally we add the current environment \AB{δ} to the result.
-Note that the use of \AF{ee-tail} in \AF{∇Σ} is only needed to remove the
-trivial \AC{ix} element from the environment.  This strategy applies to all
-three \AF{imap}s, we just use the right kind of selection into the seed $s$.
+\paragraph{Imaps} Conceptually, differentiation of \AC{imap}s proceeds as follows:
+for every index $i$ of the imap index-space, we compute a derivative of $i$-th
+element of $e$ with the seed $s\ i$; after that we sum-up all the environments
+over the index $i$.  Technically, $e$ is an expression that may refer to the index
+of the \AC{imap} which is given by the variable \AC{v₀}.  This means that $e$
+is defined in a larger context (extended by the index variable) that the context
+of \AC{imap} $e$.  If we inline \AF{∇Σ}, we compute \AF{∇} $e$ with the seed
+$s$ selected at index \AC{v₀} (note that we had to weaken $s$, as we are in
+the extended context).  At this point we have accumulated per-index changes
+in the environment (over a larger context).  After that, these changes are
+summed-up by applying \AF{sum} to all the elements of the environment.
 
-When differentiating selections we recurse on the array we are
-selecting from with the seed that is zero everywhere except the index we were
-selecting at.  Differentiating
-conditionals is straight-forward, as $i$ and $j$ must be in the context, we can
-simply differentiate $e$ with the condition on the seed.  If indices were equal, we will
-compute the update, otherwise we will differentiate with seed \AC{zero} which
+While this selection-based rule might seem unusual, keep in mind that \AF{imap}s
+are array constructors, which means that they potentially run different computations
+on different indices.  Therefore, the effect that these computations had on the
+given variable within the context have to be aggregated through summation.
+
+
+\paragraph{Selections} When differentiating selections we have to recurse into
+the array expression we are selecting from.  This means that we have to create
+a seed that masks all the array elements except the one that is given by
+the index of the selection.  Hence the seed construction in the selection rules,
+where we construct an array that contains zeros everywhere except the index we were
+selecting at.  While this code is likely to run inefficiently if executed as is,
+our optimisations can deal with these patterns.
+
+\paragraph{Conditionals} Differentiating
+conditionals is straight-forward.  Both arguments $i$ and $j$ are index expressions
+which have no effect on derivatives, therefore we proceed with 
+differentiating $e$ with the $i == j$ predicate on the seed.  If indices were equal,
+we will compute the update, otherwise we will differentiate with seed \AC{zero} which
 has no effect.  As we are operating in a total language, there is no need to worry
-about pulling the expression out of conditional.
+about pulling expressions out of conditionals.
 
-The argument of \AC{sum}
-lives is in the extended context, so we apply the same rules as for the \AC{imap} family,
-except we propagate the original seed to all the summands.  Addition and multiplication
-rules are straight-forward application of rules of symbolic differentiation.
-The \AC{slide}/\AC{backslide}
-pair forms a satisfying \AF{∇}-symmetry.  Finally, \AC{scaledown}, \AC{minus} and
-\AC{logistic} follow the rules of differentiation.
-\todo[inline]{reviewer 3 (2024): I was surprised that the backpropagation of
-imaps was defined through selections, is there no way to define it as a
-whole-array operation with less temporary values (i.e. how does it compare to
-other definitions of AD on array languages)? if this is unnecessary due to the
-later optimizations, it might be useful to mention this briefly at this stage.
-
-I was surprised to see that AD is defined with backpropagation on a context,
-rather than adjoint functions. Does this mean that the AD process needs to know
-the global context and is not compositional (can the results from AD on
-multiple sub-expressions or functions be easily combined together), or am I
-mistaken?
-}
+\paragraph{Arithmetic and slides} The argument of \AC{sum} is defined in the
+extended context, so we apply the same rules as for the \AC{imap} family,
+except we propagate the original seed to all the summands.  Addition and
+multiplication rules are straight-forward application of rules of symbolic
+differentiation. The \AC{slide}/\AC{backslide} pair forms a satisfying
+\AF{∇}-symmetry.  Finally, \AC{scaledown}, \AC{minus} and \AC{logistic} follow
+the rules of differentiation.
 
 \paragraph{Let expressions} The rules for the let case look complicated due to
-encoding, but it is easy to understand what is going on from the following example.
-Consider an expression in one variable $a$ that binds a local variable $x$ to $a^2$
-and the initial environment for $\partial a$ that is set to $0$:
+encoding, but their essence is easy to understand through the following example.
+Consider an expression in one variable $a$ that binds a local variable $x$ to $a^2$.
+The initial environment contains one position for $\partial a$, and we start
+with the empty environment $\langle 0 \rangle$:
 \[ 
    \AF{∇}\ (\AC{let}\ x = a^2\ \AC{in}\ (a + a)x)\ 1\ \langle 0 \rangle
 \]
-The first step is to apply \AF{∇} to the body of the let.  This
-requires extending our environment with an element for $\partial x$,
-computing:
+The first step applies \AF{∇} to the body of the let.  This
+requires extending our environment with the initial (zero) value for $\partial x$.
+In the environment that preserves the $x$-bound expression we compute:
 \[ 
    \AF{∇}\ ((a + a)x)\ 1\ (\AC{let}\ x = a^2\ \AC{in}\ \langle 0, 0 \rangle)
    = \AC{let}\ x = a^2\ \AC{in}\ \langle x+x, a+a \rangle
 \]
-in the environment that preserves the $x$-bound expression.  This exactly
-the call we do in the \AC{let′} case of \AF{∇}.
-The next step is to apply the chain rule, computing the derivative of the
+This exactly the call we do in the \AC{let′} case of \AF{∇}.
+The next step applies the chain rule, computing the derivative of the
 $x$-bound expression using the result of the previous computation as seed:
 \[ 
    \AF{∇}\ a^2\ (a+a)\ (\AC{let}\ x = a^2\ \AC{in}\ \langle x+x \rangle)
@@ -1607,11 +1622,10 @@ this computation by defining a new let-binding and rearranging the call to
    \AC{let}\ y = a+a\ \AC{in}\
    \langle x+x + ya + ya \rangle
 \]
-this is exactly what \AF{∇ₗ} is doing --- traverse under the chain let
-and share the seed by introducing a new variable.
+this is exactly what \AF{∇ₗ} is doing.  It traverses under the let chain
+and it shares the seed by introducing a new variable.
 
- 
- 
+
  
  
  
