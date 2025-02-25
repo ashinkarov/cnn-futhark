@@ -14,29 +14,33 @@ module _ where
 \section{Embedded DSL \label{sec:edsl}}
 
 Any implementation of automatic differentiation has to decide which operations
-are supported.
-\todo[inline]{reviewer 3 notices: I do not think this is true, some languages allow extending differentiable operations through traits or typeclasses. In this paper, it seems that deciding on the support operations makes optimization easier, since the set of operations to optimize for is known. this is true --- rephrase}
-Surely, it does not make sense to compute derivatives
-of a function that opens a file.  This choice, no matter how it is implemented,
+are supported.  Surely, it does not make sense to compute derivatives
+of a function that opens a file.  Some systems make it possible to extend
+the set of operations via traits or typeclasses, yet when all the instances
+are resolved, we end up with a set of operations that
 can be seen as a definition of an embedded language.
-Once we accept the idea of embedded language, we can choose to use deep embedding
-which can serve two purposes.  We can implement both AD and extraction within the
-host language without modifying the compiler.  This is particularly useful in the
-context of a theorem prover, as we can annotate our implementations with the
-correctness invariants of our choice.  This is the approach we are taking here.
+Once we accept the idea of an embedded language, we may consider to implement
+it through deep embedding which gives us the following two advantages.
+Firstly, AD, extraction and optimisations can be implemented within the
+host language without any compiler modifications.  Secondly, as our host
+language is a theorem prover, our implementations can include safety
+guarantees of our choice.  This is the approach we are taking here.
 
-The next challenge lies in identifying the primitives for the embedded language.
-These have to be sufficiently powerful to define CNNs and to express AD.
+One challenge lies in identifying the primitives for the embedded language,
+so that it is sufficiently powerful to define CNNs and to express AD.
 Finding the right level of abstraction for the primitives is non-trivial,
 as it heavily depends on the capabilities of the backend language and the
-optimisations that we can perform locally.  However, keeping the DSL, optimisations
-and extraction within a single framework makes it possible to experiment
-with these choices easily.
+optimisations that we can perform locally.  However, keeping the DSL,
+optimisations and extraction within a single framework makes it possible
+to experiment with these choices easily.
 
-The primitives that we have chosen are easy to implement in the backend language
-and they guarantee that AD can be performed within this DSL.
-The latter is very useful as: we can do high-order derivatives within the
-same language and we can use optimisations for programs and their derivatives.
+
+We have chosen sufficiently generic primitives so that many interesting
+examples can be derived within the DSL, yet all the primitives are easily
+implementable in the backend.  Another consideration is the ability to define
+AD within the same DSL, which is useful because we can do higher-order
+derivatives and we can share optimisations between the programs and their
+derivatives.
 \begin{code}[hide]
 module Lang where
   --open Array hiding (sum; slide; backslide)
@@ -50,15 +54,15 @@ module Lang where
 
 \end{code}
 
-In Agda we can easily make our
+We leverage our dependently-typed setting by making our
 embedded language well-scoped and intrinsically typed (shaped).
 This is very useful as it eliminates a large class of errors that have to do
 with wrong variables uses and ill-typed expressions.
-Types of our language are given by \AD{IS}.  We distinguish between arrays of
-some shape $s$ (denoted by \AC{ar}) and indices of shape $s$
-(denoted by \AC{ix}).  Contexts are snoc-lists of \AF{IS}-es, and they are
-given by \AD{Ctx}.  We use de Bruijn variables given by the relation
-\AF{\_∈\_} in the usual way. 
+Types are given by \AD{IS}: we have arrays of
+shape $s$ (denoted by \AC{ar}) and indices of shape $s$
+(denoted by \AC{ix}).  Contexts are given by \AD{Ctx} and they are
+snoc-lists of \AF{IS}-es.  We use de Bruijn variables which are given
+by the relation \AF{\_∈\_} in the usual way. 
 %We also define variables \AB{v₁}, \AB{v₂}, \etc{}
 %by iteratively applying \AC{vₛ} to \AC{v₀} (definition not shown).
 \begin{mathpar}
@@ -89,7 +93,7 @@ Note that while our contexts are non-dependent (\ie{} types do not depend on the
 members of the context), we use non-trivial dependencies within constructors.
 The embedded language does not have a notion of shape as a value, therefore all
 the shape dependencies are handled by Agda, keeping our language simply
-typed (shaped).  This is very helpful when it comes to writing
+typed (shaped).  This is helpful when it comes to writing
 embedded programs.% XXX: more explanation? 
 \begin{code}[hide]
   --pattern v₀ = v₀
@@ -107,12 +111,11 @@ embedded programs.% XXX: more explanation?
   infixl 15 _⊠_
 \end{code}
 
-All arrays in our language are assumed to be arrays of reals.  This is why
-our contexts do not carry array element types.  However, we distinguish
-singleton arrays of shape \AF{unit} that always contain a single element.
-Such arrays are called scalars in the array literature and they are mapped
-into the type that represents real in the backend \eg{} double.
-We support two binary operations in our langauge (addition and multiplication)
+All arrays in our language are assumed to be arrays of reals.  Our contexts
+do not carry array element types, and we distinguish
+singleton arrays of shape \AF{unit} (\emph{scalars}) that will be mapped
+into the type that represents real numbers in the backend \eg{} double.
+The language supports two binary operations (addition and multiplication)
 that are given by \AD{Bop}.
 \begin{mathpar}
 \codeblock{\begin{code}
@@ -132,11 +135,11 @@ flavours of array constructor/eliminator pairs given by \AC{imaps}/\AC{sels},
 \AC{imap}/\AC{sel} and \AC{imapb}/\AC{selb}; summation \AC{sum}; conditional
 \AC{zero-but} where the predicate is fixed to equality of two indices and the
 else branch is zero; \AC{slide} and \AC{backslide} exactly as described before;
-numerical operations which includes \AC{logistic}, plus and
+numerical operations which includes \AC{logistic}, plus,
 multiplication, division by a constant \AC{scaledown}, and unary \AC{minus};
-and let bindings for arrays given by \AC{let′}.
+finally, let bindings for arrays are given by \AC{let′}.
 The definition of the embedded language \AF{E} follows.  We also introduce the
-syntax for infix plus and multiplication denoted \AC{⊞} and \AC{⊠}
+syntax for infix plus and multiplication denoted by \AC{⊞} and \AC{⊠}
 correspondingly.
 %\begin{mathpar}
 %\codeblock{
@@ -191,16 +194,15 @@ powerful type theory such as setoid- or cubical type theory.
 \subsection{Evaluation}
 
 We give semantics of our language by interpreting \AD{E} expressions
-into \AD{Ar} arrays using combinators that we define earlier.  Later
-we will use this semantics to prove that our optimisations preserve
+into \AD{Ar} arrays using combinators that we defined earlier.  
+This semantics will be also used to prove that optimisations preserve
 the meaning of programs.
 
 \subsubsection{Reals}
-We we parametrise our semantics with respect to the encoding of reals.
-This choice makes it possible to abstract away from the implementational
-details in the definition and gives the ability to instantiate this
-semantics to the preferred encoding of reals.  We define the set of
-reals and their basic operations as follows.
+We parametrise our semantics by the type of reals.
+This makes it possible to abstract away from the implementational
+details of numerical encoding which are not relevant here.
+We define an interface to reals and their basic operations as follows.
 \begin{mathpar}
 \codeblock{\begin{code}
 record Real : Set₁ where
@@ -221,9 +223,11 @@ record Real : Set₁ where
   logisticʳ x = fromℕ 1 ÷ (fromℕ 1 + e^ (- x))
 \end{code}}
 \end{mathpar}
-We require arithmetic operations for real and the notion of zero and one that we
-define through \AF{fromℕ}.  With arithmetic operations in place, logistics function
-is a derived notion that we define within the \AM{Real} module for convenience.
+We require a type of reals that we call \AR{R}; basic arithmetic operations
+that include addition, multiplication, division, unary minus, and exponentiation.
+Constants such as zero and one can be defined via \AF{fromℕ} which converts
+natural numbers to \AR{R}.  With arithmetic operations in place, logistics function
+is a derived notion that we define within the same module for convenience.
 
 \begin{code}[hide]
 module Eval (real : Real) where
@@ -239,7 +243,7 @@ module Eval (real : Real) where
   open Real real
 \end{code}
 
-We interpret expressions in \AF{E} \AB{Γ} \AB{is} into the value set of values
+We interpret expressions in \AF{E} \AB{Γ} \AB{is} as a value of type
 (\AF{Val} \AB{is}) in the environment (\AF{Env} \AB{Γ}).  The values are either
 arrays or positions of the corresponding shape.  Environments for the given context
 \AB{Γ} are tuples of values of the corresponding shapes.  The \AF{lookup} function
@@ -315,12 +319,10 @@ Mostly, the interpretation is a straightforward mapping into the \AF{Ar} constru
 In the \AC{imaps} case we can see how the implicit conversion from what would be a
 shape $s ⊗ \AF{unit}$ into $s$.  In case of \AC{imaps} we make a singleton array
 using \AF{K}. Note that \AF{sum} has explicit summation index like in a mathematical
-$\sum$-notation.
-\todo[inline]{
-reviewer 3 (2024): why is the default value of \texttt{backslide} fixed
-to 0.0 for the DSL?
-}
-
+$\sum$-notation.  We fix the default value of \AF{backslide} to zero for simplicity.
+For arrays of reals, we can get general \AF{backslide} behaviour through masking.
+However, this operation can be generalised in case we decide to support arrays of
+other element types.
 
 
 % With the above definition we can better explain the choices of language constructors.
@@ -353,15 +355,16 @@ to 0.0 for the DSL?
 
 
 \subsection{Weakening and Substitution}
-As our language has explicit de Bruin variables (as opposed to HOAS~\cite{hoas} approaches),
-we need the means to do weakening and substitution when we optimise expressions in \AF{E}.
-Our language is intrinsically typed(shaped) which
-makes the definition of both operations challenging.  However, this problem has
+We are working with explicit de Bruijn variables (as opposed to HOAS~\cite{hoas}
+approaches), and we need to define the notion of weakening and substitution
+for constructing expressions and optimising them.
+Intrinsic types(shapes) make both definitions challenging.  However, the problem has
 been well-understood, and several approaches have been proposed in the
 literature~\cite{subst}.
 
-The key structure needed for weakening is order-preserving embedding of contexts given
-by \AD{\_⊆\_} which is defined inductively.  If \AB{Γ} \AD{⊆} \AB{Δ} then all the
+The key structure that we use for weakening is an order-preserving embedding
+of contexts given by \AD{\_⊆\_} which is defined inductively.
+If \AB{Γ} \AD{⊆} \AB{Δ} then all the
 elements of \AB{Γ} can be found in \AB{Δ} in the original order (possibly with some gaps).
 Weakening variables according to some context embedding is given by \AF{wkv} which is
 defined as follows.
@@ -387,7 +390,7 @@ module WkSub where
 
 Weakening expressions in \AF{E} according to some context embedding is given by \AF{wk}
 which type is defined below.  Reflexivity of context embeddings is given by \AF{⊆-eq}.
-A common case of weakening when expressions are lifted in a context with one extra variable
+A common case of weakening expressions into the context with one extra variable
 is denoted with \AF{\_↑} and it is defined as follows.
 \begin{mathpar}
 \codeblock{\begin{code}
@@ -428,11 +431,12 @@ is denoted with \AF{\_↑} and it is defined as follows.
 \end{code} 
 
 We implement parallel substitution~\cite{} in the usual way.  The key structure that
-gives rise to parallel substitution is a mapping of variables to expressions for some
-context \AF{Δ}.  This is given by \AC{Sub} \AB{Γ} {Δ} and it means a \AF{Δ}-long
+gives rise to the substitution is a mapping of variables in the context \AB{Δ}
+into expressions in the context \AB{Γ}.
+This is given by \AC{Sub} \AB{Γ} {Δ} and it represents a \AF{Δ}-long
 list of (\AF{E} \AB{Γ})-s where each expression is of a type that corresponds to the
-variable type in the given position of \AF{Δ}.  We define \AF{wks} which maps weakening
-to all the elements of \AF{Sub} in the following way.
+variable type at the given position of \AF{Δ}.  We define \AF{wks} which weakens
+all the expressions of \AF{Sub} in the following way.
 \begin{mathpar}
 \codeblock{\begin{code}
   data Sub (Γ : Ctx) : Ctx → Set where
@@ -446,10 +450,10 @@ to all the elements of \AF{Sub} in the following way.
   wks (s ▹ x) p  = (wks s p) ▹ wk p x
 \end{code}}
 \end{mathpar}
-Using \AF{wks} we can define two useful combinators: \AF{sdrop} to lift all
+Using \AF{wks} we define two useful combinators: \AF{sdrop} to lift all
 expressions in the \AD{Sub} list into a context that is extended by one variable;
-\AF{skeep} to weaken the list using \AF{sdrop} and add the variable at the end of
-the list.  With these combinators we can define identity substitution \AF{sub-id}
+\AF{skeep} to shift the substitution by one variable, keeping the top variable
+as is.  With these combinators we define the identity substitution \AF{sub-id}
 that has no effect when applying it.  Finally, the type of the actual substitution
 that replaces all the variables in \AF{E} according to some \AF{Sub} list is given
 by \AF{sub}.
@@ -498,10 +502,10 @@ by \AF{sub}.
   ε ∙ˢ t = ε
   (s ▹ x) ∙ˢ t = (s ∙ˢ t) ▹ sub x t
 \end{code}
-As our context do not encode explicit dependencies between the variables,
-we can define a substitution that swaps two top variables in the
-context.  This substitution is given by \AF{sub-swap} and it will
-be used later to define some of our optimisations.
+As our contexts are not dependent (\eg{} the type of the variables does not
+depend on previous variables) we can define a substitution that swaps two top
+variables in the context.  This substitution is given by \AF{sub-swap} and it
+will be used in optimisations.
 \begin{mathpar}
 \codeblock{\begin{code}
   sub-swap : Sub (Γ ▹ is ▹ ip) (Γ ▹ ip ▹ is)
@@ -510,28 +514,28 @@ be used later to define some of our optimisations.
 \end{mathpar}
 
 \subsection{Syntax}
-Deeply-embedded DSLs with intrinsic de-Bruijn indices guarantee well-scopedness,
-but they are far not intuitive for programmers.  This section proposes a mechanism
-to overcome the encoding burden by providing HOAS-like syntactic wrappers over
-our embedding.  Some of the ideas we are using here can be found in~\cite{},
-but in this work they are applied in the context of the actual intrinsic language.
+Deeply-embedded DSLs with intrinsic de Bruijn variables guarantee well-scopedness,
+but they are not intuitive for humans.  This section proposes a mechanism
+to overcome the encoding burden by providing HOAS-like syntactic wrappers for
+\AD{E}.
 
-Our goal is to replace de-Bruijn indices with Agda's variables.  One immediate
+Our goal is to replace de Bruijn variables with Agda's variables.  One immediate
 difficulty with this approach is that whenever we go under binders such as 
-\AC{imap} or \AC{let′}, all the old variables/expressions have to be lifted
-into extended context.  We tackle this problem by defining generalised expressions
-and generalised variables that can be lifted automatically into any extensions of
-the context that they were originally defined in.  This lifting will be performed
-automatically by (ab)using Agda's instance resolution mechanism.
+\AC{imap} or \AC{let′}, all the variables/expressions we defined before have to be
+lifted into the extended context.  We tackle this problem by forcing Agda to
+compute such lifted expressions automatically by (ab)using Agda's
+instance resolution mechanism.
 
-Firstly we observed, that we only ever need to lift expressions/variables into
+We only ever need to lift expressions/variables into
 contexts where a certain number of variables were added at the end, \ie{} the
 prefix of the extended context always correspond to the context of the original
-expression.  Therefore we define a binary relation \AF{Prefix} \AB{Γ} \AB{Δ}
+expression.  Therefore, we define a binary relation \AF{Prefix} \AB{Γ} \AB{Δ}
 that determines whether the \AB{Γ} is a prefix of \AB{Δ}.  We annotate
-constructors of \AF{Prefix} with the \AK{instance} keyword, and we also wrap
+constructors of \AF{Prefix} with the \AK{instance} keyword, and we wrap
 the argument of the \AC{suc} constructor into double braces, turning this into
-an instance argument:
+an instance argument.  Simultaneously, \AF{prefix-⊆} defines a translation from
+\AD{Prefix} into order-preserving embeddings \AD{⊆} so that we can
+leverage weakening.
 \begin{mathpar}
 \codeblock{\begin{code}[hide]
 module Syntax where
@@ -554,12 +558,20 @@ module Syntax where
 \end{code}}
 \end{mathpar}
 
-As a result, Agda will be able to construct a witness for cases like
-\AC{Prefix} \AB{Γ} (\AB{Γ} \AC{▹} \AB{is} ▹ \AB{ip} ▹ \AB{iq}).  Similarly
-to hidden arguments, there is no guarantee that Agda will find a solution
-in all cases, and it will report an error in case of failure.
+As a result, Agda is able to construct an element of
+\AC{Prefix} \AB{Γ} (\AB{Γ} \AC{▹} \AB{is} ▹ \AB{ip} ▹ \AB{iq}) automatically.
+Similarly
+to hidden arguments, there is no guarantee that the solution will be found
+in all cases --- Agda will report an error in case of failure.
+Note that instance resolution is looking for the \emph{unique} solution.
+This is the reason why we could not use \AD{⊆} instead of \AD{Prefix} easily,
+even thought the former is more general than the latter.
+Contexts (\AB{Γ} \AC{▹} \AB{is}) and (\AB{Γ} \AC{▹} \AB{is} \AC{▹} \AB{is}),
+are related by \AD{Prefix} in a unique way.  However, these two contexts are
+related by \AD{⊆} in two different ways (by keeping the first or the
+second variable).
 
-Secondly, we define a notion of generalised variables and expressions that
+We introduce generalised variables \AF{GV} and expressions \AF{GV} that
 are defined in context \AB{Γ} but can be lifted into any context \AB{Δ}, given
 that \AB{Γ} is a prefix of \AB{Δ}.  The trick here is that both types define
 a function of two hidden arguments that Agda will be able to fill-in automatically.
@@ -574,8 +586,8 @@ a function of two hidden arguments that Agda will be able to fill-in automatical
   GVar Γ is = ∀ {Δ} → ⦃ p : Prefix Γ Δ ⦄ → is ∈ Δ
 \end{code}}
 \end{mathpar}
-We can lift expressions into generalised expressions by translating prefixes
-into \AC{⊆} with later application of weakening.
+We can lift expressions into generalised expressions in two steps: 
+(i) we translate prefixes into \AC{⊆}; (ii) we use weakening that we defined earlier.
 \begin{mathpar}
 \codeblock{\begin{code}
   ⟨_⟩ : E Γ is → GE Γ is
@@ -587,8 +599,8 @@ into \AC{⊆} with later application of weakening.
   ⟨_⟩ᵛ v ⦃ p ⦄ = wkv (prefix-⊆ p) v
 \end{code}}
 \end{mathpar}
-Now we are ready to define HOAS-like wrappers for the constructors of \AF{E}
-that bind variables (\eg{} \AC{imap} family, \AC{sum}, \AC{let′}).  Consider
+With these operations we define HOAS-like wrappers for the \AF{E} binders
+such as \AC{imap} family, \AC{sum} and \AC{let′}.  Consider
 a wrapper for \AC{imap} defined as follows.
 \begin{code}
   Imap : (GE (Γ ▹ ix s) (ix s) → E (Γ ▹ ix s) (ar p)) → E Γ (ar (s ⊗ p))
@@ -596,21 +608,21 @@ a wrapper for \AC{imap} defined as follows.
 \end{code}
 The first argument is a function in Agda's function space where the
 argument is a generalised expression of type $\AC{ix}\ s$ in the context
-extended by $\AC{ix}\ s$ (the imap index), and the return type is the array
+extended by $\AC{ix}\ s$ (the imap index); and the return type is the array
 expression that will be computed in the body of the imap.  The implementation
-of the wrapper simply constructs an \AC{imap} lifting the index variable
-$v₀$ in the context \AB{Γ} \AC{▹} $\AC{ix}\ s$ into the context that is determined
+of the wrapper constructs an \AC{imap}, lifting the index variable
+$v₀$ of the context \AB{Γ} \AC{▹} $\AC{ix}\ s$ into a larger context that is determined
 by the hidden/instance arguments of $f$.  This means that within the body of $f$
-we can use the argument under further binders, allowing us to write something
-like:
+we can use the argument under further binders as follows:
 \begin{code}
   _ : E ε _ 
   _ = Imap {s = ι 5} λ i → Imap {s = ι 5} λ j → sels (sel one j) i
 \end{code}
 The code for wrappers for \AC{sum}, \AC{imaps}, \AC{imapb} looks very similar
-so we omit it here.  However, when defining a wrapper for \AC{let′} we will
-use Agda's \AK{syntax} feature\footnote{} to define the actual syntax for
-let bindings in \AF{E}.
+so we omit it here.  However, when defining a wrapper for \AC{let′} we
+use Agda's \AK{syntax} feature\footnote{See
+\url{https://agda.readthedocs.io/en/v2.7.0.1/language/syntax-declarations.html}
+for more details.} to define a familiar syntax for let bindings in \AF{E}.
 \begin{code}[hide]
   Sum : ∀ {Γ}
        → (GE (Γ ▹ ix s) (ix s) → E (Γ ▹ ix s) (ar p))
@@ -631,10 +643,9 @@ let bindings in \AF{E}.
 \begin{code}
   Let-syntax : E Γ (ar s) → (GE (Γ ▹ (ar s)) (ar s) → E (Γ ▹ (ar s)) (ar p)) → E Γ (ar p)
   Let-syntax x f = let′ x (f (var ⟨ v₀ ⟩ᵛ))
-  
   syntax Let-syntax e (λ x → e') = Let x := e In e'
 \end{code}
-Wit these definitions we can write expressions like:
+With these definitions we can write expressions with let binding as follow:
 \begin{code}
   _ : E ε (ar [])
   _ = Let x := one In Let y := x ⊞ one In (x ⊞ y) ⊠ x  
@@ -648,7 +659,7 @@ Secondly, we define \AF{lfun} that for the given list of \AF{IS}-es
 ip computes an Agda function of type (\AF{GE} (\AF{ext} \AF{Γ} l) is₁ →
 \dots → \AF{GE} (\AF{ext} \AF{Γ} l) isₙ → \AD{E} (\AF{ext} Γ l) ip).
 The function \AF{lvar} lifts a variable in some context Γ into
-the \AF{ext}ended context.
+a generalised expression within the \AF{ext}ended context.
 \begin{mathpar}
 \codeblock{\begin{code}[hide]
   infixl 3 Let-syntax
@@ -688,32 +699,39 @@ the \AF{ext}ended context.
   lvar [] v = var ⟨ v ⟩ᵛ
   lvar (x ∷ l) v = lvar l (vₛ v)
 \end{code}
-With these helper functions we define the \AF{Lcon} that
-for the given list of types $l$, resulting type \AB{is}, the initial
-context Γ and the function of type \AF{lfun} l Γ \AB{is} computes
-the expression in the context \AF{ext} Γ l.
+With these helper functions we define \AF{Lcon} which computes
+an expression in the context extended by $l$ from the function
+of $l$ arguments:
 \begin{code}
   Lcon : ∀ l is Γ → (f : lfun l Γ is) → E (ext Γ l) is
   Lcon []      is Γ f  = f
   Lcon (x ∷ l) is Γ f  = Lcon l is (Γ ▹ x) (f (lvar l v₀))
 \end{code}
-This means that we can bind the last $n$ elements of the
-context to Agda variables and use them safely under binders.
-For example, consider this expression:
+In practice, this allows one to bind the last $n$ elements of the
+context to Agda variables and use them under binders without weakening.
+For example, consider the expression:
 \begin{code}
   _ : E _ _
   _ = Lcon (ar (ι 5) ∷ ar (5 ∷ 5 ∷ []) ∷ []) (ar []) ε
       λ a b → Sum λ i → sels a i ⊞ sels (sel b i) i
 \end{code}
-where we \AB{a} and \AB{b} are bound to the arguments of
-the Agda's lambda term and which are used when computing
-expression in the context (ε ▹ 5 ∷ [] ▹ 5 ∷ 5 ∷ []). 
+where \AB{a} and \AB{b} are Agda's variables that represent
+de Bruijn variable 1 and 0{} in the context (ε ▹ 5 ∷ [] ▹ 5 ∷ 5 ∷ []).
 
 
 
-\subsection{Primitives}
-We are defining primitives that are needed for expression our
-running example in $E$.  We consider an example for the \AF{conv}olution:
+\subsection{CNN Primitives in \AD{E}}
+The built-in operations of \AD{E} are not specific to the CNN that we
+are defining.  Therefore, similarly to Sec.~\ref{sec:ar-cnn-prim},
+the primitives required for the running example have to be
+implemented in terms of \AD{E}.  Syntactic wrappers help us
+to achieve similarity between the operations defined below and the
+\AF{Ar} primitives.
+
+For \AF{conv}, \AF{mconv} and \AF{avgp₂} are direct translations
+of theur \AD{Ar} counterparts, the only visible differences are:
+lack of \AF{map} combinator and
+rank-polymorphic addition and multiplication.
 \begin{code}[hide]
 module Primitives where
 
@@ -738,14 +756,18 @@ module Primitives where
 
   avgp₂ : ∀ m n → (a : E Γ (ar (m ℕ.* 2 ∷ n ℕ.* 2 ∷ []))) → E Γ (ar (m ∷ n ∷ []))
   avgp₂ m n a = Imaps λ i → scaledown 4 $ Sum λ j → sels (selb it ⟨ a ⟩ i) j
-
+\end{code}
+The mean squared error function \AF{meansqerr} computes
+$\sum_i \frac{1}{2}(r_i - o_i)^2$ for the argument arrays $r$ and $o$
+which must be of the same shape.
+\begin{code}
   sqerr : (r o : E Γ (ar [])) → E Γ (ar [])
   sqerr r o = scaledown 2 ((r ⊞ (minus o)) ⊠ (r ⊞ (minus o)))
 
   meansqerr : (r o : E Γ (ar s)) → E Γ (ar [])
   meansqerr r o = Sum λ i → sqerr (sels ⟨ r ⟩ i) (sels ⟨ o ⟩ i) 
 \end{code}
-Finally, the CNN embedded in $E$ is given as follows:
+With these primitives, we embedded our running example in $E$ as follows:
 \begin{code}
   cnn : E _ _
   cnn = Lcon (  ar (28 ∷ 28 ∷ []) ∷ ar (6 ∷ 5 ∷ 5 ∷ [])
@@ -765,8 +787,11 @@ Finally, the CNN embedded in $E$ is given as follows:
         Let o   := logistic o₁ In
         Let e   := meansqerr target o In
         e
-        
 \end{code}
+Note that with the proposed syntax, the above definition looks very similar
+to the one we defined directly in Agda.  We use more let bindings in this
+definition, which is not an arbitrary choice, and we will come back to this
+discussion in Section~\ref{sec:opt}.
 
 % \paragraph{Building Blocks}
 % Now we implement the remaining building blocks in \AD{E} that are needed

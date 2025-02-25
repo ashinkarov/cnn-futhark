@@ -118,8 +118,8 @@ which is well-suited for specifying numerical applications such as CNNs.
 
 The work in the rest of the paper is presented in Agda and we assume some
 familiarity with its syntax.
-For gentle introductions we refer to one of the tutorials that are freely available
-online\footnote{See \url{https://agda.readthedocs.io/en/v2.6.3/getting-started/tutorial-list.html}.}.
+For gentle introductions to Agda we refer to one of the tutorials that are freely available
+online\footnote{See \url{https://agda.readthedocs.io/en/v2.7.0.1/getting-started/tutorial-list.html}.}.
 
 The conciseness of the CNN specification
 in~\cite{cnn-array} relies on rank-polymorphism, which is the ability to operate
@@ -135,9 +135,10 @@ Absence of out-of-bound errors means that all array indices fall within
 the shapes of the arrays that they are selecting from.
 The shape of array describes the extent of each of its axes.  We represent
 shapes as lists of natural numbers using the data type \AD{S}.
-The \AC{[]} shape describes an array of rank zero that contains one
-element (array languages often call arrays of such shape \emph{scalars}).
-The cons operation \AC{\_∷\_} prepends the axis to the left of the shape.
+The \AC{[]} shape describes an array of rank zero that contains exactly one
+element (arrays of such shape are often called \emph{scalars} and we use this
+terminology in the rest of the paper).
+The cons operation \AC{\_∷\_} prepends a new axis to the left of the shape.
 Note on the notation: underscores in \AC{\_∷\_} specify positions where
 arguments go, turning \AC{∷} into an infix binary operation.
 
@@ -1087,20 +1088,6 @@ prerequisites for defining convolution:
 \>[2]\AgdaFunction{inj₁₂}\AgdaSpace{}%
 \AgdaSymbol{()}\<%
 \end{code}
-\todo[inline]{A comment from the reviewer 2 (2004) (fucking idiot...): The
-'bounded addition' and subtraction operations seemed odd to me. Usually,
-functions involving Fin (n + m) invoke the isomorphism between this type and
-Either (Fin n) (Fin m). The paper seems to be leaving out the subtraction
-invocations, leading to a Dec type that requires extra pattern matching. Could
-this be expressed more elegantly as a view?}
-\todo[inline]{
-reviewer 3: I think that more explanations are required on the left
-subtraction: only after analysing the \texttt{backslide} implementation
-did I realize that not only is \(k = i - j >= 0\) ensured, but also
-\(k = i - j < 1 + n\). Similarly, the explanation of \texttt{backslide} in Section 4.2 is
-very expeditive: I had to make a drawing on paper to understand what
-\texttt{backslide} is doing and deduct how its implementation works.
-}
 \begin{mathpar}
 \codeblock{\begin{code}%
 %
@@ -1463,9 +1450,16 @@ very expeditive: I had to make a drawing on paper to understand what
 %
 \>[2]\AgdaComment{--\ minusx\ \{suc\ m\}\ \{suc\ n\}\ (suc\ i)\ (suc\ j)\ =\ ?\ }\<%
 \end{code}
-While the definitions look innocent, their types carry non-trivial
-information.  Consider \AF{\_⊕\_} which is addition of bounded $i$ and $j$.
-However, the type says:
+Recall that the type \AF{Fin} $n$ is a type for natural numbers $i$ that
+are bounded by $n$ (\ie{} $i < n$).  Plus adds two bounded indices $i$ and $j$
+where $i < m$ and $j < 1 + n$ (both $i$ and $j$ are non-negative as any
+element of \AF{Fin}).
+The indices $i$ and $j$ are added as natural numbers, so there is
+no easy way to apply type isomorphisms such as \AD{Fin} $(m + n)$ $\cong$
+\AD{Fin} $m$ $⊎$ \AD{Fin} n.  Minus is a partial inverse of plus described below.
+
+While both definitions look innocent, their types carry non-trivial
+information about the bounds.  Consider the bounds in the \AF{\_⊕\_} operation:
 \begin{mathpar}
   \inferrule*
     {i < m \and j < 1 + n}
@@ -1476,9 +1470,12 @@ Readers may convince themselves by considering the maximum value that $i$ and $j
 can possibly take.  The \AF{\_⊕\_} operation have partial inverses making it possible
 to define left and right subtraction.  We consider left subtraction \AF{\_⊝\_}.
 Its type says that there exists a decision procedure for finding $k$ of type
-\AF{Fin} (1 + \AB{n}) together with the proof that $k$ is an inverse.
+\AF{Fin} (1 + \AB{n}) (\eg{} $k < 1 + n$) together with the proof that $k$ is
+an inverse of \AF{⊕}.
 In some sense \AF{Dec} is similar to \AF{Maybe} type, except it forces one
 to prove why the value does not exist as opposed to just returning \AC{nothing}.
+For example, if we were to evaluate $i ⊝ j$ where $i = 1 < 3 + 5$ and $j = 2 < 3$,
+we will get a proof that there is no natural number $k < 1 + 5$ such that $2 ⊕ k ≡ 1$.
 Here dependent types come very useful, as we eliminate the possibility of
 introducing off-by-one errors in the definition of \AF{⊝}.
 
@@ -1612,18 +1609,20 @@ and then sum it up.
 \AgdaBound{a}\AgdaSymbol{))}\<%
 \end{code}}
 \end{mathpar}
-\todo[inline]{reviewer 2 (2004): I would appreciate a bit more specification
-or description of conv₁}
+Note that in the definition of \AF{conv₁} we use a standard array language
+trick --- we pull summation to the outside.  For example, fot $m = 3$, $n = 2$,
+a straight-forward way to compute (\AF{conv₁} $[a_1, a_2, a_3, a_4, a_5]$
+$[w_1, w_2, w_3]$) would be $[a_1w_1 + a_2w_2 + a_3w_3, a_2w_1 + a_3w_2 +
+a_4w_3,\dots]$.  However, the above definition proceeds as $w_1[a_1,a_2,a_3] +
+w_2[a_2,a_3,a_4] + w_3[a_3,a_4,a_5]$ which computes the same result.  Such
+definition makes it easy to replace the implementation of slide, obtaining
+other versions of convolution such as the one with constant or cyclic
+boundaries.  As we demonstrate in the next section, this pattern generalises
+nicely to higher ranks.
+
+
 
 \subsection{Generalisation\label{sec:general-ix-ops}}
-\todo[inline]{reviewer 2 (2004) (fucking idiot): I can't help but wonder if
-there is no simpler definition of operations such as slide and backslide that
-don't rely on such heavy manipulation of individual indices (and the proofs
-that guarantee things remain in bounds). Richard Bird coined the phrase
-'wholemeal programming' -- where the definitions tend to avoid index
-manipulation in favour of manipulating entire arrays at once, claiming that the
-functional wholemeal style is easier to reason about and verify.}
-
 Now we generalise 1-dimensional slide for arrays of higher ranks.
 This requires generalising vector shapes $m + n$ and $1 + n$ for the cases
 when $m$ and $n$ for arbitrary shapes.  In case of addition, we need a witness
@@ -2213,20 +2212,42 @@ one at the offset $i$ using \AB{def} to fill the outer region.
 \end{code}}
 \end{mathpar}
 
-\subsection{CNN primitives}
-\todo[inline]{mention that we are doing MNIST stuff here}
-Now we implement CNN-specific primitives which operate on arrays of reals.
-Here we use builtin Agda floats that we refer to as \AD{ℝ} so that we can
-run our specification with concrete values.
-Later we are going to abstract over concrete implementation of
-\AD{ℝ}.
+\paragraph{Remark on indexing} We would like to address a general remark that
+is often made by functional programmers that index-oriented definitions such as
+\AF{slide} and \AF{backslide} should be replaced by some construction that use
+algebraic data types.  While this is of course a matter of taste, here are
+important points that justify our choice. Firstly, array computations that use
+explicit indices are easier to compile into efficient code. At runtime, arrays
+will be represented as flat regions of memory without cons cells or other
+pointer-connected structures. Index computations will be turned into offset
+computations that are efficient on most architectures.  Secondly, many
+rank-polymorphic operations on arrays are easier to express via index
+manipulation (our indices have non-trivial structure) rather than via
+traversals of algebraic data structures.  For example, consider a data
+structure for a rank-polymorphic array similar to \AD{Ar}.  One needs something
+like a free monad over a \AD{Vec} type, which can be easily defined.  Now,
+consider defining a generalised transpose on such representation.  Transpose of
+an \AD{Ar} array is simply a selection on a reversed index: λ ix → a
+(\AF{reverse} ix). In case of free monads, this is a significantly more
+complicated recursive expression.  Finally, as in our formalism arrays are
+functions, we get fusion equalities (\eg{} map f ∘ map g $\cong$ map (f ∘ g))
+for free through normalisation, which makes formal reasoning easier.
+
+
+
+
+
+\subsection{CNN primitives\label{sec:ar-cnn-prim}}
+Here we implement CNN-specific primitives that are needed for our running example.
+All these primitives operate on arrays of reals.  We use builtin Agda floats in
+the rest of the section that we refer to as \AD{ℝ}.  The only reason for this
+is the ability to evaluate our specification with concrete values.
+Later we are going to abstract over concrete implementation of \AD{ℝ}.
 
 Generalised convolution is given by \AF{conv}, and it is almost identical to its
 1-dimensional counterpart (except it uses \AF{slide} instead of \AF{slide₁}).
-The \AF{mconv} runs $u$ \AF{conv}s adds biases to each of them from the array $b$.
-\todo[inline]{reviewer 3 suggested rephrase: Besides the typo, this explanation
-is hard to follow: it might be helpful to clarify that these convolutions and
-biases are run in parallel, and simply batched in an outer array dimension.}
+The \AF{mconv} runs $u$ \AF{conv}s (conceptually in parallel) and then it adds a
+corresponding bias from the array $b$ (of shape $u$) to each convolution.
 \begin{code}[hide]%
 \>[0]\AgdaKeyword{module}\AgdaSpace{}%
 \AgdaModule{CNN}\AgdaSpace{}%
@@ -2739,18 +2760,11 @@ We define an average pooling that is specialised to
 \AgdaFunction{it}\AgdaSymbol{)}\<%
 \end{code}}
 \end{mathpar}
-\todo[inline]{
-In the definition of \texttt{avgp2}, it seems that the block size is
-implicitly inferred from the shape of the input array \texttt{a}? Would
-this definition still work if the input shape would use
-e.g.~\texttt{2\ *\ m} instead of \texttt{m\ *\ 2}? If not, it would be
-useful to clarify that the block size is heavily syntax-directed --
-also, does this not make using the blocking function counter-intuitive
-and error-prone? I can imagine accidentally blocking by \texttt{m},
-\texttt{n} instead of \texttt{2}, \texttt{2} with the wrong input
-type.}
+Note that \AF{avgp₂} forces a programmer to provide explicit sizes
+of the blocked array, and it will not admit arrays of shape such as
+$2 * m \times 2 * n$, because $m * 2$ is not definitionally equal to $2 * m$.
 
-With these primitives we implement forward part of the CNN
+With these primitives we implement a forward part of the CNN
 as follows.  The \AB{inp} argument is the image of a hand-written digit, all
 the other arguments are weights, and the function returns the 10-element vector
 with probabilities which digit that is.  Note that type annotations in let are
