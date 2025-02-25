@@ -36,7 +36,7 @@ to experiment with these choices easily.
 
 
 We have chosen sufficiently generic primitives so that many interesting
-examples can be derived within the DSL, yet all the primitives are easily
+functions can be defined within the DSL, yet all the primitives are easily
 implementable in the backend.  Another consideration is the ability to define
 AD within the same DSL, which is useful because we can do higher-order
 derivatives and we can share optimisations between the programs and their
