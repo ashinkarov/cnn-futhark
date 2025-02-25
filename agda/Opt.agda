@@ -308,6 +308,7 @@ module Opt (r : Real) (rp : RealProp r) where
   --... | _ = a ⊞ b , λ ρ j → cong₂ _+_ (p ρ j) (q ρ j)
   opt (e ⊠ e₁) with opt e | opt e₁
   -- TODO: loads of casses
+  ... | one , p | b , q = b , λ ρ j → cong₂ _*_ (p ρ j) (q ρ j) ∙ *-neutˡ
   ... | a , p | b , q = a ⊠ b , λ ρ j → cong₂ _*_ (p ρ j) (q ρ j)
   opt (scaledown x e) with opt e
   ... | a , p = scaledown x a , λ ρ j → cong (_÷ fromℕ x) (p ρ j)

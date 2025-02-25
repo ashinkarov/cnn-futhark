@@ -1629,30 +1629,23 @@ and it shares the seed by introducing a new variable.
  
  
  
-\subsection{Optimisation\label{sec:opt}}
-\todo[inline]{reviewer 3 (2024): optimizations are performed by normalization
-(assuming that all peep-hole optimizations are always beneficial), however ML
-frameworks typically explore optimization spaces with complex trade-offs (e.g.
-sometimes not fusing a computation and keeping a temporary array may be a
-better choice), have you considered how to deal with this difficulty? clarify
-this}
+\subsection{Optimisations\label{sec:opt}}
 Our rule-based AD algorithm from the previous section guarantees that its
 output preserves correct shapes and that all the variables are well-scoped.
 However, direct compilation of the AD-generated expressions may be
 computationally inefficient.
 While we can hope that the backend will take care of this, it is relatively
-easy to implement a number of rewriting rules prior that will be applied
-during prior compilation.  The motivation is two-fold: (i) designing
-optimisations for a small DSL is much easier than for a general-purpose
-language; (ii) as we have semantics of \AF{E}, we can make sure that our
-optimisations are correct (semantics-preserving).
-We are only going to demonstrate here the general setting, please refer
-to supplementary materials for further details.
+easy to implement a number of rewriting rules that will be applied
+prior extraction.  Designing optimisations for a small DSL is much easier
+than for a general-purpose language.  Also, we can leverage semantics
+of \AF{E}, to formally prove that our optimisations preserve the meaning
+of programs.  We demonstrate our setting and key optimisations, for further
+details refer to supplementary materials.
 
-Firstly, as our semantics is defined on abstract reals, we require some
-properties of their properties to prove semantics preservation.
-For the optimisations that we implement,
-we only need neutrality of addition and multiplication:
+Semantics preservation proofs require several properties of reals such
+as presence of neutral elements for addition and multiplication.
+Similarly to \AF{⟦\_⟧}, we abstract our proofs over the collection
+of equalities that we call \AM{RealProp} that are defined as follows:
 \begin{code}[hide]%
 \>[0]\AgdaKeyword{module}\AgdaSpace{}%
 \AgdaModule{Opt}\AgdaSpace{}%
@@ -1747,7 +1740,7 @@ we only need neutrality of addition and multiplication:
 \>[74]\AgdaOperator{\AgdaDatatype{≡}}\AgdaSpace{}%
 \AgdaBound{x}\<%
 \end{code}
-We define the meaning of semantics preservation by means of the \AF{\_≈ᵉ\_}
+The meaning of semantics preservation is given by the \AF{\_≈ᵉ\_}
 relation, which says that two expressions are equivalent if they evaluate
 to equivalent values.  Equivalence of values is given by the propositional
 equality of indices and extensional equality of arrays.  The type of
@@ -1912,7 +1905,7 @@ semantics-preserving \AF{opt}imisation function is given as follows.
 \AgdaBound{e}\<%
 \end{code}
 
-Consider several examples of the rewrites that we are implementing.
+Consider the following examples of the rewrites that we are implementing.
 We omit the proofs for readability, but they are available in the
 supplementary materials.
 \begin{mathpar}
@@ -1920,14 +1913,19 @@ supplementary materials.
    \and
    \AC{sels}\ one\ e \rightsquigarrow \AC{one}
    \and
-   \AC{sels}\ (\AC{sum} e)\ i \rightsquigarrow \AC{sum}\ (\AC{sels}\ e\ (i\ \AF{↑}))
+   \AC{sels}\ (\AC{sum}\ e)\ i \rightsquigarrow \AC{sum}\ (\AC{sels}\ e\ (i\ \AF{↑}))
    \and
    \AC{sum}\ \AC{zero} \rightsquigarrow \AC{zero}
    \and
    \AC{sum}\ (\AC{imap*}\ e) \rightsquigarrow 
    \AC{imap*}\ (\AC{sum}\ (\AF{sub}\ e\ \AF{sub-swap}))
 \end{mathpar}
-Semantic preservation becomes especially useful in the following cases which
+The last rule that swaps \AC{sum} and \AC{imap} may feel counterintuitive.
+However, all it is saying is that $[a_1 + b_1, a_2 + b_2] = [a_1, a_2] + [b_1, b_2]$,
+as our sum is shape polymorphic with respect to summands.  Moreover, we have
+a formal proof that justifies correctness of this rewrite.
+
+Semantics preservation becomes especially useful in the following cases which
 are not immediately obvious:
 \begin{align*}
    \AC{sum}\ (\AC{zero-but}\ (\AC{var}\ i)\ (\AC{var}\ j)\ e)
@@ -1946,29 +1944,38 @@ are not immediately obvious:
    \AF{sub}\ e\ (\AF{sub-id}\ \AC{▹}\ \AC{var}\ j)
 \end{align*}
 which tell us that if we are summing-up comparisons of indices that
-happen to be variables, we can compare whether either of the variables
-is \AC{v₀} (the one that \AC{sum} binds) and potentially avoid comparison
-or summation.
+happen to be variables, we can check whether either of the variables
+is \AC{v₀} (the index of \AC{sum}), and if this is the case we can
+avoid comparison or summation.
 
-There is a number of rewrite rules that we left out.  Note that we are
-not claiming that these optimisations are complete in any sense.  We have
-implemented enough rewrites for the chosen example and backend compiler.
-However, it is straight-forward to add more rewrite rules if they are
-needed in other contexts.
+The set of implemented rewrite rules is driven by the chosen example
+and the backend compiler, therefore by no means it is complete in
+any sense.  However, adding new rewrite rules is reasonably
+straight-forward.
+
 
 Additionally to rewrites described above, we implemented a pass that
 identifies whether let bodies re-define expressions that are bound to
 the let variable.  If this is the case, then the expression is substituted
-by the variable.  The main reason for this is the expression \AC{logistic} $e$,
-which recomputes \AF{logistic} $e$ as a part of its derivative.  While
+by that variable.  The main reason for this is the derivative rule for
+\AC{logistic} $e$, which recomputes \AF{logistic} $e$.  While
 this is correct mathematically, this creates code duplication in cases
-such as (\AC{let′} (\AF{logistic} $e$) $\dots$).  Instead of reusing
-the variable that is bound in let, it recomputes the entire expression.
+\AF{logistic} $e$ is already bound to some variable.  Instead of reusing
+the variable the rule will recomputes the entire expression.
 As it is difficult to tell whether the call to logistic has been bound
-somewhere before, we implement a generally useful deduplication that
+somewhere before, we implement a generally useful deduplication pass that
 solves this problem.
 
-
+One general concern for optimisation systems such as the one described
+here is finding an optimal sequence of rewrites that leads to the best
+performance.  This is an open problem in compiler research, and we do
+not have a final answer here.  However, the following strategy seem to
+work for practical cases such as our running example.  A programmer
+have a control over the number of let bindings that they introduce
+in the code, and all our optimisations respect these (we never inline
+lets).  All the expressions within lets are aggressively inlined by
+the rules described here and by normalisation defined in the next
+section.
 
 % \begin{code}[hide]
 % module Opt where
@@ -2172,11 +2179,11 @@ solves this problem.
 % 
 \subsection{Extraction}
 
-We had two reasons to define the embedded language \AF{E}.
+Recall that the embedded language \AF{E} serves two purposes.
 Firstly, \AF{E} makes it possible to implement automatic differentiation
 within Agda, as we described in the previous section.
-Secondly, we extract expressions in \AF{E} into
-a programming language that can produce efficient code.  This
+Secondly, programs in \AF{E} can be extracted into
+programming languages that can generate efficient code.  This
 section describes extraction process into Futhark.
 
 Futhark is a functional language with automatic memory management and
@@ -2202,7 +2209,8 @@ def isum2 : (m: i64) -> (n: i64)
 \end{Verbatim}
 
 
-\paragraph{Static Ranks} As Futhark does not support rank polymorphism, we must define imap and sum variants for every needed array rank. This also means that
+\paragraph{Static Ranks} As Futhark does not support rank polymorphism,
+we must define imap and sum variants for every needed array rank. This also means that
 it is not possible to translate an arbitrary expression in \AF{E} into
 Futhark, because \AF{E} can define a function that abstracts over shapes
 (which, in turn, means abstraction over ranks).  For the purpose of
@@ -2230,11 +2238,14 @@ therefore Futhark (and many other array languages) do not inline
 computation of array elements.  For our running example, naive translation
 results in too many cases when arrays are constructed just to select
 an element from them.  Therefore, we need some notion of normalisation
-prior to extraction.
+prior to extraction.  Note that while normalisation could have been
+implemented as a part of optimisations, we implement it here because
+some of the \AF{E} primitives such as \AC{slide} are implemented
+through \texttt{imap/isum}. 
 
 
 We combine normalisation and extraction in a single step,
-resulting in an approach that is similar to normalisation by evaluation.
+resulting in an approach that is similar to normalisation by evaluation~\cite{nbe1,nbe2}.
 We model Futhark arrays as Agda functions, which makes it
 easy to encode normalisation steps.
 \begin{code}[hide]%
@@ -2385,10 +2396,11 @@ easy to encode normalisation steps.
 \AgdaFunction{monadState}\<%
 \end{code}
 Futhark indices for an array of shape $s$ are given by the type \AD{Ix} which
-is simply a list of strings (the name of the index) per dimension.
+is a list of strings where each string represents the name of the index variable
+of the given dimension.
 The \AF{Sem} function gives an interpretation to types of \AF{E} expressions.
-Indices are just interpreted as \AF{Ix} of the corresponding shape.  Array
-types are morally functions fro indices to strings.  However, in the definition
+Indices are interpreted as \AF{Ix} of the corresponding shape.  Array
+types are morally functions from indices to strings.  However, in the definition
 the type is a little more complicated:
 \begin{mathpar}
 \codeblock{\begin{code}%
@@ -2456,13 +2468,15 @@ the type is a little more complicated:
 \end{mathpar}
 Let us explain the complexity of the array type.  First of all, the codomain
 of the array is wrapped into a state monad which gives a source of fresh variable
-names.  Within the monad we have a pair we have a function which represents
-a context for the actual array computation which is the second argument.
+names.  Within that monad we have a pair of a function from string to string and
+a string.  The string represents the actual content of the array, whereas the
+function represents a context around the array content.
 This context is needed because of the interplay between let bindings and
-imaps.  Consider for a moment that we do not have explicit context in the
-type for \AC{ar} and we are compiling an expression
-\AF{Let} z \AF{:=} \AC{zero} \AF{in} \AF{Imaps} λ i → z which can result in
-something like:
+imaps which is easy to understand from the following example.
+Consider for a moment that the arrays are interpreted as \AD{Ix} $s$ → \AF{State} \AF{ℕ} \AD{String},
+and we are compiling an expression:
+\AF{Let} z \AF{:=} \AC{zero} \AF{in} \AF{Imaps} λ i → z.  This would
+result in something like:
 \begin{code}%
 %
 \>[2]\AgdaFunction{f}\AgdaSpace{}%
@@ -2487,23 +2501,22 @@ something like:
 \AgdaString{"z"}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaBound{i}\AgdaSymbol{)}\<%
 \end{code}
-If we select into this array (by applying it to some index expression)
-or compose it with other functions, this works as expected.  However,
+Selections into $f$ are applications, and we can compose such arrays
+with other functions.  However,
 at a certain point we may need to turn this expression into the actual
-array, which looks something like \AS{"imap λ i → "} \AF{++} f \AS{"i"}.
-However, this expression evaluates to \AS{"imap λ i → let z = 0\ in z"},
-but this inlines computation of let binding in the body of the imap,
-which may have a serious performance impact if let binds a non-trivial
-computation.  By introducing contexts in \AF{Sem}, we just control where
-the imap code is injected.  Generally speaking, our strategy here is to
-preserve sharing that is introduced by let bindings, yet normalise
-bound expressions and bodies.
+Futhark code, which cam can be achieved by \AS{"imap λ i → "} \AF{++} f \AS{"i"}.
+This expression evaluates to \AS{"imap λ i → let z = 0\ in z"},
+and it inlines computation of the let binding in the body of the imap,
+which may have a serious performance penalty.
+By introducing contexts in \AF{Sem}, we control where
+we can inject the \AS{"imap"} under the let chain, obtaining
+\AS{"let z = 0\ in imap λ i →  z"}.
 
-For the actual extraction we define the environment of Futhark values
-called \AF{FEnv}.  Two functions that actually do the translation are
+Extraction requires an environment of Futhark values that is given by
+\AF{FEnv}.  Two functions that perform most of the translation are
 \AF{to-fut} which computes the \AF{Sem} value, and \AF{to-str} that
-calls \AF{to-fut} and wraps the result with \AF{imap} as we described
-above.
+calls \AF{to-fut} and wraps the result with imap or isum similarly to
+the way we described above.
 \begin{mathpar}
 \codeblock{\begin{code}%
 %
@@ -3722,14 +3735,16 @@ above.
 \end{mathpar}
 Consider two cases of \AF{to-fut} for \AC{imap} an \AC{sel}.
 In both cases the array we are constructing or selecting from is
-of shape $s ++ p$.  We use two helper functions \AF{ix-curry}
+of shape $s ⊗ p$.  We use two helper functions \AF{ix-curry}
 and \AF{ix-uncurry} that translate between functions of type
-\AD{Ix (s ++ p)} → X and \AD{Ix} s → \AD{Ix p} → X.  In the
-\AC{imap} case we generate a function keeping potential let
+\AD{Ix (s ⊗ p)} → X and \AD{Ix} s → \AD{Ix p} → X.  In the
+\AC{imap} case we generate a function that keeps let
 chains within the imap expression.  In case of \AF{sel}, we
-are computing the value of the array we are selecting from (i.e. $a$)
-and within the returned expression we apply $a$ to the corresponding
-indices --- this is normalisation step.
+compute the array we are selecting from and the index we
+are selecting at binding them to $a$ and $i$.  After that,
+we construct an expression for $p$-shaped array, where
+$a$ is applied to the corresponding indices, which implements
+the normalisation step.
 \begin{mathpar}
 \codeblock{\begin{code}%
 %
