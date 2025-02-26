@@ -753,6 +753,23 @@ abstract="Reasoning about syntax with binders plays an essential role in the for
 isbn="978-3-319-22102-1"
 }
 
+@inproceedings{rp-mm,
+author = {\v{S}inkarovs, Artjoms and Koopman, Thomas and Scholz, Sven-Bodo},
+title = {Rank-Polymorphism for Shape-Guided Blocking},
+year = {2023},
+isbn = {9798400702969},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3609024.3609410},
+doi = {10.1145/3609024.3609410},
+abstract = {Many numerical algorithms on matrices or tensors can be formulated in a blocking style which improves performance due to better cache locality. In imperative languages, blocking is achieved by introducing additional layers of loops in a nested fashion alongside with suitable adjustments in index computations. While this process is tedious and error-prone, it is also difficult to implement a generically blocked version that would support arbitrary levels of blocking. At the example of matrix multiply, this paper demonstrates how rank-polymorphic array languages enable the specification of such generically blocked algorithms in a simple, recursive form. The depth of the blocking as well as blocking factors can be encoded in the structure of array shapes. In turn, reshaping arrays makes it possible to switch between blocked and non-blocked arrays. Through rank-polymorphic array combinators, any specification of loop boundaries or explicit index computations can be avoided. Firstly, we propose a dependently-typed framework for rank-polymorphic arrays. We use it to demonstrate that all blocked algorithms can be naturally derived by induction on the argument shapes. Our framework guarantees lack of out-of-bound indexing, and we also prove that all the blocked versions compute the same results as the canonical algorithm. Secondly, we translate our specification to the array language SaC. Not only do we show that we achieve similar conciseness in the implementation, but we also observe good performance of the generated code. We achieve a 7\% improvement compared to the highly-optimised OpenBLAS library, and 3\% compared to Intel’s MKL library when running on a 32-core shared-memory system.},
+booktitle = {Proceedings of the 11th ACM SIGPLAN International Workshop on Functional High-Performance and Numerical Computing},
+pages = {1–14},
+numpages = {14},
+keywords = {Array Programming, Dependent Types, HPC, Matrix Multiply, Rank-Polymorphism},
+location = {Seattle, WA, USA},
+series = {FHPNC 2023}
+}
 
 @INPROCEEDINGS{nbe2,
   author={Abel, Andreas and Coquand, Thierry and Dybjer, Peter},

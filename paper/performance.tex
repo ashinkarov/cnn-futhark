@@ -7,68 +7,78 @@ substantiate this claim, we compare the running times of the code that
 we generate from the specification of the CNN at the end of the
 Section~\ref{sec:edsl} with an equivalent CNN implemented with
 TensorFlow~\cite{ad-tf} and PyTorch~\cite{ad-pytorch}. This is a
-limited study, and it does not exploit all the expressivity provided
+limited study, and it does not exploit all the expressiveness provided
 by our language, but nevertheless it shows the potential of achieving
 performance that approaches that of established programs in
 non-verified languages. We use the commonly used MNIST database, which
 consists of 60000 greyscale images of handwritten digits, each 28 by
 28 pixels~\cite{deng2012mnist}.
 
-Our verified CNN code corresponds only to a single forward and
-backward pass. To build a full CNN, we implement by hand the
+Our verified CNN code corresponds to a single training (forward and
+backward) pass. To build a full CNN, we hand-implement the
 ``batching loop'' that iterates across the training set, in which we
 invoke the Futhark code extracted from the specification. Since the
 specification is known to be free of indexing errors, we instruct the
 Futhark compiler to elide bounds checking.
 
-Our experimental results have been obtained on an NVIDIA A100 with
-CUDA 11.8 and cuDNN 8.6.0, and are shown in
-Table~\ref{tab:performance}. The runtime numbers exclude startup
-costs, such as graph compilation, initialising GPU context, copying
-data to the GPU, in order to focus on the performance of the generated
-code. For the largest training set, these startup costs are about $5s$
-seconds for TensorFlow and $6.7s$ for Futhark, which dwarfs the actual
-training time, due to our small datasets. The PyTorch runtime is
-extremely high, due to low GPU utilization.
 
+Comparing performance of Futhark with Tensorflow and PyTorch is not
+straight-forward.  Futhark is a classical ahead of time compiler,
+whereas Tensorflow and PyTorch are large frameworks that depend on
+many external libraries, therefore their performance is very
+sensitive to system configuration.  Moreover, by default, Tensorflow
+and PyTorch launch just-in-time compilers as a part of their runtime
+which for our CNN takes about 5 seconds.
+It is not clear whether there is an option to cache the result of
+JIT compilation between the runs.  Here we pretend that this is the
+case, and we exclude any identifiable startup costs and JIT time
+from the measurements.
+
+We run our experiments on an NVIDIA A100 with
+CUDA 11.8 and cuDNN 8.6.0, and we summarise results for Futhark and
+Tensorflow in Table~\ref{tab:performance}. 
 While Futhark is competitive for the small workload, TensorFlow is
-faster for the large ones. This is not surprising, as the individual
-layers in the TensorFlow implementation are ultimately implemented
-using hand-tuned primitives from cuDNN, which the Futhark compiler,
-despite its optimisations, cannot match. Futhark's minor advantage on
-the small workload is likely due to lower fixed overheads in the
-generated code.
+faster for the large ones. This is not surprising, as machine learning
+frameworks are optimised for executing CNNs.  Individual
+layers in the TensorFlow are ultimately implemented
+using hand-tuned primitives from cuDNN, so it is very challenging
+to outperform them from the general purpose Futhark compiler.
+Futhark's advantage on the small workload is likely due to lower
+fixed overheads in the generated code.
 
-Profiling our generated code, we find that the Futhark compiler has
-generated a rather large number of GPU kernels for the training loop,
-most of which perform very little work, and contribute little to the
-runtime. This is due to the normalisation issue discussed in
-Section~\ref{sec:opt}, and shows that perhaps too many small arrays
-are still manifested, that ought to be inlined. This is essentially
-the common dilemma of how to balance recomputation with reuse.
-However, the impact of these small GPU kernels on training performance
-is minor--approximately 83\% of all GPU work occurs in two kernels
-corresponding to the convolutional layers. These are also the layers
-where cuDNN's implementation is significantly better than what the
-Futhark compiler can produce.
+PyTorch version result in extremely high runtime of 19 and 61 seconds,
+and we observer low GPU utilization.  While this is likely to be a problem
+with a system configuration, we report these numbers here as an indication
+that performance of machine learning systems is fragile.
 
-Closing this performance gap could be done by improving the Futhark
-compiler to match cuDNN's performance, although this is perhaps not
-realistic. Another approach could be to extract TensorFlow instead of
-Futhark from our DSL, although this will also require us to add new
-builtin primitives to perform e.g. convolutions, as our index-oriented
-array operations are not a good fit for TensorFlow's programming
-model. Although not difficult to do, and it would result in better
-performance for the specific case of CNNs, it would result in a more
+Profiling our generated code, we find that 83\% of all GPU work occurs
+in two kernels corresponding to the convolutional layers. These are also the layers
+where cuDNN's implementation is significantly better than the one
+that is generated by Futhark from a high-level specification.
+For the rest 17\% of runtime, we observe that Futhark has
+generated a rather large number of GPU kernels that perform relatively
+little work.  Identifying a better strategy on reducing the number
+of small kernels requires further research.  It might be beneficial to
+inline some array computations to get rid of intermediate arrays;
+or there might be a better way to split the computation into kernels.
+
+Closing the observed performance gap is an interesting task.
+While it is unlikely that Futhark can match cuDNN's performance
+from the existing specification, our framework makes it possible
+to adjust the generate code to help the compiler.  As long as cuDNN
+does not use custom hardware for the entire kernel, an approach
+based on high-level array blocking~\cite{rp-mm} might be applicable
+in the context of GPUs.  We could clearly introduce specialised
+primitives in the DSL, but it would result in a more
 restricted language, which is less interesting from a research
 perspective.
 
 \begin{table}
 \begin{tabular}{crrrr}
 \textbf{Size of training set} & \multicolumn{3}{c}{\textbf{Runtime}} & \textbf{Ratio} \\
-& Futhark & TensorFlow & PyTorch & \\
-$10000$ & $0.91s$ & $1.07s$ & $19s$ & $0.85\times{}$ \\
-$60000$ & $4.93s$ & $2.92s$ & $61s$ & $1.68\times{}$
+& Futhark & TensorFlow & \\
+$10000$ & $0.91s$ & $1.07s$ &  $0.85\times{}$ \\
+$60000$ & $4.93s$ & $2.92s$ &  $1.68\times{}$
 \end{tabular}
 \caption{Training time for various training set sizes, comparing
   Futhark, Tensorflow, and PyTorch, running on an A100 GPU. The final column
