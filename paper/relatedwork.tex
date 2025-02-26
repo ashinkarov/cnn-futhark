@@ -5,10 +5,6 @@ work. One important distinction however, which is easily obscured by
 this detail-oriented comparison, is that our work combines parts that
 have been subject to prior work, but are not commonly found together.
 
-% - "Efficient Differentiable Programming in a Functional Array-Processing Language"
-% - "Verified tensor-program optimization via high-level scheduling rewrites"
-% - "Indexed Streams: A Formal Intermediate Representation for Fused Contraction Programs"
-
 \subsection{Automatic Differentiation}
 
 Automatic differentiation has been around for many decades~\cite{early-ad1, early-ad2},
@@ -90,6 +86,14 @@ unresolved implementation challenges. Even though our for support rank
 polymorphism results in having even more complicated types, our code
 extraction, which is essentially ahead-of-time compilation, is fairly
 unproblematic.
+
+Another related approach is the Etch compiler for indexed
+streams~\cite{10.1145/3591268}, which is implemented as an embedded
+language in Lean. Although the domain differs from ours, stream/tensor
+contraction as compared to array programming, the basic idea of
+extracting low level code is similar. Significant differences include
+our support for rank polymorphism, automatic differentiation, and
+parallel execution.
 
 \subsection{Type systems}
 
