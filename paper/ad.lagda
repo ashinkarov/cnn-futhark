@@ -727,7 +727,7 @@ a built-in type for arrays.  Futhark provides key array combinators such as
 map and reduce, which makes the translation process straightforward.
 The only boilerplate code we require from Futhark in order
 to run the generated code is: implementations of operation on reals
-from \AM{Real} (these are mapped into 32-bit floating point operations);
+from \AD{Real} (these are mapped into 32-bit floating point operations);
 and rank-$n$ versions of the imap and sum combinators.  The latter is defined
 as follows:
 \begin{Verbatim}
@@ -765,19 +765,19 @@ functions, and inlining arbitrary evaluation of array elements may
 have a significant performance cost.  For example, in the expression
 \texttt{let a = imap \textbackslash i -> }$e$ \texttt{in imap \textbackslash j -> a[f j]}, Futhark
 allocates memory for $a$ and manifests elements in memory, and within the
-body of the let, selection fetches from memory.  If we were
-to inline $a$ by replacing $a[f\ j]$ with $e[i := f\ j]$, we loose sharing
-by potentially recomputing $e$ much more often than needed
-(e.g. assume that $i$ ranges over 10 elements, but $j$ over $10^5$).
+body of the let, selection fetches array elements from memory.  If we were
+to inline $a$ by replacing $a[f\ j]$ with $e[i := f\ j]$, we would loose sharing,
+potentially recomputing $e$ (at index $f\ j$ much more often than needed.
+\Eg{} assume that $i$ ranges over 10 elements, but $j$ over $10^5$.
 Resolving when such inlining is beneficial for performance is non-trivial,
-therefore Futhark (and many other array languages) do not inline 
+so Futhark (and many other array languages) does not inline 
 computation of array elements.  For our running example, naive translation
 results in too many cases when arrays are constructed just to select
-an element from them.  Therefore, we need some notion of normalisation
+a single element from them.  Therefore, we need some notion of normalisation
 prior to extraction.  Note that while normalisation could have been
 implemented as a part of optimisations, we implement it here because
 some of the \AF{E} primitives such as \AC{slide} are implemented
-through \texttt{imap/isum}. 
+through Futhark's \texttt{imap/isum}. 
 
 
 We combine normalisation and extraction in a single step,
@@ -849,10 +849,10 @@ result in something like:
 Selections into $f$ are applications, and we can compose such arrays
 with other functions.  However,
 at a certain point we may need to turn this expression into the actual
-Futhark code, which cam can be achieved by \AS{"imap λ i → "} \AF{++} f \AS{"i"}.
+Futhark code, which can be achieved by \AS{"imap λ i → "} \AF{++} f \AS{"i"}.
 This expression evaluates to \AS{"imap λ i → let z = 0\ in z"},
-and it inlines computation of the let binding in the body of the imap,
-which may have a serious performance penalty.
+which inlines the let binding computation into the body of the imap,
+potentially causing performance penalty.
 By introducing contexts in \AF{Sem}, we control where
 we can inject the \AS{"imap"} under the let chain, obtaining
 \AS{"let z = 0\ in imap λ i →  z"}.
@@ -860,8 +860,8 @@ we can inject the \AS{"imap"} under the let chain, obtaining
 Extraction requires an environment of Futhark values that is given by
 \AF{FEnv}.  Two functions that perform most of the translation are
 \AF{to-fut} which computes the \AF{Sem} value, and \AF{to-str} that
-calls \AF{to-fut} and wraps the result with imap or isum similarly to
-the way we described above.
+calls \AF{to-fut} and wraps the result with \texttt{imap} or \texttt{isum}
+similarly to the way we described above.
 \begin{mathpar}
 \codeblock{\begin{code}
   FEnv : Ctx → Set
@@ -1019,7 +1019,7 @@ the way we described above.
   to-str : E Γ (ar s) → FEnv Γ → State ℕ String
 \end{code}}
 \end{mathpar}
-Consider two cases of \AF{to-fut} for \AC{imap} an \AC{sel}.
+Consider the definition of \AF{to-fut} for \AC{imap} an \AC{sel}.
 In both cases the array we are constructing or selecting from is
 of shape $s ⊗ p$.  We use two helper functions \AF{ix-curry}
 and \AF{ix-uncurry} that translate between functions of type
@@ -1027,10 +1027,10 @@ and \AF{ix-uncurry} that translate between functions of type
 \AC{imap} case we generate a function that keeps let
 chains within the imap expression.  In case of \AF{sel}, we
 compute the array we are selecting from and the index we
-are selecting at binding them to $a$ and $i$.  After that,
-we construct an expression for $p$-shaped array, where
-$a$ is applied to the corresponding indices, which implements
-the normalisation step.
+are selecting at, and we bind them to variables $a$ and $i$.
+After that, we construct an expression for $p$-shaped array, where
+$a$ is applied to the corresponding indices.  This application
+implements the normalisation step.
 \begin{mathpar}
 \codeblock{\begin{code}
   to-fut (imap {s = s} e) ρ = 
