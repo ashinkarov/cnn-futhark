@@ -231,10 +231,10 @@ specified application into a high-performance language of our choice.  Concretel
 we are using Agda to specify a framework for automatic differentiation (reverse mode)
 that is focused on index-safe tensors.  This framework comes
 with an optimiser for tensor expressions and the ability to translate these
-expressions into SaC and C.  We specify a canonical convolutional neural network
+expressions into Futhark.  We specify a canonical convolutional neural network
 within the proposed framework, compute the derivatives needed for the training
-phase and then demonstrate that the generated code matches the performance of hand-written
-code when running on a multi-core machine.
+phase and then demonstrate that the generated code approaches the performance of TensorFlow
+code when running on a GPU.
 \end{abstract}
 
 \maketitle
