@@ -46,10 +46,11 @@ to outperform them from the general purpose Futhark compiler.
 Futhark's advantage on the small workload is likely due to lower
 fixed overheads in the generated code.
 
-PyTorch version result in extremely high runtime of 19 and 61 seconds,
-and we observer low GPU utilization.  While this is likely to be a problem
-with a system configuration, we report these numbers here as an indication
-that performance of machine learning systems is fragile.
+Our PyTorch version results in extremely high runtimes of 19 and 61
+seconds, and we observe low GPU utilization. While this is likely to
+be a problem with a system configuration, we report these numbers here
+as an indication that performance of machine learning systems is
+fragile.
 
 Profiling our generated code, we find that 83\% of all GPU work occurs
 in two kernels corresponding to the convolutional layers. These are also the layers
@@ -74,8 +75,8 @@ restricted language, which is less interesting from a research
 perspective.
 
 \begin{table}
-\begin{tabular}{crrrr}
-\textbf{Size of training set} & \multicolumn{3}{c}{\textbf{Runtime}} & \textbf{Ratio} \\
+\begin{tabular}{crrr}
+\textbf{Size of training set} & \multicolumn{2}{c}{\textbf{Runtime}} & \textbf{Ratio} \\
 & Futhark & TensorFlow & \\
 $10000$ & $0.91s$ & $1.07s$ &  $0.85\times{}$ \\
 $60000$ & $4.93s$ & $2.92s$ &  $1.68\times{}$
