@@ -16,7 +16,6 @@
    and how close can you reliably get to proper reverse AD?
 }
 
-\todo[inline]{mention that we are doing MNIST stuff here}
 The year is 2025, and we still have to make a formidable choice between
 correctness and performance for all the programming projects that we start.
 Low level programming languages such as C or Fortran make it possible to leverage
@@ -56,7 +55,8 @@ Within this framework, we encode the CNN from~\cite{cnn-array} and lift it
 into an embedded DSL.  We implement AD
 (reverse mode) and domain-specific optimisations for expressions in that DSL.
 Finally, we implement an extraction 
-into Futhark (a functional array language) and compare performance with TensorFlow.
+into Futhark (a functional array language), apply the CNN to the MNIST digit recognition problem,
+and compare performance with TensorFlow.
 
 As a result, we demonstrate an approach where the entire specification,
 optimiser, AD and code generation are available to us within a proof
