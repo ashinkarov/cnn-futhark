@@ -6,13 +6,13 @@ other system that can run the algorithm efficiently. In order to
 substantiate this claim, we compare the running times of the code that
 we generate from the specification of the CNN at the end of the
 Section~\ref{sec:edsl} with an equivalent CNN implemented with
-TensorFlow~\cite{ad-tf}. This is a limited study, and it does not
-exploit all the expressivity provided by our language, but
-nevertheless it shows the potential of achieving performance that
-approaches that of established programs in non-verified languages. We
-use the commonly used MNIST database, which consists of 60000
-greyscale images of handwritten digits, each 28 by 28
-pixels~\cite{deng2012mnist}.
+TensorFlow~\cite{ad-tf} and PyTorch~\cite{ad-pytorch}. This is a
+limited study, and it does not exploit all the expressivity provided
+by our language, but nevertheless it shows the potential of achieving
+performance that approaches that of established programs in
+non-verified languages. We use the commonly used MNIST database, which
+consists of 60000 greyscale images of handwritten digits, each 28 by
+28 pixels~\cite{deng2012mnist}.
 
 Our verified CNN code corresponds only to a single forward and
 backward pass. To build a full CNN, we implement by hand the
@@ -28,7 +28,8 @@ costs, such as graph compilation, initialising GPU context, copying
 data to the GPU, in order to focus on the performance of the generated
 code. For the largest training set, these startup costs are about $5s$
 seconds for TensorFlow and $6.7s$ for Futhark, which dwarfs the actual
-training time, due to our small datasets.
+training time, due to our small datasets. The PyTorch runtime is
+extremely high, due to low GPU utilization.
 
 While Futhark is competitive for the small workload, TensorFlow is
 faster for the large ones. This is not surprising, as the individual
@@ -63,14 +64,14 @@ restricted language, which is less interesting from a research
 perspective.
 
 \begin{table}
-\begin{tabular}{crrr}
-\textbf{Size of training set} & \multicolumn{2}{c}{\textbf{Runtime}} & \textbf{Ratio} \\
-& Futhark & TensorFlow & \\
-$10000$ & $0.91s$ & $1.07s$ & $0.85\times{}$ \\
-$60000$ & $4.93s$ & $2.92s$ & $1.68\times{}$
+\begin{tabular}{crrrr}
+\textbf{Size of training set} & \multicolumn{3}{c}{\textbf{Runtime}} & \textbf{Ratio} \\
+& Futhark & TensorFlow & PyTorch & \\
+$10000$ & $0.91s$ & $1.07s$ & $19s$ & $0.85\times{}$ \\
+$60000$ & $4.93s$ & $2.92s$ & $61s$ & $1.68\times{}$
 \end{tabular}
 \caption{Training time for various training set sizes, comparing
-  Futhark and Tensorflow, running on an A100 GPU. The third column
+  Futhark, Tensorflow, and PyTorch, running on an A100 GPU. The final column
   shows the speedup of TensorFlow compared to Futhark. We use a batch
   size of $1000$, a training rate of $0.05$, and train for $10$
   epochs.}
