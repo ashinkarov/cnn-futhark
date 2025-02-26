@@ -317,7 +317,7 @@ in recursive calls when it is passed unchanged.
 \end{code}
 Mostly, the interpretation is a straightforward mapping into the \AF{Ar} constructors.
 In the \AC{imaps} case we can see how the implicit conversion from what would be a
-shape $s ⊗ \AF{unit}$ into $s$.  In case of \AC{imaps} we make a singleton array
+shape $s ⊗ \AF{unit}$ into $s$.  In case of \AC{sels} we make a singleton array
 using \AF{K}. Note that \AF{sum} has explicit summation index like in a mathematical
 $\sum$-notation.  We fix the default value of \AF{backslide} to zero for simplicity.
 For arrays of reals, we can get general \AF{backslide} behaviour through masking.
@@ -430,7 +430,8 @@ is denoted with \AF{\_↑} and it is defined as follows.
   wk s (let′ e e₁) = let′ (wk s e) (wk (keep s) e₁)
 \end{code} 
 
-We implement parallel substitution~\cite{} in the usual way.  The key structure that
+We implement parallel substitution~\cite{par-sub1,par-sub2} in the usual way.
+The key structure that
 gives rise to the substitution is a mapping of variables in the context \AB{Δ}
 into expressions in the context \AB{Γ}.
 This is given by \AC{Sub} \AB{Γ} {Δ} and it represents a \AF{Δ}-long
@@ -645,7 +646,7 @@ for more details.} to define a familiar syntax for let bindings in \AF{E}.
   Let-syntax x f = let′ x (f (var ⟨ v₀ ⟩ᵛ))
   syntax Let-syntax e (λ x → e') = Let x := e In e'
 \end{code}
-With these definitions we can write expressions with let binding as follow:
+With these definitions we can write expressions with let binding as follows:
 \begin{code}
   _ : E ε (ar [])
   _ = Let x := one In Let y := x ⊞ one In (x ⊞ y) ⊠ x  
@@ -728,9 +729,9 @@ implemented in terms of \AD{E}.  Syntactic wrappers help us
 to achieve similarity between the operations defined below and the
 \AF{Ar} primitives.
 
-For \AF{conv}, \AF{mconv} and \AF{avgp₂} are direct translations
-of theur \AD{Ar} counterparts, the only visible differences are:
-lack of \AF{map} combinator and
+Implementation of \AF{conv}, \AF{mconv} and \AF{avgp₂} is a direct
+translation of the respective \AD{Ar} counterparts, the only visible
+differences are: lack of \AF{map} combinator and
 rank-polymorphic addition and multiplication.
 \begin{code}[hide]
 module Primitives where
@@ -767,7 +768,7 @@ which must be of the same shape.
   meansqerr : (r o : E Γ (ar s)) → E Γ (ar [])
   meansqerr r o = Sum λ i → sqerr (sels ⟨ r ⟩ i) (sels ⟨ o ⟩ i) 
 \end{code}
-With these primitives, we embedded our running example in $E$ as follows:
+With these primitives, we embed our running example in $E$ as follows:
 \begin{code}
   cnn : E _ _
   cnn = Lcon (  ar (28 ∷ 28 ∷ []) ∷ ar (6 ∷ 5 ∷ 5 ∷ [])
@@ -791,7 +792,7 @@ With these primitives, we embedded our running example in $E$ as follows:
 Note that with the proposed syntax, the above definition looks very similar
 to the one we defined directly in Agda.  We use more let bindings in this
 definition, which is not an arbitrary choice, and we will come back to this
-discussion in Section~\ref{sec:opt}.
+discussion in the next section.
 
 % \paragraph{Building Blocks}
 % Now we implement the remaining building blocks in \AD{E} that are needed

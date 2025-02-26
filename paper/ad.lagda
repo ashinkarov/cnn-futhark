@@ -81,7 +81,7 @@ let bindings.  We traverse the expression with the given adjoint and
 we collect partial derivatives for each variable within the context that
 the expression is defined in.  When we compute derivatives for let
 bindings, we share the adjoints and the binding by means of introducing
-new variable.
+new variables.
  
 Technically, if some expression \AF{E} is defined in some context \AB{Γ},
 we need a structure that stores all the partial derivatives with respect
@@ -299,7 +299,7 @@ for every index $i$ of the imap index-space, we compute a derivative of $i$-th
 element of $e$ with the seed $s\ i$; after that we sum-up all the environments
 over the index $i$.  Technically, $e$ is an expression that may refer to the index
 of the \AC{imap} which is given by the variable \AC{v₀}.  This means that $e$
-is defined in a larger context (extended by the index variable) that the context
+is defined in a larger context (extended by the index variable) than the context
 of \AC{imap} $e$.  If we inline \AF{∇Σ}, we compute \AF{∇} $e$ with the seed
 $s$ selected at index \AC{v₀} (note that we had to weaken $s$, as we are in
 the extended context).  At this point we have accumulated per-index changes
@@ -315,8 +315,8 @@ given variable within the context have to be aggregated through summation.
 \paragraph{Selections} When differentiating selections we have to recurse into
 the array expression we are selecting from.  This means that we have to create
 a seed that masks all the array elements except the one that is given by
-the index of the selection.  Hence the seed construction in the selection rules,
-where we construct an array that contains zeros everywhere except the index we were
+the index of the selection.  Hence seed expressions in selection rules,
+which construct arrays that contains zeros everywhere except the index we were
 selecting at.  While this code is likely to run inefficiently if executed as is,
 our optimisations can deal with these patterns.
 
@@ -389,13 +389,13 @@ easy to implement a number of rewriting rules that will be applied
 prior extraction.  Designing optimisations for a small DSL is much easier
 than for a general-purpose language.  Also, we can leverage semantics
 of \AF{E}, to formally prove that our optimisations preserve the meaning
-of programs.  We demonstrate our setting and key optimisations, for further
-details refer to supplementary materials.
+of programs.  We demonstrate the setting and key optimisations in this section;
+for further details refer to supplementary materials.
 
 Semantics preservation proofs require several properties of reals such
 as presence of neutral elements for addition and multiplication.
 Similarly to \AF{⟦\_⟧}, we abstract our proofs over the collection
-of equalities that we call \AM{RealProp} that are defined as follows:
+of equalities that we call \AD{RealProp} that are defined as follows:
 \begin{code}[hide]
 module Opt where
   open import Data.Nat as ℕ using (ℕ; zero; suc)
@@ -457,9 +457,9 @@ supplementary materials.
    \AC{imap*}\ (\AC{sum}\ (\AF{sub}\ e\ \AF{sub-swap}))
 \end{mathpar}
 The last rule that swaps \AC{sum} and \AC{imap} may feel counterintuitive.
-However, all it is saying is that $[a_1 + b_1, a_2 + b_2] = [a_1, a_2] + [b_1, b_2]$,
-as our sum is shape polymorphic with respect to summands.  Moreover, we have
-a formal proof that justifies correctness of this rewrite.
+However, all it is saying is that $[a_1 + b_1, a_2 + b_2] = [a_1, a_2] + [b_1, b_2]$;
+recall that \AF{sum} is shape polymorphic with respect to summands.
+Moreover, we have a formal proof that justifies correctness of this rewrite.
 
 Semantics preservation becomes especially useful in the following cases which
 are not immediately obvious:
@@ -715,7 +715,7 @@ section.
 % 
 \subsection{Extraction}
 
-Recall that the embedded language \AF{E} serves two purposes.
+The embedded language \AF{E} serves two purposes.
 Firstly, \AF{E} makes it possible to implement automatic differentiation
 within Agda, as we described in the previous section.
 Secondly, programs in \AF{E} can be extracted into
