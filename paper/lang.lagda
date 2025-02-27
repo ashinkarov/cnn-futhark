@@ -572,7 +572,7 @@ are related by \AD{Prefix} in a unique way.  However, these two contexts are
 related by \AD{⊆} in two different ways (by keeping the first or the
 second variable).
 
-We introduce generalised variables \AF{GV} and expressions \AF{GV} that
+We introduce generalised variables \AF{GV} and expressions \AF{GE} that
 are defined in context \AB{Γ} but can be lifted into any context \AB{Δ}, given
 that \AB{Γ} is a prefix of \AB{Δ}.  The trick here is that both types define
 a function of two hidden arguments that Agda will be able to fill-in automatically.
@@ -583,8 +583,8 @@ a function of two hidden arguments that Agda will be able to fill-in automatical
 \end{code}}
 \and
 \codeblock{\begin{code}
-  GVar : Ctx → IS → Set
-  GVar Γ is = ∀ {Δ} → ⦃ p : Prefix Γ Δ ⦄ → is ∈ Δ
+  GV : Ctx → IS → Set
+  GV Γ is = ∀ {Δ} → ⦃ p : Prefix Γ Δ ⦄ → is ∈ Δ
 \end{code}}
 \end{mathpar}
 We can lift expressions into generalised expressions in two steps: 
@@ -596,7 +596,7 @@ We can lift expressions into generalised expressions in two steps:
 \end{code}}
 \and
 \codeblock{\begin{code}
-  ⟨_⟩ᵛ : is ∈ Γ → GVar Γ is
+  ⟨_⟩ᵛ : is ∈ Γ → GV Γ is
   ⟨_⟩ᵛ v ⦃ p ⦄ = wkv (prefix-⊆ p) v
 \end{code}}
 \end{mathpar}

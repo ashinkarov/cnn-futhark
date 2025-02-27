@@ -2554,7 +2554,7 @@ are related by \AD{Prefix} in a unique way.  However, these two contexts are
 related by \AD{⊆} in two different ways (by keeping the first or the
 second variable).
 
-We introduce generalised variables \AF{GV} and expressions \AF{GV} that
+We introduce generalised variables \AF{GV} and expressions \AF{GE} that
 are defined in context \AB{Γ} but can be lifted into any context \AB{Δ}, given
 that \AB{Γ} is a prefix of \AB{Δ}.  The trick here is that both types define
 a function of two hidden arguments that Agda will be able to fill-in automatically.
@@ -2590,7 +2590,7 @@ a function of two hidden arguments that Agda will be able to fill-in automatical
 \and
 \codeblock{\begin{code}%
 %
-\>[2]\AgdaFunction{GVar}\AgdaSpace{}%
+\>[2]\AgdaFunction{GV}\AgdaSpace{}%
 \AgdaSymbol{:}\AgdaSpace{}%
 \AgdaDatatype{Ctx}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
@@ -2599,7 +2599,7 @@ a function of two hidden arguments that Agda will be able to fill-in automatical
 \AgdaPrimitive{Set}\<%
 \\
 %
-\>[2]\AgdaFunction{GVar}\AgdaSpace{}%
+\>[2]\AgdaFunction{GV}\AgdaSpace{}%
 \AgdaBound{Γ}\AgdaSpace{}%
 \AgdaBound{is}\AgdaSpace{}%
 \AgdaSymbol{=}\AgdaSpace{}%
@@ -2656,7 +2656,7 @@ We can lift expressions into generalised expressions in two steps:
 \AgdaOperator{\AgdaDatatype{∈}}\AgdaSpace{}%
 \AgdaGeneralizable{Γ}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
-\AgdaFunction{GVar}\AgdaSpace{}%
+\AgdaFunction{GV}\AgdaSpace{}%
 \AgdaGeneralizable{Γ}\AgdaSpace{}%
 \AgdaGeneralizable{is}\<%
 \\
