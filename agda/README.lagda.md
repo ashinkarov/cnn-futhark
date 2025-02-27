@@ -5,7 +5,7 @@ module _ where
 ```
 -->
 This is an overview of the Agda code that accompanies
-the <NAME> paper.
+the "Correctness meets high performance in Agda" paper.
 
 We used Agda version 2.7.0.1, and the standard library version
 2.1.1.
@@ -112,9 +112,8 @@ definitions is given in the file `GradTerm.agda`).
 
 ```
 open import Grad
+open import GradTerm renaming (grad to term-grad)
 ```
-
-### TODO: adjust GradTerm
 
 AD is defined in reverse mode as a function from the DSL expression 
 (e : E Γ (ar s)), seed value (s : E Γ (ar s)) and the inital environment
@@ -172,11 +171,19 @@ module OptExample (r : Real) (rp : RealProp r) where
 
 ```
 
-### TODO
+### Deduplication
 
-Do we want to tell anything about deduplication that I implement?
-Doesn't seem to be particulary interesting but it is somewhat useful.
+We found out that it would be usefult to have a deduplication for
+the expressions in the let chains, as mathematical rule for derivarives
+of logistics function computes logisitcs function of the original argument.
+Deduplication is a generally useful optimisation to have, and its main
+functionality is given in `Replace.agda` where we traverse the term
+and compare if one expression is equal to the other one.  Extraciton
+file contains more details on how it is used.
 
+```
+open import Replace
+```
 
 # Code Generation
 
@@ -231,5 +238,4 @@ module ExtractionDemo where
 If you are reading this file in Agda, you can normalise 
 `ExtractionDemo.extracted-cnn` to obtain Futhark expression
 for the training phase of our network.
-
 
