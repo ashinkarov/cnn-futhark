@@ -42,7 +42,7 @@
 
 \section{Automatic Differentiation\label{sec:ad}}
 
-We implement automatic differentiation in reverse mode
+We implement the reverse mode of automatic differentiation
 for expressions in \AF{E}.  We focus on reverse mode because it is
 of most interest in machine learning, and it is more challenging to implement.
 We start with a brief introduction of the AD, for much more in-depth
@@ -51,7 +51,7 @@ a function composition consisting of three functions:
 \[ 
    y = (f \circ g \circ h)\ x
 \]
-rewrite it using temporary variables:
+We rewrite it using temporary variables:
 \begin{eqnarray*}
   w_0 &=& x \\
   w_1 &=& h\ w_0 \\
@@ -64,8 +64,8 @@ $\frac{\partial y}{\partial x}
     \frac{\partial w_2}{\partial w_1}
     \frac{\partial w_1}{\partial x}$.  The difference between the forward and reverse
     mode lies in the direction that we traverse the chain rule.  In forward mode we
-    traverse the chain inside-out, and the revers mode traverses the chain outside-in
-    thus computing recursive relation:
+    traverse the chain inside-out, and the revers mode traverses the chain outside-in,
+    thus computing the recursive relation:
 $\frac{\partial y}{\partial w_i}
   = \frac{\partial y}{\partial w_{i+1}}
     \frac{\partial w_{i+1}}{\partial w_i}$.  For our example, we compute
@@ -109,14 +109,14 @@ variables for all sub-expressions, instead we rely on existing
 let bindings.  We traverse the expression with the given adjoint and
 we collect partial derivatives for each variable within the context that
 the expression is defined in.  When we compute derivatives for let
-bindings, we share the adjoints and the binding by means of introducing
+bindings, we ensure sharing of adjoints by introducing
 new variables.
  
 Technically, if some expression \AF{E} is defined in some context \AB{Γ},
 we need a structure that stores all the partial derivatives with respect
 to the variables in \AB{Γ}.  Each partial
 derivative is an expression \AF{E} in context \AF{Γ}.  We call this
-structure \emph{environment} which is a \AB{Γ}-long list of expressions
+structure an \emph{environment}, and is a \AB{Γ}-long list of expressions
 in context \AB{Γ} and it is given by \AF{Env}.
 This  construction is
 similar to our parallel substitution \AF{Sub}, except we ignore the values of index
@@ -266,7 +266,7 @@ We can weaken environments in two ways: \AF{ee-wk} weakens each element of the e
 elements according to the \AF{⊆}-argument.  We can add two environments with \AF{ee-plus}
 which: (i) adds elements of the environments point-wise; (ii) combines two \AF{EE} let
 chains into a single one.  For the environment where elements are in the context
-where zero-th variable
+where the zero-th variable
 is some (\AC{ix} s), \AF{ee-map-sum} applies \AF{sum} to all the elements.  Note that
 here we inline let-bindings of the environment into the elements, because the bindings
 may refer to the index.  This potentially leads to code duplication, but for now, we
@@ -1538,7 +1538,7 @@ below and the explanation of how it works follow.
 \AgdaSymbol{(}\AgdaInductiveConstructor{skip}\AgdaSpace{}%
 \AgdaFunction{⊆-eq}\AgdaSymbol{))))}\<%
 \end{code}
-\paragraph{Constants and variables} Derivative of constants (\AC{zero} and \AC{one})
+\paragraph{Constants and variables} The derivative of constants (\AC{zero} and \AC{one})
 is zero, so nothing needs to be updated in the environment.  Index variables are
 not stored in the environment, so no updates are needed either.  If we differentiate
 the variable $x$ with some seed \AB{s}, we update the $x$-th position in the environment
@@ -1563,12 +1563,13 @@ given variable within the context have to be aggregated through summation.
 
 
 \paragraph{Selections} When differentiating selections we have to recurse into
-the array expression we are selecting from.  This means that we have to create
-a seed that masks all the array elements except the one that is given by
-the index of the selection.  Hence seed expressions in selection rules,
-which construct arrays that contains zeros everywhere except the index we were
-selecting at.  While this code is likely to run inefficiently if executed as is,
-our optimisations can deal with these patterns.
+the array expression we are selecting from. This means that we have to
+create a seed that masks all the array elements except the one that is
+given by the index of the selection. Hence seed expressions in
+selection rules, which construct \emph{one-hot} arrays that contains
+zeros everywhere except the index we were selecting at. While this
+code is likely to run inefficiently if executed as is, our
+optimisations can deal with these patterns.
 
 \paragraph{Conditionals} Differentiating
 conditionals is straight-forward.  Both arguments $i$ and $j$ are index expressions
@@ -1946,7 +1947,8 @@ are not immediately obvious:
 which tell us that if we are summing-up comparisons of indices that
 happen to be variables, we can check whether either of the variables
 is \AC{v₀} (the index of \AC{sum}), and if this is the case we can
-avoid comparison or summation.
+avoid comparison or summation. This is the crucial optimisation that
+handles the one-hot arrays produced when differentiating selections.
 
 The set of implemented rewrite rules is driven by the chosen example
 and the backend compiler, therefore by no means it is complete in
