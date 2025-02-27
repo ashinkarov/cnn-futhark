@@ -29,9 +29,9 @@ two open questions: (i) how is it possible to
 ensure that the AD algorithm is implemented correctly?
 \todo[inline]{reviewer 3 (2024) notices: This paper does not really answer this question besides enforcing consistency of shapes and accesses? Besides, final extraction could break these properties?  this is correct, we have to clarify this.}
 (ii) if the
-language or the framework do not perform as expected, what are the
-options to solve this?  Unfortunately, for many cases the answer to
-both questions is unsatisfying.  Most of the languages/frameworks do not
+language does not perform as expected, what are the
+options to solve this?  Unfortunately, in many cases the answer to
+both questions is unsatisfying.  Most languages do not
 come with formal correctness guarantees, so one has to trust the
 implementers of these tools.  One can run tests as well to gain trust 
 in the implementation but that is far from a 
@@ -104,13 +104,13 @@ ranks. Our target language, Futhark, supports size-dependent
 types~\cite{10.1145/3609024.3609412}, but this information is used
 only to ensure shape conformance (e.g., that the operands to a matrix
 multiplication have the same size), not to ensure the correctness of
-array indexing. Single-Assignment C~\cite{sac2} (SaC) is a statically
-typed language with support for rank polymorphism, including dynamic
-ranks, but it does not guarantee that absence of indexing errors.
+array indexing. Single-Assignment C~\cite{sac2} (SaC) supports rank
+polymorphism, including dynamic ranks, but does not guarantee that
+absence of indexing errors.
 
 Gibbons showed how to express rank polymorphism in Haskell, through
 the use of \emph{Naperian functors}~\cite{10.1145/2976022.2976023}.
-This form of rank polymorphism is somewhat more limited than ours; in
+This form of rank polymorphism is more limited than ours; in
 particular, it imposes static ranks. Further, Gibbons' work focused
 solely on the embedding in Haskell, while our system also supports
 code extraction and demonstrates good real-world performance.
