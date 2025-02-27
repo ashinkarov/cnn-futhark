@@ -98,7 +98,7 @@ module _ where
   env-plus (skip ρ) (skip ν) = skip (env-plus ρ ν)
   env-plus (ρ ▹ x) (ν ▹ y) = env-plus ρ ν ▹ (x ⊞ y)
 
-  {-# TERMINATING #-}
+  {-# TERMINATING #-}  -- See GradTerm.agda where this is fixed
   ee-plus : (ρ ν : EE Γ Δ) → EE Γ Δ
   ee-plus (env ρ) (env ν) = env (env-plus ρ ν)
   ee-plus (env ρ) (let′ x ν) = let′ x (ee-plus (ee-wk (skip ⊆-eq) (env ρ)) ν)
@@ -163,7 +163,7 @@ module _ where
   ee-let : (v : ar s ∈ Δ) (x : E (Δ / v) (ar s)) → EE Γ Δ → EE Γ (Δ / v)
   ee-let v x ρ = let′ x $ ee-sub ρ (glet-sub v) 
 
-  {-# TERMINATING #-}
+  {-# TERMINATING #-} -- See GradTerm.agda where this is fixed
   grad-last : E Γ (ar s) → EE (Γ ▹ ar s) Γ → EE Γ Γ
 
   -- Just an alternative (arguably more complicated) implementation
@@ -203,10 +203,7 @@ module _ where
   grad (let′ e e₁) s δ =
     let
       r = grad e₁ (s ↑) (ee-push-zero $′ ee-wk (skip ⊆-eq) δ)
-      --t = grad-last′ v₀ e (let′ e r)
       t = grad-last e (let′ e r)
-
-
     in t 
 
   grad-last′ v e (env ρ) = let
@@ -216,8 +213,6 @@ module _ where
     r = ee-rm-/ u v
     in r
   grad-last′ v e (let′ x ρ) = let′ x $′ ee-tail $′ grad-last′ (there v) (e ↑) (ee-push-zero ρ)
-
-
 
 
   grad-last e (env (ρ ▹ x)) = ee-tail $′ let′ x $′ grad (e ↑) (var v₀) (ee-push-zero $′ ee-wk (skip ⊆-eq) (env ρ))

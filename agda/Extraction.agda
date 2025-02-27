@@ -133,6 +133,9 @@ module Extract where
   ee-fut : EE Γ Γ → NamedEnv Γ → String
   ee-fut e ρ = proj₂ $ runState (ee-fut′ (ee-opt $ ee-dedup $ ee-opt e) ρ ρ) 0
 
+  -- This is the "entry point" that computes derivatives
+  -- and generates the Futhark code for the variable names
+  -- passed through NamedEnv
   pp : E Γ (ar s) → NamedEnv Γ → String
   pp e ρ = ee-fut ({- env-norm-lets $ -} grad e one zero-ee) ρ
 
@@ -159,11 +162,7 @@ module Extract where
             Let s₁  := (Imap {s = 6 ∷ []} λ i → avgp₂ 12 12 (sel c₁ i)) In
             Let c₂₁ := mconv s₁ k₂ b₂ In
             c₂₁
-            --Let c₂ := logistic c₂₁ In
-            --c₂
             
-
-
   grad-compc1-e = ee-opt (grad compc1 one zero-ee)
   grad-compc1-s = pp compc1 (ε ▹ "inp" ▹ "k1" ▹ "b1" ▹ "k2" ▹ "b2")
 
@@ -184,24 +183,9 @@ module Extract where
   grad-test-s = ee-fut (grad test-e (var v₀) zero-ee) (ε ▹ "x" ▹ "s" )
 
   grad-cnn-e = ee-OPT (grad Primitives.cnn one zero-ee)
+
+  -- This is our CNN example from the paper.
   grad-cnn-s = pp Primitives.cnn (ε ▹ "inp" ▹ "k1" ▹ "b1" ▹ "k2" ▹ "b2" ▹ "fc" ▹ "b" ▹ "target" )
-  --grad-cnn-s = ee-fut (grad cnn (var v₀) zero-ee) (ε ▹ "inp" ▹ "k1" ▹ "b1" ▹ "k2" ▹ "b2" ▹ "fc" ▹ "b" ▹ "target" ▹ "seed")
-
-
-  esum-zb : E (ε ▹ ar []) _
-  esum-zb = 
-         (imaps {s = 10 ∷ []}
-           (E.sum
-            (zero-but (var v₁) (var v₀)
-             (minus
-              (scaledown 2 (var v₂) ⊠ one))
-             ⊞
-             zero-but (var v₁) (var v₀)
-             (minus
-              (scaledown 2 (var v₂) ⊠
-               one)))))
-
-  esum-opt-e = multiopt esum-zb OPT
 
 
 

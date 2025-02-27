@@ -8,7 +8,7 @@ open import Relation.Binary.PropositionalEquality
 open import Relation.Nullary
 open import Function
 
-open import Ar --hiding (_++_)
+open import Ar
 open import Lang
 open import LangEq
 open import Real
@@ -21,17 +21,6 @@ module Opt (r : Real) (rp : RealProp r) where
   open import Eval r
   open ZeroBut rp
   open WkSub hiding (_∙ˢ_)
-
-  --postulate
-  --  TODO : ∀ {A : Set} → A
-
-  --sum₁-zero : sum₁ {n = n} _+_ (fromℕ 0) (λ _ → fromℕ 0) ≡ fromℕ 0
-  --sum₁-zero {n = zero} = refl
-  --sum₁-zero {n = suc n} = +-neutˡ ∙ sum₁-zero {n}
-
-
-  --subst-cong : (eq : s ≡ p) {a b : Ar s R} → a ≈ᵃ b → subst (λ t → Ar t R) eq a ≈ᵃ subst (λ t → Ar t R) eq b
-  --subst-cong refl a~b = a~b
 
   ∷-inj₂ : (n ∷ s ≡ n ∷ p) → s ≡ p
   ∷-inj₂ refl = refl
@@ -126,21 +115,11 @@ module Opt (r : Real) (rp : RealProp r) where
   opt (sel {s = s} {p} e e₁) | a , pf | i , q | no _ | no _ | no _ 
   -- ... | a | i = sel a i
     = sel a i , λ ρ j → pf ρ (eval e₁ ρ ++ j) ∙ cong (eval a ρ) (cong (_++ j) (q ρ))
-  -- TODO
-  -- ... | bin op a b | i = bin op (sel a i) (sel b i)
-  -- ... | sum e | i = sum (sel e (wk here i))
-  -- ... | zero-but i j a | k = zero-but i j (sel a k)
 
 
   opt (E.imapb x e) with opt e
   ... | a , p = E.imapb x a , λ ρ j → p (ρ , ix-div j x) (ix-mod j x)
   opt (E.selb x e e₁) with opt e | opt e₁
-  -- TODO
-  -- ... | zero = zero
-  -- ... | one = one
-  -- ... | sum e = sum (selb m e (↑ k {- var $ there k-}))
-  -- ... | zero-but i j a = zero-but i j (selb m a k)
-  -- ... | bin op a b = bin op (selb m a k) (selb m b k)
   ... | a , p | i , q = E.selb x a i
                       , λ ρ j → p ρ (ix-combine (eval e₁ ρ) j x) 
                                 ∙ cong (eval a ρ) (cong (λ t → ix-combine t j x ) (q ρ))
@@ -164,7 +143,6 @@ module Opt (r : Real) (rp : RealProp r) where
                                                                         ∙ᶜ sub-env-id ∙ᶜ wk-env-id ∙ᶜ wk-env-id) ▹ refl ▹ refl) [] )
                                      ∙ sum-cong _+_ (fromℕ 0) {λ z → eval a′ ((ρ , z) , j) []} (λ i → sym (pf (ρ , i) j)) 
                                      ∙ sym (sum-inv _+_ (fromℕ 0) {λ z → eval e (ρ , z)} j))
-  -- TODO
   --... | imap a = imap (sum (ctx-swap v₁ a))
   ... | imap a′ , pf = imap (E.sum (sub a′ sub-swap)) 
                      , λ ρ j → let ss = ((wks (wks sub-id (skip ⊆-eq)) 
@@ -232,7 +210,6 @@ module Opt (r : Real) (rp : RealProp r) where
                         ∙ sum-cong _+_ (fromℕ 0) {λ j₁ → eval e (ρ , j₁) j} (λ i → p (ρ , i) j)
                         ∙ (sym (sum-inv _+_ (fromℕ 0) {λ i → eval a (ρ , i)} j))
   opt (zero-but e e₁ e₂) with opt e₂
-  -- TODO case when e and e₁ are variables
   ... | a , p = zero-but e e₁ a
               , go
       where go : (ρ : ⟦ _ ⟧ᶜ) (j : _) → eval (zero-but e e₁ e₂) ρ j ≡ eval (zero-but e e₁ a) ρ j
@@ -263,13 +240,6 @@ module Opt (r : Real) (rp : RealProp r) where
   --... | a | zero = a
   ... | no _ with isZero b
   ... | yes refl = a , λ ρ j → cong₂ _+_ (p ρ j) (q ρ j) ∙ +-neutʳ
-  -- WRONG
-  --... | (zero-but i j e) | b = zero-but i j (bin plus e b)
-  --... | no _ with isZeroBut a
-  --... | yes (_ , i , j , a′ , refl) = ? 
-  ----... | a | (zero-but i j e) = zero-but i j (bin plus a e)
-  --... | no _ with isZeroBut b
-  --... | yes _ = ?
 
   --... | imapₛ a | b = imapₛ (bin plus a (selₛ (↑ b) (var v₀)))
   ... | no _ with isImaps a
@@ -296,24 +266,13 @@ module Opt (r : Real) (rp : RealProp r) where
 
   ... | _ | _ = zero-but (var i) (var j) x ⊞ zero-but (var i′) (var j′) x′ , λ ρ k → cong₂ _+_ (p ρ k) (q ρ k)
 
-  -- opt (e ⊞ e₁) | a , p | b , q | no _ | zero-but (var i) (var j) x | zero-but (var i′) (var j′) x′ = a ⊞ b , TODO
-  --opt (e ⊞ e₁) | a , p | b , q | no _ | _ | _ = a ⊞ b , TODO
   opt (e ⊞ e₁) | a₁ , p | b₁ , q | no _ | no _ | no _ | no _ | a | b = a ⊞ b , λ ρ j → cong₂ _+_ (p ρ j) (q ρ j)
-  -- TODO: loads of casses
-  --... | imap a | b = imap (bin plus a (sel (↑ b) (var v₀)))
-  --... | a | imap b = imap (bin plus (sel (↑ a) (var v₀)) b)
-  --... | imapb m a | b = imapb m (bin plus a (selb m (↑ b) (var v₀)))
-  --... | a | imapb m b = imapb m (bin plus (selb m (↑ a) (var v₀)) b)
-  --... | a | b = bin plus a b
-  --... | _ = a ⊞ b , λ ρ j → cong₂ _+_ (p ρ j) (q ρ j)
   opt (e ⊠ e₁) with opt e | opt e₁
-  -- TODO: loads of casses
   ... | one , p | b , q = b , λ ρ j → cong₂ _*_ (p ρ j) (q ρ j) ∙ *-neutˡ
   ... | a , p | b , q = a ⊠ b , λ ρ j → cong₂ _*_ (p ρ j) (q ρ j)
   opt (scaledown x e) with opt e
   ... | a , p = scaledown x a , λ ρ j → cong (_÷ fromℕ x) (p ρ j)
   opt (minus e) with opt e
-  -- TODO: many cases
   ... | a , p = minus a , λ ρ j → cong -_ (p ρ j)
   opt (let′ e e₁) with opt e | opt e₁
   ... | a , p | b , q with isVar a

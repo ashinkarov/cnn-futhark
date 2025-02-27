@@ -12,8 +12,6 @@ module _ where
     ix  : S → IS
     ar  : S → IS
   
-  -- TODO: Let's carry the name of the variable in the context
-  --       so that pretty-printing gets more control.
   data Ctx : Set where
     ε    : Ctx
     _▹_  : Ctx → IS → Ctx
@@ -210,7 +208,6 @@ module WkSub where
   (s ▹ x) ∙ˢ t = (s ∙ˢ t) ▹ sub x t
 
   -- All kinds of theorems
-
   wkv-at-eq : (v : is ∈ Γ) → wkv ⊆-eq v ≡ v
   wkv-at-eq v₀ = refl
   wkv-at-eq (there v) = cong there (wkv-at-eq v)
@@ -254,6 +251,7 @@ module WkSub where
   sub-swap : Sub (Γ ▹ is ▹ ip) (Γ ▹ ip ▹ is)
   sub-swap = (sdrop (sdrop sub-id) ▹ var v₀) ▹ var (there v₀)
 
+  -- We are not really using this, but this is a useful function to have.
   open import Data.Maybe
   strenv : (x : is ∈ Γ) (y : ip ∈ Γ) → Maybe (ip ∈ (Γ / x)) 
   strenv v₀ v₀ = nothing
@@ -357,7 +355,6 @@ module Syntax where
 
   -- Convenience functions when writing expressions in the DSL
   -- In some sense we are faking HOAS using instance resolution.
-
   data Prefix : (Γ Δ : Ctx) → Set where
     instance
       zero : Prefix Γ Γ
@@ -519,7 +516,6 @@ module LangTest where
   nested-inc {s = s} = imap {s = s} ((var v₁) ⊞ sel (var v₂) (var v₀)) 
 
   -- Test convenience
-  
   _ : Prefix (Γ ▹ ar []) (Γ ▹ ar [] ▹ (ar (5 ∷ [])))
   _ = it
 

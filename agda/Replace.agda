@@ -17,10 +17,7 @@ module _ where
 
   open WkSub
 
-
-
-  -- replace x with y in e.
-  -- if x is any subexpression in e.
+  -- replace x with y in e, if x is any subexpression in e.
   replace : (e : E Γ is) (x y : E Γ ip) → E Γ is
   replace e x y with e-eq? e x
   ... | just (refl , refl) = y

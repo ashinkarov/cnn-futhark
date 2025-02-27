@@ -3,7 +3,6 @@ open import Data.Nat using (zero; suc; ℕ; _+_; _*_; _≤_; s≤s; z≤n; _<_)
 open import Data.Nat.Properties using (+-mono-≤; ≤-step; ≤-pred; _≟_; +-comm; +-suc)
 open import Data.Fin as F using (zero; suc; Fin; combine; remQuot; fromℕ<; inject+; splitAt)
 open import Data.Fin.Properties using (suc-injective; toℕ<n; splitAt-inject+)
---open import Fin2 using (Fin; #_; combine; remQuot; zerof; sucf; _⊕_; _⊝_)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Product as Prod using (∃; _,_; _×_; proj₁; proj₂)
 

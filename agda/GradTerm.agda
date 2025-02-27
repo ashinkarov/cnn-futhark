@@ -223,6 +223,9 @@ module _ where
   grad : (e s : E Γ is) → (δ : Env Γ Γ) → Env Γ Γ
   grad e s δ = grad′ e s δ (suc (e-depth e)) ≤-refl
 
+
+{-
+
 module Print where
   -- open import Data.Nat.Show using () renaming (show to show-nat)
   -- open import Data.List as L using (List; []; _∷_)
@@ -300,3 +303,4 @@ module Test where
 
   test-conv : String
   test-conv = pp conv-e ((_ , ar "img"), ar "w")
+-}

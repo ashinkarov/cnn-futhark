@@ -174,10 +174,6 @@ module _ where
   to-imap s i e = printf "(imap%u %s (\\ %s -> %s))" 
                    (dim s) (shape-args s) (ix-join i " ")
                    e
-  --to-sum : (s : S) → (i : Ix s) → (e : String) → String
-  --to-sum [] i e = e
-  --to-sum s  i e = printf "(sum%ud %s)" (dim s) (to-imap s i e)
-
   to-sum : (s : S) → (i : Ix s) → (e : String) → String
   to-sum [] i e = e
   to-sum s  i e = printf "(isum%u %s (\\ %s -> %s))" (dim s) (shape-args s)
@@ -237,13 +233,6 @@ module _ where
     i ← iv s
     f , b ← p i
     return (f (to-imap s i b))
-    --do
-    --p ← to-fut e ρ
-    --i ← iv s
-    --body ← p i
-    --return (printf "imap%u %s λ %s -> %s" 
-    --               (dim s) (shape-args s) (ix-join i " ")
-    --               body)
 
   to-fut (var x) ρ = return $ lookup x ρ
   to-fut zero ρ = return (λ _ → return (id , "zero"))
@@ -253,7 +242,6 @@ module _ where
      f , b′ ← b []
      return (id , f b′)
 
-     --λ i → let k = to-fut e (ρ , i) ; r = (_$ []) <$> k in join r
   to-fut (sels e e₁) ρ = do
      a ← to-fut e ρ
      x ← to-fut e₁ ρ
@@ -380,10 +368,6 @@ module Test where
   open Syntax
 
   open import Effect.Monad.State
-  --open import Effect.Monad using (RawMonad)
-  --open RawMonadState {{...}} -- public
-  --open RawMonad {{...}} -- public
-  
   instance
     _ = monad
     _ = applicative
@@ -394,13 +378,7 @@ module Test where
 
   test-e : E _ _
   test-e = Lcon (ar (5 ∷ 5 ∷ []) ∷ ix (5 ∷ 5 ∷ []) ∷ []) (ar ([])) ε
-           --λ a → Imaps λ i → sels a i ⊞ sels a i
            λ a j → sel (Let x := a ⊞ a In x ⊞ a) j
-                 --Let z := zero {s = []} In
-                 --Let a :=
-                 -- (Imaps λ i → (Let x := zero In x ⊞ x)
-                 --            ⊞ (Let y := sels a i In y ⊞ y))
-                 --In sels a j
 
 
   test-s : String
@@ -421,9 +399,6 @@ module Test where
   
   conv-s : String
   conv-s = proj₂ (runState (to-str conv-e (_ ,, mkar "img" ,, mkar "k1")) 0)
-
-  --c1-s : String
-  --c1-s = proj₂ $ runState (to-str (Primitives.compc1) (((_ , mkar "inp") , mkar "k1") , mkar "b1")) 0
 
 
   --λ inp k₁ b₁ k₂ b₂ fc b →
