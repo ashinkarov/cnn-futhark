@@ -92,11 +92,15 @@ unproblematic.
 
 Another related approach is the Etch compiler for indexed
 streams~\cite{10.1145/3591268}, which is implemented as an embedded
-language in Lean. Although the domain differs from ours, stream/tensor
-contraction as compared to array programming, the basic idea of
-extracting low level code is similar. Significant differences include
-our support for rank polymorphism, automatic differentiation, and
-parallel execution.
+language in Lean.  This work is very similar in spirit and it gives
+a general encoding for sparse array computations.  The key difference
+is that indexed streams fix traversal order of the index-space
+of the given array, whereas \AD{Ar} only describes a mapping.
+In fact indexed streams could be used to implement \AF{Ar}
+computations.  It is a little unclear how to handle parallelism
+in indexed streams.  \AF{Ar} expressions can always run parallel,
+and this is one of the reasons why we can map them so easily to GPUs.
+
 
 \paragraph{Type systems}
 
