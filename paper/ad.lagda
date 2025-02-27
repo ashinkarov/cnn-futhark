@@ -312,14 +312,17 @@ on different indices.  Therefore, the effect that these computations had on the
 given variable within the context have to be aggregated through summation.
 
 
-\paragraph{Selections} When differentiating selections we have to recurse into
-the array expression we are selecting from. This means that we have to
-create a seed that masks all the array elements except the one that is
-given by the index of the selection. Hence seed expressions in
-selection rules, which construct \emph{one-hot} arrays that contains
-zeros everywhere except the index we were selecting at. While this
-code is likely to run inefficiently if executed as is, our
-optimisations can deal with these patterns.
+\paragraph{Selections} When differentiating selections we have to
+recurse into the array expression we are selecting from. This means
+that we have to create a seed that masks all the array elements except
+the one that is given by the index of the selection. Hence seed
+expressions in selection rules, which construct \emph{one-hot}
+cotangent arrays that contains zeros everywhere except the index we
+were selecting at. While this code would be asymptotically inefficient
+if executed as is, the optimisations discussed later can deal reliably
+with these patterns, as the limitations of our language (in
+particular, no sequential loops) ensure that these cotangent arrays
+have only a single nonzero element.
 
 \paragraph{Conditionals} Differentiating
 conditionals is straight-forward.  Both arguments $i$ and $j$ are index expressions

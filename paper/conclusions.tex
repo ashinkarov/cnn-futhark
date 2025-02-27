@@ -21,6 +21,14 @@ transformations, such as automatic differentiation. For our example,
 the entire framework that includes array theory, DSL, optimisations
 and extraction is about 2000 lines of Agda code.
 
+The asymptotic efficiency of our AD implementation depends crucially
+on ``ad-hoc'' optimisations of summations of arrays with only a single
+nonzero element. Although effective in many cases, this can be seen as
+a somewhat fragile technique, and will likely not work for a richer
+language with more complicated control flow, but this limitation is
+not fundamental to our approach: in the future, we could for example
+use an sparse representation of adjoint arrays instead.
+
 A lot of pieces that we have developed in this paper can be reused in
 other numerical applications. However, there are many more
 opportunities that we did not explore. For example, one can prove the
