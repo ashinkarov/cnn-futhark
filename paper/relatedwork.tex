@@ -5,7 +5,7 @@ work. One important distinction however, which is easily obscured by
 this detail-oriented comparison, is that our work combines parts that
 have been subject to prior work, but are not commonly found together.
 
-\subsection{Automatic Differentiation}
+\paragraph{Automatic Differentiation}
 
 Automatic differentiation has been around for many decades~\cite{early-ad1, early-ad2},
 so it is well-understood at a conceptual level.  However,
@@ -27,7 +27,6 @@ While in particular the dedicated frameworks tend to find widespread
 acceptance by practitioners, both, correctness and performance leave
 two open questions: (i) how is it possible to
 ensure that the AD algorithm is implemented correctly?
-\todo[inline]{reviewer 3 (2024) notices: This paper does not really answer this question besides enforcing consistency of shapes and accesses? Besides, final extraction could break these properties?  this is correct, we have to clarify this.}
 (ii) if the
 language does not perform as expected, what are the
 options to solve this?  Unfortunately, in many cases the answer to
@@ -40,7 +39,11 @@ on the AD provided by a chosen language/framework, and the generated code does n
 perform well, one has to modify the language/framework, as these solutions
 are tightly integrated with the tools. The problem here is that most of of these tools
 have very large and sophisticated implementations typically comprising
-of hundreds of thousands of lines of code.
+of hundreds of thousands of lines of code.  Note that while our work
+does not give a formal proof that AD implementation is correct (it is
+not clear how to formulate correcntess criteria for it), the entire
+implementatuion of AD is about 20 lines of code, so it is easy to
+understand and modify.
 
 Another line of work studies high-level principles of AD using
 category theory~\cite{ad-theor1, ad-theor2, ad-theor3}.
@@ -66,7 +69,7 @@ Also, correctness guarantees are inevitably restricted by the
 Haskell type system, so we are likely to find invariants that
 are inexpressible in that setup.
 
-\subsection{Verified high performance computing}
+\paragraph{Verified high performance computing}
 
 One popular line of research is based on the idea of separating the
 high level \emph{specification} of a problem from the \emph{schedule}
@@ -95,7 +98,7 @@ extracting low level code is similar. Significant differences include
 our support for rank polymorphism, automatic differentiation, and
 parallel execution.
 
-\subsection{Type systems}
+\paragraph{Type systems}
 
 Verifying index operations is a classic application of dependent
 types, as seen in for example Dependent

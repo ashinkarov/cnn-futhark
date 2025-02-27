@@ -897,7 +897,7 @@ We recover regular fold behaviour by running \AD{sum} over function composition:
 \section{CNN Building Blocks\label{sec:cnn}}
 
 Using the array theory and combinators from the previous section we
-define the primitives that are need for the CNN.
+define the primitives that are needed for the CNN.
 
 \subsection{One-dimensional convolution}
 We start with plus and minus operations for 1-d indices which are
@@ -1769,8 +1769,8 @@ While the definition is straight-forward, note that we mark constructors
 with the keyword \AK{instance} and we turn the arguments of \AC{cons}
 into instance arguments\footnote{See \url{https://agda.readthedocs.io/en/v2.7.0.1/language/instance-arguments.html} for more details.}.  These arguments
 behave like the hidden arguments, except Agda will apply an instance
-search when solving them.  This allows us to ommit these proofs in
-a larger number of cases when compared to hidden arguments.
+search when solving them.  This allows us to omit these proofs in
+a larger number of cases than if we were to use hidden arguments.
 
 \begin{code}[hide]%
 %
@@ -2229,9 +2229,9 @@ like a free monad over a \AD{Vec} type, which can be easily defined.  Now,
 consider defining a generalised transpose on such representation.  Transpose of
 an \AD{Ar} array is simply a selection on a reversed index: λ ix → a
 (\AF{reverse} ix). In case of free monads, this is a significantly more
-complicated recursive expression.  Finally, as in our formalism arrays are
-functions, we get fusion equalities (\eg{} map f ∘ map g $\cong$ map (f ∘ g))
-for free through normalisation, which makes formal reasoning easier.
+complicated recursive expression.  Finally, when arrays are
+functions, fusion equalities (\eg{} map f ∘ map g $\cong$ map (f ∘ g))
+come for free through normalisation, which makes formal reasoning easier.
 
 
 

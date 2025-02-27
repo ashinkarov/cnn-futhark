@@ -47,9 +47,9 @@ Futhark's advantage on the small workload is likely due to lower
 fixed overheads in the generated code.
 
 Our PyTorch version results in extremely high runtimes of 19 and 61
-seconds, and we observe low GPU utilization. While this is likely to
-be a problem with a system configuration, we report these numbers here
-as an indication that performance of machine learning systems is
+seconds, and we observe low GPU utilization. While this likely can be
+improved by adjusting system configuration, we report these numbers here
+as an indication that performance of box-standard machine learning systems is
 fragile.
 
 Profiling our generated code, we find that 83\% of all GPU work occurs
@@ -82,7 +82,7 @@ $10000$ & $0.91s$ & $1.07s$ &  $0.85\times{}$ \\
 $60000$ & $4.93s$ & $2.92s$ &  $1.68\times{}$
 \end{tabular}
 \caption{Training time for various training set sizes, comparing
-  Futhark, Tensorflow, and PyTorch, running on an A100 GPU. The final column
+  Futhark and Tensorflow, running on an A100 GPU. The final column
   shows the speedup of TensorFlow compared to Futhark. We use a batch
   size of $1000$, a training rate of $0.05$, and train for $10$
   epochs.}

@@ -2,8 +2,9 @@
 
 The paper demonstrates a technique of developing high performance
 applications with strong correctness guarantees, including the absence
-of out-of-bound indexing, certain functions being inverses, as well as
-well-scopedness and well-typedness of our DSL.
+of out-of-bound indexing, certain functions being inverses,
+well-scopedness and well-typedness of the embedded DSL and
+semantics-preserving optimisations.
 
 The key insight lies in using a proof assistant in cooperation with a
 high-performance language of choice. This gives a clear separation of
@@ -21,24 +22,22 @@ transformations, such as automatic differentiation. For our example,
 the entire framework that includes array theory, DSL, optimisations
 and extraction is about 2000 lines of Agda code.
 
-The asymptotic efficiency of our AD implementation depends crucially
-on ``ad-hoc'' optimisations of summations of arrays with only a single
-nonzero element. Although effective in many cases, this can be seen as
-a somewhat fragile technique, and will likely not work for a richer
-language with more complicated control flow, but this limitation is
-not fundamental to our approach: in the future, we could for example
-use an sparse representation of adjoint arrays instead.
-
 A lot of pieces that we have developed in this paper can be reused in
 other numerical applications. However, there are many more
-opportunities that we did not explore. For example, one can prove the
-correctness of optimisations, relating evaluation of optimised an
-non-optimised expressions. We can provide more guarantees when we run
-extraction, \eg{} we can formalise some aspects of the backend
-language and relate them to our DSL. As for the DSL itself, the exact
-choice of supported primitives, and its implications for extracting
-high performance code or performing optimisation or transformation,
-remains an interesting question.
+opportunities that we did not yet explore. We can formalise other
+correctness criteria for our specification spanning from verified
+extraction to functional correctness of the actual application such
+as CNN robustness.
+Choosing DSL primitives so that specificational clarity and
+performance requirements are at balance is an interesting question.
+Guaranteeing asymptotic efficiency of the AD implementation is another
+interesting research direction.  Currently we rely on
+optimisations which is known to be a fragile technique, despite its efficiency 
+in many cases.  Identifying a normal form for the optimisations would
+be a more fundamental approach.  Richer languages with more
+control flow may require us choosing more powerful
+encoding for the adjoint structures.
+
 
 There are indeed plenty of opportunities, but the key point is this.
 Correctness and performance are competing requirements when it comes
@@ -47,3 +46,4 @@ correctness-oriented and performance-oriented tools is likely to
 persist. With this work we demonstrate that such cooperation can be
 done using fairly straightforward means, by Agda standards, and obtain
 compelling practical performance.
+

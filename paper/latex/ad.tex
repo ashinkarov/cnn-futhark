@@ -1556,13 +1556,13 @@ the extended context).  At this point we have accumulated per-index changes
 in the environment (over a larger context).  After that, these changes are
 summed-up by applying \AF{sum} to all the elements of the environment.
 
-While this selection-based rule might seem unusual, keep in mind that \AF{imap}s
+While this selection-based rule might seem unusual, keep in mind that \AC{imap}s
 are array constructors, which means that they potentially run different computations
 on different indices.  Therefore, the effect that these computations had on the
 given variable within the context have to be aggregated through summation.
 
 
-\paragraph{Selections} When differentiating selections we have to
+\paragraph{Selections} When differentiating selections, we have to
 recurse into the array expression we are selecting from. This means
 that we have to create a seed that masks all the array elements except
 the one that is given by the index of the selection. Hence seed
@@ -1570,9 +1570,8 @@ expressions in selection rules, which construct \emph{one-hot}
 cotangent arrays that contains zeros everywhere except the index we
 were selecting at. While this code would be asymptotically inefficient
 if executed as is, the optimisations discussed later can deal reliably
-with these patterns, as the limitations of our language (in
-particular, no sequential loops) ensure that these cotangent arrays
-have only a single nonzero element.
+with these patterns, as summing elements of such an array is exactly
+the single nonzero element.
 
 \paragraph{Conditionals} Differentiating
 conditionals is straight-forward.  Both arguments $i$ and $j$ are index expressions

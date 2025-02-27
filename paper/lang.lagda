@@ -363,7 +363,7 @@ been well-understood, and several approaches have been proposed in the
 literature~\cite{subst}.
 
 The key structure that we use for weakening is an order-preserving embedding
-of contexts given by \AD{\_⊆\_} which is defined inductively.
+of contexts given by \AD{\_⊆\_}, which is defined inductively.
 If \AB{Γ} \AD{⊆} \AB{Δ} then all the
 elements of \AB{Γ} can be found in \AB{Δ} in the original order (possibly with some gaps).
 Weakening variables according to some context embedding is given by \AF{wkv} which is
@@ -434,7 +434,7 @@ We implement parallel substitution~\cite{par-sub1,par-sub2} in the usual way.
 The key structure that
 gives rise to the substitution is a mapping of variables in the context \AB{Δ}
 into expressions in the context \AB{Γ}.
-This is given by \AC{Sub} \AB{Γ} {Δ} and it represents a \AF{Δ}-long
+This is given by \AF{Sub} \AB{Γ} {Δ} and it represents a \AF{Δ}-long
 list of (\AF{E} \AB{Γ})-s where each expression is of a type that corresponds to the
 variable type at the given position of \AF{Δ}.  We define \AF{wks} which weakens
 all the expressions of \AF{Sub} in the following way.
@@ -560,7 +560,7 @@ module Syntax where
 \end{mathpar}
 
 As a result, Agda is able to construct an element of
-\AC{Prefix} \AB{Γ} (\AB{Γ} \AC{▹} \AB{is} ▹ \AB{ip} ▹ \AB{iq}) automatically.
+\AD{Prefix} \AB{Γ} (\AB{Γ} \AC{▹} \AB{is} ▹ \AB{ip} ▹ \AB{iq}) automatically.
 Similarly
 to hidden arguments, there is no guarantee that the solution will be found
 in all cases --- Agda will report an error in case of failure.
@@ -619,7 +619,7 @@ we can use the argument under further binders as follows:
   _ : E ε _ 
   _ = Imap {s = ι 5} λ i → Imap {s = ι 5} λ j → sels (sel one j) i
 \end{code}
-The code for wrappers for \AC{sum}, \AC{imaps}, \AC{imapb} looks very similar
+Implementation of wrappers for \AC{sum}, \AC{imaps}, \AC{imapb} looks very similar
 so we omit it here.  However, when defining a wrapper for \AC{let′} we
 use Agda's \AK{syntax} feature\footnote{See
 \url{https://agda.readthedocs.io/en/v2.7.0.1/language/syntax-declarations.html}
@@ -717,7 +717,8 @@ For example, consider the expression:
       λ a b → Sum λ i → sels a i ⊞ sels (sel b i) i
 \end{code}
 where \AB{a} and \AB{b} are Agda's variables that represent
-de Bruijn variable 1 and 0{} in the context (ε ▹ 5 ∷ [] ▹ 5 ∷ 5 ∷ []).
+de Bruijn variable 1 and 0{} in the context (ε ▹ \AC{ar} (5 ∷ []) ▹ 
+\AC{ar} (5 ∷ 5 ∷ [])).
 
 
 
