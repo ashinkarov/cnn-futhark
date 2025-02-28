@@ -498,9 +498,9 @@ Additionally to rewrites described above, we implemented a pass that
 identifies whether let bodies re-define expressions that are bound to
 the let variable.  If this is the case, then the expression is substituted
 by that variable.  The main reason for this is the derivative rule for
-\AC{logistic} $e$, which recomputes \AF{logistic} $e$.  While
+\AC{logistic} $e$, which recomputes \AC{logistic} $e$.  While
 this is correct mathematically, this creates code duplication in cases
-\AF{logistic} $e$ is already bound to some variable.  Instead of reusing
+\AC{logistic} $e$ is already bound to some variable.  Instead of reusing
 the variable the rule will recomputes the entire expression.
 As it is difficult to tell whether the call to logistic has been bound
 somewhere before, we implement a generally useful deduplication pass that

@@ -318,8 +318,8 @@ in recursive calls when it is passed unchanged.
 Mostly, the interpretation is a straightforward mapping into the \AF{Ar} constructors.
 In the \AC{imaps} case we can see how the implicit conversion from what would be a
 shape $s ⊗ \AF{unit}$ into $s$.  In case of \AC{sels} we make a singleton array
-using \AF{K}. Note that \AF{sum} has explicit summation index like in a mathematical
-$\sum$-notation.  We fix the default value of \AF{backslide} to zero for simplicity.
+using \AF{K}. Note that \AC{sum} has explicit summation index like in a mathematical
+$\sum$-notation.  We fix the default value of \AC{backslide} to zero for simplicity.
 For arrays of reals, we can get general \AF{backslide} behaviour through masking.
 However, this operation can be generalised in case we decide to support arrays of
 other element types.
@@ -612,7 +612,7 @@ argument is a generalised expression of type $\AC{ix}\ s$ in the context
 extended by $\AC{ix}\ s$ (the imap index); and the return type is the array
 expression that will be computed in the body of the imap.  The implementation
 of the wrapper constructs an \AC{imap}, lifting the index variable
-$v₀$ of the context \AB{Γ} \AC{▹} $\AC{ix}\ s$ into a larger context that is determined
+\AC{v₀} of the context \AB{Γ} \AC{▹} $\AC{ix}\ s$ into a larger context that is determined
 by the hidden/instance arguments of $f$.  This means that within the body of $f$
 we can use the argument under further binders as follows:
 \begin{code}
