@@ -21,7 +21,7 @@ is often found in machine learning applications.  This is a convenient case stud
 as it comes with the following challenges.  From the correctness perspective,
 it is crucially important to track the shapes and ranks of the tensors,
 guaranteeing the absence of out-of-bound indexing.
-This is a very common source of errors that can be incredibly difficult
+This is a very common source of errors that can be difficult
 to find.   Secondly, we have to compute derivatives of the given tensor expressions,
 preserve safe indexing guarantees while we do so, and we have to be able to translate
 the computed expressions into some high-performance language.
