@@ -40,10 +40,6 @@ def unzip7 [n] 'a 'b 'c 'd 'e 'f 'g : (a: [n](a, b, c, d, e, f, g)) -> ([n]a, [n
     , imap n (\i -> a[i].6)
     )
 
-def zipWith [n] 'a 'b 'c : (a -> b -> c) -> ([n]a) -> ([n]b) -> [n]c =
-  \f a b ->
-    map (uncurry f) (zip a b)
-
 --==== Convolution Module ====--
 module nn (F: real) = {
   type real = F.t
@@ -84,268 +80,15 @@ module nn (F: real) = {
   def sum (a: []real) : real =
     reduce (F.+) zero a
 
-  def sum1d (a: []real) : real = sum a
-
-  def conv1 [In] [kn] : (I: [In]real) -> (k: [kn]real) -> [In - kn + 1]real =
-    \I k ->
-      let sum_k i = sum (imap kn (\j -> I[i + j] F.* k[j]))
-      in imap (In - kn + 1) sum_k
-
-  -- convolution with biases `b` which is a 1-d array.
-  def mconv1 [In] [kn] [bn] : (I: [In]real)
-  -> (k: [bn][kn]real)
-  -> (b: [bn]real)
-  -> [bn][In - kn + 1]real =
-    \I k b -> imap bn (\i -> map (F.+ b[i]) (conv1 I k[i]))
-
-  -- Back multi convolution 1d
-  def backmconv1 [In] [kn] [bn] : (dout: [bn][In - kn + 1]real)
-  -> (w: [bn][kn]real)
-  -> (I: [In]real)
-  -> (b: [bn]real)
-  -> ([In]real, [bn][kn]real, [bn]real) =
-    -- ∂I ∂w ∂b
-    \dout w I b ->
-      -- Reverse convolution
-      let dI =
-        loop r = imap In (\_ -> zero)
-        for i < kn do
-          loop r' = r
-          for j < In - kn + 1 do
-            r' with [i + j] = copy r'[i + j] F.+ sum (map (\k -> dout[k][j] F.* w[k][i]) (iota bn))
-      let dw = imap bn (\i -> conv1 I dout[i])
-      let db = imap bn (\i -> sum dout[i])
-      in (dI, (dw :> [bn][kn]real), db)
-
   --==== 2d cases ====--
   def sum2d (a: [][]real) : real =
     sum (map sum a)
-
-  --sum (flatten a)
-
-  def conv2d [Im] [In] [km] [kn] : (I: [Im][In]real) -> (k: [km][kn]real) -> [Im - km + 1][In - kn + 1]real =
-    \I k ->
-      let sum_k i j = sum2d (imap2 km kn (\i' j' -> I[i + i'][j + j'] F.* k[i'][j']))
-      in imap2 (Im - km + 1) (In - kn + 1) sum_k
-
-  def add2d_c [m] [n] : (a: [m][n]real)
-  -> (b: real) -> [m][n]real =
-    \a b -> map (\s1d -> map (\s0d -> s0d F.+ b) s1d) a
-
-  def mconv2d [Im] [In] [km] [kn] [kbn] : (I: [Im][In]real)
-  -> (k: [kbn][km][kn]real)
-  -> (b: [kbn]real) -> [kbn][Im - km + 1][In - kn + 1]real =
-    \I k b ->
-      imap kbn (\j -> add2d_c (conv2d I (k[j])) b[j])
-
-  -- Back multi convolution 2d
-  def backmconv2 [Im] [In] [km] [kn] [kbn] : (dout: [kbn][Im - km + 1][In - kn + 1]real)
-  -> (w: [kbn][km][kn]real)
-  -> (I: [Im][In]real)
-  -> (b: [kbn]real)
-  -> ([Im][In]real, [kbn][km][kn]real, [kbn]real) =
-    -- ∂I ∂w ∂b
-    \dout w I b ->
-      -- Reverse convolution
-      let dI =
-        --loop r0 = map (\_-> map (\_ -> zero) (iota Im)) (iota In) for i0 < km do
-        loop r0 = imap2 Im In (\_ _ -> zero)
-        for i0 < km do
-          loop r1 = r0
-          for i1 < kn do
-            loop r2 = r1
-            for j0 < Im - km + 1 do
-              loop r3 = r2
-              for j1 < In - kn + 1 do
-                r3 with [i0 + j0, i1 + j1] = copy r3[i0 + j0][i1 + j1]
-                   F.+ sum (map (\k -> dout[k][j0][j1] F.* w[k][i0][i1]) (iota kbn))
-      let dw = imap kbn (\i -> conv2d I dout[i])
-      let db = imap kbn (\i -> sum2d dout[i])
-      in ((dI :> [Im][In]real), (dw :> [kbn][km][kn]real), db)
-
-  --==== 3d cases ====--
-  def sum3d (a: [][][]real) : real =
-    sum (map sum2d a)
-
-  --sum (flatten (flatten a))
-
-  def conv3d [Im] [In] [Ik] [km] [kn] [kk] : (I: [Im][In][Ik]real)
-  -> (k: [km][kn][kk]real)
-  -> [Im - km + 1][In - kn + 1][Ik - kk + 1]real =
-    \I weights ->
-      let sum_k i j k =
-        sum3d (imap3 km kn kk (\i' j' k' ->
-                                 I[i + i'][j + j'][k + k']
-                                 F.* weights[i'][j'][k']))
-      in imap3 (Im - km + 1) (In - kn + 1) (Ik - kk + 1) sum_k
-
-  def add3d_c [m] [n] [k] : (a: [m][n][k]real)
-  -> (b: real) -> [m][n][k]real =
-    \a b -> map (\s2d -> add2d_c s2d b) a
-
-  def mconv3d [Im] [In] [Ik] [km] [kn] [kk] [kbn] : (I: [Im][In][Ik]real)
-  -> (weights: [kbn][km][kn][kk]real)
-  -> (b: [kbn]real) -> [kbn][Im - km + 1][In - kn + 1][Ik - kk + 1]real =
-    \I weights b ->
-      imap kbn (\j -> add3d_c (conv3d I (weights[j])) b[j])
-
-  def backmconv3 [Im] [In] [Ik] [km] [kn] [kk] [kbn] : (dout: [kbn][Im - km + 1][In - kn + 1][Ik - kk + 1]real)
-  -> (w: [kbn][km][kn][kk]real)
-  -> (I: [Im][In][Ik]real)
-  -> (b: [kbn]real)
-  -> ([Im][In][Ik]real, [kbn][km][kn][kk]real, [kbn]real) =
-    -- ∂I ∂w ∂b
-    \dout w I b ->
-      -- Reverse convolution
-      let dI =
-        loop r0 = imap3 Im In Ik (\_ _ _ -> zero)
-        for i0 < km do
-          loop r1 = r0
-          for i1 < kn do
-            loop r2 = r1
-            for i2 < kk do
-              loop r3 = r2
-              for j0 < Im - km + 1 do
-                loop r4 = r3
-                for j1 < In - kn + 1 do
-                  loop r5 = r4
-                  for j2 < Ik - kk + 1 do
-                    r5 with [i0 + j0, i1 + j1, i2 + j2] = copy r5[i0 + j0][i1 + j1][i2 + j2]
-                       F.+ sum (map (\k -> dout[k][j0][j1][j2] F.* w[k][i0][i1][i2]) (iota kbn))
-      let dw = imap kbn (\i -> conv3d I dout[i])
-      let db = imap kbn (\i -> sum3d dout[i])
-      in ((dI :> [Im][In][Ik]real), (dw :> [kbn][km][kn][kk]real), db)
-
-  --==== >4 dim ====--
-  def sum4d (a: [][][][]real) : real =
-    sum (map sum3d a)
-
-  def sum5d (a: [][][][][]real) : real =
-    sum (map sum4d a)
 
   --==== Logistics ====--
   def logistics : real -> real =
     \e -> one F./ (one F.+ F.exp (F.neg e))
 
-  def logistics1 [n] : (a: [n]real) -> [n]real =
-    map logistics
-
-  def logistics2 [m] [n] : (a: [m][n]real) -> [m][n]real =
-    map logistics1
-
-  def logistics3 [m] [n] [k] : (a: [m][n][k]real) -> [m][n][k]real =
-    map logistics2
-
-  def logistics4 [m] [n] [k] [p] : (a: [m][n][k][p]real) -> [m][n][k][p]real =
-    map logistics3
-
-  -- Back logistics
-  def backlog1 [n] : (dout: [n]real) -> (out: [n]real) -> [n]real =
-    map2 (\d o -> d F.* o F.* (one F.- o))
-
-  def backlog2 [m] [n] : (dout: [m][n]real) -> (out: [m][n]real) -> [m][n]real =
-    map2 backlog1
-
-  def backlog3 [m] [n] [k] : (dout: [m][n][k]real) -> (out: [m][n][k]real) -> [m][n][k]real =
-    map2 backlog2
-
-  def backlog4 [m] [n] [k] [p] : (dout: [m][n][k][p]real) -> (out: [m][n][k][p]real) -> [m][n][k][p]real =
-    map2 backlog3
-
-  -- Average pooling 2d
-  def avgp2 [m] [n] : (a: [m * 2][n * 2]real) -> [m][n]real =
-    \a ->
-      imap2 m n (\i j -> sum2d (imap2 2 2 (\i' j' -> a[2 * i + i'][2 * j + j'])) F./ fromi64 4)
-
-  def backavgp2 [m] [n] : (dout: [m][n]real) -> [m * 2][n * 2]real =
-    \dout ->
-      imap2 (m * 2) (n * 2) (\i j -> dout[i / 2][j / 2] F./ fromi64 4)
-
-  def forward : (inp: [28][28]real)
-  -> (k1: [6][5][5]real)
-  -> (b1: [6]real)
-  -> (k2: [12][6][5][5]real)
-  -> (b2: [12]real)
-  -> (fc: [10][12][4][4]real)
-  -> (b: [10]real)
-  -> [10]real =
-    \inp k1 b1 k2 b2 fc b ->
-      let c1 =
-        --: [6][24][24]real
-        logistics3 (mconv2d inp k1 b1)
-      let s1 =
-        --: [6][12][12]real
-        map avgp2 (c1 :> [6][12 * 2][12 * 2]real)
-      let c2' =
-        --: [12][1][8][8]real
-        logistics4 (mconv3d s1 k2 b2)
-      let c2 =
-        --: [12][8][8]real
-        flatten c2' :> [12][8][8]real
-      let s2 =
-        --: [12][4][4]real
-        map avgp2 (c2 :> [12][4 * 2][4 * 2]real)
-      let r =
-        --: [10][1][1][1]
-        logistics4 (mconv3d s2 fc b)
-      in flatten (flatten (flatten r)) :> [10]real
-
-  def mean_sq_err [n] : (res: [n]real) -> (lbl: [n]real) -> real =
-    \res lbl -> sum (zipWith (\x y -> let d = x F.- y in d F.* d F./ fromi64 2) lbl res)
-
-  def train : (inp: [28][28]real)
-  -> (k1: [6][5][5]real)
-  -> (b1: [6]real)
-  -> (k2: [12][6][5][5]real)
-  -> (b2: [12]real)
-  -> (fc: [10][12][4][4]real)
-  -> (b: [10]real)
-  -> (target: [10]real)
-  -> ( [6][5][5]real
-     , -- ∂k1
-       [6]real
-     , -- ∂b1
-       [12][6][5][5]real
-     , -- ∂k2
-       [12]real
-     , -- ∂b2
-       [10][12][4][4]real
-     , -- ∂fc
-       [10]real
-     , -- ∂b
-       real
-     ) =
-    -- error
-
-    \inp k1 b1 k2 b2 fc b target ->
-      let c1 =
-        --: [6][24][24]real
-        logistics3 (mconv2d inp k1 b1)
-      let s1 =
-        --: [6][12][12]real
-        map avgp2 (c1 :> [6][12 * 2][12 * 2]real)
-      let c2' =
-        --: [12][1][8][8]real
-        logistics4 (mconv3d s1 k2 b2)
-      let c2 =
-        --: [12][8][8]real
-        flatten c2' :> [12][8][8]real
-      let s2 =
-        --: [12][4][4]real
-        map avgp2 (c2 :> [12][4 * 2][4 * 2]real)
-      let r =
-        --: [10][1][1][1]
-        logistics4 (mconv3d s2 fc b)
-      let out = flatten (flatten (flatten r)) :> [10]real
-      let err = mean_sq_err out target
-      let dout = zipWith (F.-) out target
-      let (ds2, dfc, db) = backmconv3 (unflatten_4d (backlog1 dout out :> [10 * (12 - 12 + 1) * (4 - 4 + 1) * (4 - 4 + 1)]real)) fc s2 b
-      let dc2 = map backavgp2 ds2 :> [12][8][8]real
-      let (ds1, dk2, db2) = backmconv3 (unflatten (backlog3 dc2 c2 :> [12 * 1][8][8]real) :> [12][6 - 6 + 1][12 - 5 + 1][12 - 5 + 1]real) k2 s1 b2
-      let dc1 = map backavgp2 ds1 :> [6][24][24]real
-      let (_, dk1, db1) = backmconv2 (backlog3 dc1 (c1 :> [6][24][24]real) :> [6][28 - 5 + 1][28 - 5 + 1]real) k1 inp b1
-      in (dk1, db1, dk2, db2, dfc, db, err)
-
+  --==== This is the generated function. ====--
   def train_gen : (inp: [28][28]real)
   -> (k1: [6][5][5]real)
   -> (b1: [6]real)
@@ -373,33 +116,31 @@ module nn (F: real) = {
     \(inp: [28][28]real) (k1: [6][5][5]real) (b1: [6]real) (k2: [12][6][5][5]real) (b2: [12]real) (fc': [10][12][4][4]real) (b: [10]real) (target': [10]real) ->
       let fc = map (\a -> unflatten (a :> [12 * 1][4][4]real)) fc' :> [10][12][1][4][4]real
       let target = unflatten (unflatten (unflatten (unflatten (target' :> [10 * 1]real) :> [10 * 1][1]real) :> [10 * 1][1][1]real) :> [10 * 1][1][1][1]real) :> [10][1][1][1][1]real
-
-      let x0 = (imap3 6 24 24 (\ x1_0 x1_1 x1_2 -> ((isum2 5 5 (\ x2_0 x2_1 -> (inp[(x2_0 + x1_1)][(x2_1 + x1_2)] F.* k1[x1_0][x2_0][x2_1]))) F.+ b1[x1_0])))
-      let x3 = (imap3 6 24 24 (\ x4_0 x4_1 x4_2 -> (logistics x0[x4_0][x4_1][x4_2])))
-      let x5 = (imap3 6 12 12 (\ x6_0 x6_1 x6_2 -> ((isum2 2 2 (\ x7_0 x7_1 -> x3[x6_0][((x6_1 * 2) + x7_0)][((x6_2 * 2) + x7_1)])) F./ fromi64 4)))
-      let x8 = (imap4 12 1 8 8 (\ x9_0 x9_1 x9_2 x9_3 -> ((isum3 6 5 5 (\ x10_0 x10_1 x10_2 -> (x5[(x10_0 + x9_1)][(x10_1 + x9_2)][(x10_2 + x9_3)] F.* k2[x9_0][x10_0][x10_1][x10_2]))) F.+ b2[x9_0])))
-      let x11 = (imap4 12 1 8 8 (\ x12_0 x12_1 x12_2 x12_3 -> (logistics x8[x12_0][x12_1][x12_2][x12_3])))
-      let x13 = (imap4 12 1 4 4 (\ x14_0 x14_1 x14_2 x14_3 -> ((isum2 2 2 (\ x15_0 x15_1 -> x11[x14_0][x14_1][((x14_2 * 2) + x15_0)][((x14_3 * 2) + x15_1)])) F./ fromi64 4)))
-      let x16 = (imap5 10 1 1 1 1 (\ x17_0 x17_1 x17_2 x17_3 x17_4 -> ((isum4 12 1 4 4 (\ x18_0 x18_1 x18_2 x18_3 -> (x13[(x18_0 + x17_1)][(x18_1 + x17_2)][(x18_2 + x17_3)][(x18_3 + x17_4)] F.* fc[x17_0][x18_0][x18_1][x18_2][x18_3]))) F.+ b[x17_0])))
-      let x19 = (imap5 10 1 1 1 1 (\ x20_0 x20_1 x20_2 x20_3 x20_4 -> (logistics x16[x20_0][x20_1][x20_2][x20_3][x20_4])))
-      let x21 = (isum5 10 1 1 1 1 (\ x22_0 x22_1 x22_2 x22_3 x22_4 -> (((target[x22_0][x22_1][x22_2][x22_3][x22_4] F.+ (F.neg x19[x22_0][x22_1][x22_2][x22_3][x22_4])) F.* (target[x22_0][x22_1][x22_2][x22_3][x22_4] F.+ (F.neg x19[x22_0][x22_1][x22_2][x22_3][x22_4]))) F./ fromi64 2)))
+      let x0 = (imap3 6 24 24 (\x1_0 x1_1 x1_2 -> ((isum2 5 5 (\x2_0 x2_1 -> (inp[(x2_0 + x1_1)][(x2_1 + x1_2)] F.* k1[x1_0][x2_0][x2_1]))) F.+ b1[x1_0])))
+      let x3 = (imap3 6 24 24 (\x4_0 x4_1 x4_2 -> (logistics x0[x4_0][x4_1][x4_2])))
+      let x5 = (imap3 6 12 12 (\x6_0 x6_1 x6_2 -> ((isum2 2 2 (\x7_0 x7_1 -> x3[x6_0][((x6_1 * 2) + x7_0)][((x6_2 * 2) + x7_1)])) F./ fromi64 4)))
+      let x8 = (imap4 12 1 8 8 (\x9_0 x9_1 x9_2 x9_3 -> ((isum3 6 5 5 (\x10_0 x10_1 x10_2 -> (x5[(x10_0 + x9_1)][(x10_1 + x9_2)][(x10_2 + x9_3)] F.* k2[x9_0][x10_0][x10_1][x10_2]))) F.+ b2[x9_0])))
+      let x11 = (imap4 12 1 8 8 (\x12_0 x12_1 x12_2 x12_3 -> (logistics x8[x12_0][x12_1][x12_2][x12_3])))
+      let x13 = (imap4 12 1 4 4 (\x14_0 x14_1 x14_2 x14_3 -> ((isum2 2 2 (\x15_0 x15_1 -> x11[x14_0][x14_1][((x14_2 * 2) + x15_0)][((x14_3 * 2) + x15_1)])) F./ fromi64 4)))
+      let x16 = (imap5 10 1 1 1 1 (\x17_0 x17_1 x17_2 x17_3 x17_4 -> ((isum4 12 1 4 4 (\x18_0 x18_1 x18_2 x18_3 -> (x13[(x18_0 + x17_1)][(x18_1 + x17_2)][(x18_2 + x17_3)][(x18_3 + x17_4)] F.* fc[x17_0][x18_0][x18_1][x18_2][x18_3]))) F.+ b[x17_0])))
+      let x19 = (imap5 10 1 1 1 1 (\x20_0 x20_1 x20_2 x20_3 x20_4 -> (logistics x16[x20_0][x20_1][x20_2][x20_3][x20_4])))
+      let x21 = (isum5 10 1 1 1 1 (\x22_0 x22_1 x22_2 x22_3 x22_4 -> (((target[x22_0][x22_1][x22_2][x22_3][x22_4] F.+ (F.neg x19[x22_0][x22_1][x22_2][x22_3][x22_4])) F.* (target[x22_0][x22_1][x22_2][x22_3][x22_4] F.+ (F.neg x19[x22_0][x22_1][x22_2][x22_3][x22_4]))) F./ fromi64 2)))
       let x23 = one
-      let x24 = (imap5 10 1 1 1 1 (\ x25_0 x25_1 x25_2 x25_3 x25_4 -> ((F.neg ((x23 F./ fromi64 2) F.* (target[x25_0][x25_1][x25_2][x25_3][x25_4] F.+ (F.neg x19[x25_0][x25_1][x25_2][x25_3][x25_4])))) F.+ (F.neg ((x23 F./ fromi64 2) F.* (target[x25_0][x25_1][x25_2][x25_3][x25_4] F.+ (F.neg x19[x25_0][x25_1][x25_2][x25_3][x25_4])))))))
-      let x26 = (imap5 10 1 1 1 1 (\ x27_0 x27_1 x27_2 x27_3 x27_4 -> ((x24[x27_0][x27_1][x27_2][x27_3][x27_4] F.* x19[x27_0][x27_1][x27_2][x27_3][x27_4]) F.* (one F.+ (F.neg x19[x27_0][x27_1][x27_2][x27_3][x27_4])))))
-      let x28 = (imap4 12 1 4 4 (\ x31_0 x31_1 x31_2 x31_3 -> (isum1 10 (\ x29_0 -> (isum4 12 1 4 4 (\ x30_0 x30_1 x30_2 x30_3 -> if (x31_0 >= x30_0 && x31_1 >= x30_1 && x31_2 >= x30_2 && x31_3 >= x30_3 && (x31_0 - x30_0) < 1 && (x31_1 - x30_1) < 1 && (x31_2 - x30_2) < 1 && (x31_3 - x30_3) < 1) then (x26[x29_0][(x31_0 - x30_0)][(x31_1 - x30_1)][(x31_2 - x30_2)][(x31_3 - x30_3)] F.* fc[x29_0][x30_0][x30_1][x30_2][x30_3]) else zero))))))
-      let x32 = (imap4 12 1 8 8 (\ x33_0 x33_1 x33_2 x33_3 -> (x28[x33_0][x33_1][(x33_2 / 2)][(x33_3 / 2)] F./ fromi64 4)))
-      let x34 = (imap4 12 1 8 8 (\ x35_0 x35_1 x35_2 x35_3 -> ((x32[x35_0][x35_1][x35_2][x35_3] F.* x11[x35_0][x35_1][x35_2][x35_3]) F.* (one F.+ (F.neg x11[x35_0][x35_1][x35_2][x35_3])))))
-      let x36 = (imap3 6 12 12 (\ x39_0 x39_1 x39_2 -> (isum1 12 (\ x37_0 -> (isum3 6 5 5 (\ x38_0 x38_1 x38_2 -> if (x39_0 >= x38_0 && x39_1 >= x38_1 && x39_2 >= x38_2 && (x39_0 - x38_0) < 1 && (x39_1 - x38_1) < 8 && (x39_2 - x38_2) < 8) then (x34[x37_0][(x39_0 - x38_0)][(x39_1 - x38_1)][(x39_2 - x38_2)] F.* k2[x37_0][x38_0][x38_1][x38_2]) else zero))))))
-      let x40 = (imap3 6 24 24 (\ x41_0 x41_1 x41_2 -> (x36[x41_0][(x41_1 / 2)][(x41_2 / 2)] F./ fromi64 4)))
-      let x42 = (imap3 6 24 24 (\ x43_0 x43_1 x43_2 -> ((x40[x43_0][x43_1][x43_2] F.* x3[x43_0][x43_1][x43_2]) F.* (one F.+ (F.neg x3[x43_0][x43_1][x43_2])))))
-
-      let dinp = (imap2 28 28 (\ x46_0 x46_1 -> (isum1 6 (\ x44_0 -> (isum2 5 5 (\ x45_0 x45_1 -> if (x46_0 >= x45_0 && x46_1 >= x45_1 && (x46_0 - x45_0) < 24 && (x46_1 - x45_1) < 24) then (x42[x44_0][(x46_0 - x45_0)][(x46_1 - x45_1)] F.* k1[x44_0][x45_0][x45_1]) else zero))))))
-      let dk1 = (imap3 6 5 5 (\ x47_0 x47_1 x47_2 -> (isum2 24 24 (\ x48_0 x48_1 -> (x42[x47_0][x48_0][x48_1] F.* inp[(x47_1 + x48_0)][(x47_2 + x48_1)])))))
-      let db1 = (imap1 6 (\ x49_0 -> (isum2 24 24 (\ x50_0 x50_1 -> x42[x49_0][x50_0][x50_1]))))
-      let dk2 = (imap4 12 6 5 5 (\ x51_0 x51_1 x51_2 x51_3 -> (isum3 1 8 8 (\ x52_0 x52_1 x52_2 -> (x34[x51_0][x52_0][x52_1][x52_2] F.* x5[(x51_1 + x52_0)][(x51_2 + x52_1)][(x51_3 + x52_2)])))))
-      let db2 = (imap1 12 (\ x53_0 -> (isum3 1 8 8 (\ x54_0 x54_1 x54_2 -> x34[x53_0][x54_0][x54_1][x54_2]))))
-      let dfc = (imap5 10 12 1 4 4 (\ x55_0 x55_1 x55_2 x55_3 x55_4 -> (isum4 1 1 1 1 (\ x56_0 x56_1 x56_2 x56_3 -> (x26[x55_0][x56_0][x56_1][x56_2][x56_3] F.* x13[(x55_1 + x56_0)][(x55_2 + x56_1)][(x55_3 + x56_2)][(x55_4 + x56_3)])))))
-      let db = (imap1 10 (\ x57_0 -> (isum4 1 1 1 1 (\ x58_0 x58_1 x58_2 x58_3 -> x26[x57_0][x58_0][x58_1][x58_2][x58_3]))))
+      let x24 = (imap5 10 1 1 1 1 (\x25_0 x25_1 x25_2 x25_3 x25_4 -> ((F.neg ((x23 F./ fromi64 2) F.* (target[x25_0][x25_1][x25_2][x25_3][x25_4] F.+ (F.neg x19[x25_0][x25_1][x25_2][x25_3][x25_4])))) F.+ (F.neg ((x23 F./ fromi64 2) F.* (target[x25_0][x25_1][x25_2][x25_3][x25_4] F.+ (F.neg x19[x25_0][x25_1][x25_2][x25_3][x25_4])))))))
+      let x26 = (imap5 10 1 1 1 1 (\x27_0 x27_1 x27_2 x27_3 x27_4 -> ((x24[x27_0][x27_1][x27_2][x27_3][x27_4] F.* x19[x27_0][x27_1][x27_2][x27_3][x27_4]) F.* (one F.+ (F.neg x19[x27_0][x27_1][x27_2][x27_3][x27_4])))))
+      let x28 = (imap4 12 1 4 4 (\x31_0 x31_1 x31_2 x31_3 -> (isum1 10 (\x29_0 -> (isum4 12 1 4 4 (\x30_0 x30_1 x30_2 x30_3 -> if (x31_0 >= x30_0 && x31_1 >= x30_1 && x31_2 >= x30_2 && x31_3 >= x30_3 && (x31_0 - x30_0) < 1 && (x31_1 - x30_1) < 1 && (x31_2 - x30_2) < 1 && (x31_3 - x30_3) < 1) then (x26[x29_0][(x31_0 - x30_0)][(x31_1 - x30_1)][(x31_2 - x30_2)][(x31_3 - x30_3)] F.* fc[x29_0][x30_0][x30_1][x30_2][x30_3]) else zero))))))
+      let x32 = (imap4 12 1 8 8 (\x33_0 x33_1 x33_2 x33_3 -> (x28[x33_0][x33_1][(x33_2 / 2)][(x33_3 / 2)] F./ fromi64 4)))
+      let x34 = (imap4 12 1 8 8 (\x35_0 x35_1 x35_2 x35_3 -> ((x32[x35_0][x35_1][x35_2][x35_3] F.* x11[x35_0][x35_1][x35_2][x35_3]) F.* (one F.+ (F.neg x11[x35_0][x35_1][x35_2][x35_3])))))
+      let x36 = (imap3 6 12 12 (\x39_0 x39_1 x39_2 -> (isum1 12 (\x37_0 -> (isum3 6 5 5 (\x38_0 x38_1 x38_2 -> if (x39_0 >= x38_0 && x39_1 >= x38_1 && x39_2 >= x38_2 && (x39_0 - x38_0) < 1 && (x39_1 - x38_1) < 8 && (x39_2 - x38_2) < 8) then (x34[x37_0][(x39_0 - x38_0)][(x39_1 - x38_1)][(x39_2 - x38_2)] F.* k2[x37_0][x38_0][x38_1][x38_2]) else zero))))))
+      let x40 = (imap3 6 24 24 (\x41_0 x41_1 x41_2 -> (x36[x41_0][(x41_1 / 2)][(x41_2 / 2)] F./ fromi64 4)))
+      let x42 = (imap3 6 24 24 (\x43_0 x43_1 x43_2 -> ((x40[x43_0][x43_1][x43_2] F.* x3[x43_0][x43_1][x43_2]) F.* (one F.+ (F.neg x3[x43_0][x43_1][x43_2])))))
+      let dinp = (imap2 28 28 (\x46_0 x46_1 -> (isum1 6 (\x44_0 -> (isum2 5 5 (\x45_0 x45_1 -> if (x46_0 >= x45_0 && x46_1 >= x45_1 && (x46_0 - x45_0) < 24 && (x46_1 - x45_1) < 24) then (x42[x44_0][(x46_0 - x45_0)][(x46_1 - x45_1)] F.* k1[x44_0][x45_0][x45_1]) else zero))))))
+      let dk1 = (imap3 6 5 5 (\x47_0 x47_1 x47_2 -> (isum2 24 24 (\x48_0 x48_1 -> (x42[x47_0][x48_0][x48_1] F.* inp[(x47_1 + x48_0)][(x47_2 + x48_1)])))))
+      let db1 = (imap1 6 (\x49_0 -> (isum2 24 24 (\x50_0 x50_1 -> x42[x49_0][x50_0][x50_1]))))
+      let dk2 = (imap4 12 6 5 5 (\x51_0 x51_1 x51_2 x51_3 -> (isum3 1 8 8 (\x52_0 x52_1 x52_2 -> (x34[x51_0][x52_0][x52_1][x52_2] F.* x5[(x51_1 + x52_0)][(x51_2 + x52_1)][(x51_3 + x52_2)])))))
+      let db2 = (imap1 12 (\x53_0 -> (isum3 1 8 8 (\x54_0 x54_1 x54_2 -> x34[x53_0][x54_0][x54_1][x54_2]))))
+      let dfc = (imap5 10 12 1 4 4 (\x55_0 x55_1 x55_2 x55_3 x55_4 -> (isum4 1 1 1 1 (\x56_0 x56_1 x56_2 x56_3 -> (x26[x55_0][x56_0][x56_1][x56_2][x56_3] F.* x13[(x55_1 + x56_0)][(x55_2 + x56_1)][(x55_3 + x56_2)][(x55_4 + x56_3)])))))
+      let db = (imap1 10 (\x57_0 -> (isum4 1 1 1 1 (\x58_0 x58_1 x58_2 x58_3 -> x26[x57_0][x58_0][x58_1][x58_2][x58_3]))))
       --let dtarget = (imap5 10 1 1 1 1 (\ x59_0 x59_1 x59_2 x59_3 x59_4 -> (((x23 F./ fromi64 2) F.* (target[x59_0][x59_1][x59_2][x59_3][x59_4] F.+ (F.neg x19[x59_0][x59_1][x59_2][x59_3][x59_4]))) F.+ ((x23 F./ fromi64 2) F.* (target[x59_0][x59_1][x59_2][x59_3][x59_4] F.+ (F.neg x19[x59_0][x59_1][x59_2][x59_3][x59_4]))))))
 
       let err = x21
@@ -407,26 +148,7 @@ module nn (F: real) = {
       in (dk1, db1, dk2, db2, dfc', db, err)
 }
 
-open nn (f32)
-
--- Mnist parsing
-def decode_u32_be (w: [4]u8) =
-  (u32.u8 w[0] << 24)
-  | (u32.u8 w[1] << 16)
-  | (u32.u8 w[2] << 8)
-  | (u32.u8 w[3] << 0)
-
-def decode_label_file (s: []u8) =
-  let magic = decode_u32_be (take 4 s)
-  in assert (magic == 2049) (map i8.u8 (drop 8 s))
-
-def decode_image_file (s: []u8) =
-  let magic = decode_u32_be (take 4 s)
-  let n = i64.u32 (decode_u32_be (take 4 (drop 4 s)))
-  let rows = i64.u32 (decode_u32_be (take 4 (drop 8 s)))
-  let columns = i64.u32 (decode_u32_be (take 4 (drop 12 s)))
-  let get_img i = unflatten (map f32.u8 (take (rows * columns) (drop (16 + i * rows * columns) s)))
-  in assert (magic == 2051) (tabulate n get_img)
+module nn32 = nn f32
 
 type~ str_pair = ([]u8, []u8)
 
@@ -444,7 +166,7 @@ type state =
 
 entry iteration [n] (trainings: i64) (batchsize: i64) (rate: f32) (imgs: [n][28][28]f32) (lbls: [n]i8) (s: state) : (state, f32) =
   let gen_target i = imap 10 (\j -> if j == i then 1.0 else 0.0)
-  let avg (a: []f32) = sum a / f32.i64 (length a)
+  let avg (a: []f32) = nn32.sum a / f32.i64 (length a)
   let (s, err) =
     loop (s, err) = (s, 0.0)
     for i < trainings / batchsize do
@@ -454,7 +176,7 @@ entry iteration [n] (trainings: i64) (batchsize: i64) (rate: f32) (imgs: [n][28]
         imap batchsize (\j ->
                           let img = imgs[i * batchsize + j]
                           let lbl = gen_target (i64.i8 lbls[i * batchsize + j])
-                          in train_gen img k1 b1 k2 b2 fc b lbl)
+                          in nn32.train_gen img k1 b1 k2 b2 fc b lbl)
       let (bdk1, bdb1, bdk2, bdb2, bdfc, bdb, berr) = unzip7 r
       -- TODO: these should happen in-place, but hopefully this is not
       --       a hotspot, the arrays are rather small.
@@ -476,7 +198,7 @@ entry iteration [n] (trainings: i64) (batchsize: i64) (rate: f32) (imgs: [n][28]
       let b' =
         imap1 10 (\i ->
                     b[i] - rate * (avg (imap batchsize (\t -> bdb[t][i]))))
-      let err' = err + sum berr
+      let err' = err + nn32.sum berr
       in ( {k1 = k1', b1 = b1', k2 = k2', b2 = b2', fc = fc', b = b'}
          , err'
          )
