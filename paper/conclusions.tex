@@ -1,9 +1,9 @@
 \section{Conclusions\label{sec:conclusions}}
 
-The paper demonstrates a technique of developing high performance
+We have demonstrated a technique of developing high performance
 applications with strong correctness guarantees, including the absence
 of out-of-bound indexing, certain functions being inverses,
-well-scopedness and well-typedness of the embedded DSL and
+well-scopedness and well-typedness of the embedded DSL, and
 semantics-preserving optimisations.
 
 The key insight lies in using a proof assistant in cooperation with a
@@ -14,8 +14,8 @@ correctness invariants of interest and performs an extraction into a
 high-performance language, in our case Futhark, although only a
 relatively small part of our work is specific to that language.
 
-Having a trusted specification as well as entire code-generation
-pipeline within a single dependently-typed framework is incredibly
+Having a trusted specification as well as entire code generation
+pipeline within a dependently-typed framework is incredibly
 powerful. As we have demonstrated at the example of the neural
 network, we can introduce domain-specific optimisations and
 transformations, such as automatic differentiation. For our example,
