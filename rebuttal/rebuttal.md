@@ -147,7 +147,7 @@ and well-typed (-shaped) as well and AD terminates.  Working on
 intrinsically-typed representation is noticeably harder than on a raw
 syntax.
 
-As for correctness of AD, as we mentioned already: it takes about 20 lines
+As for correctness of AD, as we mentioned above: it takes about 20 lines
 of code to define all the AD rules (lines 979-830).  Most of these rules are
 book-standard (e.g. `(f + g)' = f' + g'`), the only non-trivial part here is
 the chain rule for lets.  It is non-trivial because we are working in intrinsic
