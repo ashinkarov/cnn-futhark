@@ -107,7 +107,9 @@ that generated expressions are of the same shape as human-written ones.  In
 fact the code generated for our CNN example is very much similar to the one
 that we wrote by hands first.  We do not have a formal proof that optimisations
 fix all the problems, but as our language is very small, the number of patterns
-that we had to consider is relatively small as well.
+that we had to consider is relatively small as well. In particular, the absence of
+sequential looping inside parallel operations ensure that the sparsity of the adjoint
+arrays is known statically.
 
 > - Do you have any reason to believe that your code transformation computes derivatives other than evaluation on your one example?
 
