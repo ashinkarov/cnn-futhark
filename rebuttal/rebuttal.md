@@ -1,4 +1,4 @@
-We thank the reviewers for their comments. Before getting responding to specific
+We thank the reviewers for their comments. Before responding to specific
 questions below, we wish to explain the intent of our paper in a way that we
 perhaps failed to do in the paper itself.
 
