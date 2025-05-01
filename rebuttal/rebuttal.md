@@ -204,6 +204,164 @@ is accepted.
 
 ### Reviewer A
 
+> l5: "strong correctness guarantees" -- like/namely?
+
+We make a list in lines 1197-1199, but we can surely put it here as well.
+
+> l80: "distinguishes it from most existing approaches" -- Sure, but there are also several rank polymorphic DSLs/libaries already, like Accelerate. Maybe mention them somewhere?
+
+Accelerate is mentioned 1168-1169, but we can mention it here as well.
+Also, a small subtlety, Accelerate allows only for static ranks as far as I am aware, where as the proposed array theory supports dynamic ranks as well.
+
+> l102: say somewhere that S is simply a list of natural numbers
+
+We say this in line 86.
+
+> l102: It would be helpful to say here what the intended semantics of Ar [n1, ..., nk] is, i.e. R^{n1 x ... x nk} = R^{n1} (x) ... (x) R^{nk}.
+> 
+> l111: maybe note that you can define n-ary zipWith's even.
+> 
+> l119: corresponds
+
+Sure, thanks.
+
+> l136: why call this a sum rather than a fold? this is particularly confusing as later sum is just a sum.
+
+My thought process was as follows.  This is not quite fold because it does not travers the unrolling, instead it recurses through the shape.  However, maybe sum is not the best name, happy to change.
+
+> l136: "pattern" -- quickly recall pattern syntax for readers less familiar with Agda
+> 
+> l160: "Dec" -- Just give the definition! It is not that hard and your current description is not enough to understand what it does.
+
+Sure, will do.
+
+> l160: "\exists" -- Explain. Contrast with "\Sigma". Does the choice matter here?
+
+They are the same, it is just a shorter syntax.  I am happy to explain this.
+ 
+> l172-l180:  This is currently super unclear and should probably be rewritten.
+
+Ok, I'll have another go at this.
+
+> l204: for
+
+Sure, thanks.
+
+> l204-205: It is unclear to me what the alternative is.
+
+The alternative is to move `sum` inside the `imap` and compute the tile in the input array.
+
+> l220: ternary
+> 
+> l224: Explain instance argument syntax {{}} here.
+> 
+> l220-225: Say in prose what these relations do/capture.
+> 
+> l235: Remind readers of Agda's notation for identity types.
+
+Will do, thanks.
+
+> l258: Equations relating slide and backslide?
+
+Good idea, thanks!
+
+> l297: "the local neighbourhood"
+> 
+> l298: rephrase sentence. grammar does not work.
+> 
+> l299: blocked selections "selb"
+
+Thanks, will do.
+
+> l329-342: very nice
+
+Thanks :)
+
+> l375: "use non-trivial dependencies within constructors" -- Please explain.
+
+Will do.  The point is that constructors are polymorphic in shapes and proofs in `imapb`, `selb` depend on these shapes.
+
+> l401: "imaps" -- isn't this normally called build or generate. Why stray from that? 
+> l402:  "sels" -- isn't this just indexing? why not call it that?
+
+I am not sure about build/generate.  The intuition here is that constructor is an index map (maps the value per index) and destructor `sel`ects a scalar therefore `sels`.  I do not have a strong opinion about these names.
+> 
+> l401-402: say in words what imap(s/b) and sel(s/b) are supposed to do.
+> 
+> l411: explain how zero-but gives a conditional.
+> 
+> l429: that we call imaps 
+> 
+> l433: equality.
+> 
+> l494: verb missing
+
+Will do.
+
+> l501-552: isn't this all standard? is the only point to introduce your notation?
+
+It is standard.  However, I was criticised before that without these definitions it is hard to understand some of the expressions that use weakening, `skip`, etc.  So I thought it would be a good idea to show basic definitions.
+ 
+> l554-694: Interesting! I didn't know this technique. Is this a novel contribution? If so, maybe list it in the intro?
+
+The basic idea is old, but I think that this hasn't been done for an intrinsically-typed language.  Happy to add this.
+ 
+> l702-735: Why so much white space? This seems like a perfect place to insert some diagrams/graphs!
+> 
+> l714-718: "inside-out....outside-in" -- This is quite vague and does not help the reader understand the difference between forward and reverse mode.
+> 
+> l716: reverse mode
+> 
+> l719: we can compute partial derivatives with respect to all of the inputs
+> 
+> l729: "computational graph" -- what is that? it comes out of nowhere here!
+
+You are right, I'd like to redo the beginning of section 5.
+
+> l786-791: please explain a bit more here.
+
+Sure.
+
+> l797-830: What is the complexity of the resulting algorithm? Is it as expected from reverse AD?
+
+I answered this above.
+
+> l925: is this how you fix expensive one-hot arrays?
+
+It is mainly 935-937 that does this.  We took a compromise here by keeping the language simple.  As we need to optimise AD-generated code anyway, we can also try to resolve this problem through rewrite.
+
+> l942-944: :-(
+
+This is surely not ideal, but this is pretty much inevitable state in optimising compilers.
+Specifically when languages are high-level, the quality of generated code crucially depends on the set of optimisations and even the order of running them.  Given that people make research careers on applying machine learning to figure the best optimisation strategy, this is still unsolved problem.
+ 
+> l1079: What about even larger datasets?
+
+The structure of the code is such that there is a fixed-size kernel that runs backpropagation, and the size of input only indicates how many times this kernel will be launched (sequentially).  Therefore, it is very unlikely that bigger input sizes would change the behaviour.  However, you are right, we are happy to run a bigger dataset and report the results. 
+ 
+> l1122: You may want to include some comparisons here to
+> de Vilhena, Paulo Emílio, and François Pottier. "Verifying an Effect-Handler-Based Define-By-Run Reverse-Mode AD Library." Logical Methods in Computer Science 19 (2023).
+> Paszke, Adam, et al. "Getting to the point: index sets and parallelism-preserving autodiff for pointful array programming." Proceedings of the ACM on Programming Languages 5.ICFP (2021): 1-29.
+> Smeding, Tom J., and Matthijs IL Vákár. "Efficient CHAD." Proceedings of the ACM on Programming Languages 8.POPL (2024): 1060-1088.
+> Smeding, Tom, and Matthijs Vákár. "Parallel dual-numbers reverse ad." arXiv preprint arXiv:2207.03418 (2022).
+
+Thanks, will do.
+
+> l1145: correctness 
+> 
+> l1171: "Even though our support for.."
+
+Thanks.
+
+> l1185-1187: Explain more please. I don't understand the difference.
+
+Sure, happy to explain more.  In a nutshell, shape annotations in both SaC and Futhark are somewhat like types in Python, you can use them if you want to, but they could be ignored and do not provide guarantees.  Dynamic rank polymorphism means that array ranks are only known at runtime.
+
+> l1197: "certain functions being inverses" -- where do you use this?
+
+Line 160 and 242 mainly to ensure that subtraction is an inverse to addition. 
+
+
 ### Reviewer B
 
 > * Line 76, "The work in the rest of the paper is presented in Agda, with which we assume some familiarity." I appreciated the comment upfront. The paper assumes a fair bit of Agda knowledge even for someone who has used other proof assistants and dependently typed programming languages.
