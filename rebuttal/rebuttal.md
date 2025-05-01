@@ -81,15 +81,17 @@ the entire gradient in one pass, sharing sub-expressions via introducing
 local bindings on the way.  We never have to instantiate one derivative at a time
 as in forward mode.
 
-As for complexity, we implement a book-standard algorithm, yet instead of
-using scalar elements, we use bulk operations on arrays.  As we represent
-arrays as stateless functions, we rely on the optimisations to bring bulk
-operations to the expected form.  Mainly, we aggressively fuse array updates
-and we eliminate sums of `zero-but`s.  Furthermore, we rely on Futhark to take
-care of lowering down a pretty high-level code into a chosen hardware efficiently.
-With optimisations and Futhark code generation in place, we expect asymptotic complexity
-of the generated code to be $m$ times the complexity of the original function,
-given that it takes $n$ arguments and returns $m$ arguments (for our benchmark, $m=1$).
+As for complexity, we implement a book-standard algorithm, yet instead of using
+scalar elements, we use bulk operations on arrays. As we represent arrays as
+stateless functions, we rely on the optimisations to bring bulk operations to
+the expected form. Mainly, we aggressively fuse array updates and we eliminate
+sums of `zero-but`s, i.e., to efficiently sum collections of sparse arrays that
+each have only a statically known number of nonzero elements. Furthermore, we
+rely on Futhark to take care of lowering down a pretty high-level code into a
+chosen hardware efficiently. With optimisations and Futhark code generation in
+place, we expect asymptotic complexity of the generated code to be $m$ times the
+complexity of the original function, given that it takes $n$ arguments and
+returns $m$ arguments (for our benchmark, $m=1$).
 
 > - On l899 you say "direct compilation of the AD-generated expressions may be computationally inefficient". What are the main sources of inefficiency? Is there any way to classify them and address them systematically? Are your optimizations guaranteed to fix the problems on any other programs than your one example.
 
