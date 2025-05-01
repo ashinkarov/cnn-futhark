@@ -142,7 +142,8 @@ epochs to inflate the training time, although this is unlikely to actually
 improve the training result, and so feels artificial. The purpose of our
 experiment is not to provide comprehensive evidence for outperforming
 TensorFlow, but to show that the performance of our system seems sufficient to
-be useful.
+be useful. More complicated benchmark applications, including scientific
+programs outside of machine learning, remain future work.
 
 #### Correctness of translation to Futhark
 
