@@ -5,18 +5,19 @@ perhaps failed to do in the paper itself.
 Our paper investigates the use of Agda as a practical tool for scientific
 programming, covering the span from problem specification using rank
 polymorphism, to transformation via AD, to optimisation and code generation. Not
-all parts of the whole are equally completely specified: while rank polymorphism
-is the most developed and fully verified part, the AD is performed within a
-well-shaped and well-scoped DSL, verifying absence of bounds and scoping errors,
-transformations that we run prior code generation guarantee semantics preservation
-and code generation while implementing NBE does indeed use aptly termed
+all parts of the whole are equally completely specified. Rank polymorphic
+array theory
+is the most developed and fully verified part. The AD is performed within a
+well-shaped and well-scoped DSL, verifying its termination and absence of bounds and scoping errors.
+Transformations that we run prior code generation guarantee semantics preservation.
+Code generation implements NBE but does indeed use aptly termed
 `String → String` monster.
 
-In an ideal world, all parts would of course come with formal specifications
+In an ideal world, all parts would of course come with full formal specifications
 and accompanying proof, but in practice some parts remain an entirely separate
-(and nontrivial) research effort to verify functionally correct (such as AD),
-while others can be handled using known techniques (such as code generation),
-but are somewhat time consuming. We wish to show that even in those cases where
+(and nontrivial) research effort to verify for functional correctness (such as AD).
+Other parts can be handled using known techniques (such as code generation),
+but are somewhat time consuming. Despite all this, we wish to show that even in those cases where
 resources preclude full verification, Agda can still be used as a practical
 tool, with full verification employed where it is deemed desirable and
 practical. This is what we mean by the somewhat oblique "correctness invariants
