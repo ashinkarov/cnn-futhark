@@ -37,20 +37,18 @@ transformations like AD.
 
 > - How generally does your "unembedding" technique for HOAS-style wrappers of a deeply embedded DSL work? It works for your examples, but can you give any guarantees about the applicability of the technique? What are its limitations?
 
-The key driver of the technique is the `Prefix` relation that checks whether
-the context is a prefix of another and this is done automatically using 
-the instance search.  This bit is solid, and for the DSLs with de Bruijn
-variables, this works very well.  You'd have to define wrappers for all
-the binders within your DSL, but this is straight-forward.
+The key driver for the technique is the `Prefix` relation that automates checking whether
+one context is a prefix of another one using 
+instance search.  This bit is solid, and for intrinsically-typed DSLs with de Bruijn
+variables, this works very well.  One has to define wrappers for all
+the binders within the DSL, but this is straight-forward.
 
-The limitation of all techniques that are based on instance search is
-a bad complexity of instant search implementation.  When many things
-turn into instances, instance search may have to traverse very large
+The limitation of all techniques that are based on instance search has
+to do with bad complexity of instant search implementation.  When many things
+become instances, instance search may have to traverse very large
 search spaces (e.g. evaluating a large data structure of a constant
-size, and so on).  However, this is not a problem related to DSL wrappers,
-as we rarely define a very large number of local variables, we can
-typically split a big expression into subexpressions and check them locally,
-as we do with primitives in our CNN definition.
+size, and so on).  However, this is a general concern rather than a
+practical problem related to DSL wrappers.
 
 > - How does your "unembedding" technique relate to the technique from 
 > Atkey, Robert, Sam Lindley, and Jeremy Yallop. "Unembedding domain-specific languages." Proceedings of the 2nd ACM SIGPLAN symposium on Haskell. 2009.
