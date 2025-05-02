@@ -1,6 +1,7 @@
 We thank the reviewers for their comments. Before responding to specific
-questions below, we wish to explain the intent of our paper in a way that we
-perhaps failed to do in the paper itself.
+questions below (which we do not expect reviewers to read fully), we wish to
+explain the intent of our paper in a way that we perhaps failed to do in the
+paper itself.
 
 Our paper investigates the use of Agda as a practical tool for scientific
 programming, covering the span from problem specification using rank
@@ -172,8 +173,9 @@ epochs to inflate the training time, although this is unlikely to actually
 improve the training result, and so feels artificial. The purpose of our
 experiment is not to provide comprehensive evidence for outperforming
 TensorFlow, but to show that the performance of our system seems sufficient to
-be useful. More complicated benchmark applications, including scientific
-programs outside of machine learning, remain future work.
+be useful, and that inefficiencies are not likely due to overheads imposed by
+formal verification. More complicated benchmark applications, including
+scientific programs outside of machine learning, remain future work.
 
 #### Correctness of translation to Futhark
 
