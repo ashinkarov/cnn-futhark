@@ -187,7 +187,10 @@ takes 50 lines of very straight-forward code, so the chances of making a mistake
 given that the generated code is accepted by the compiler are sufficiently small.
 On the other hand, correctness of transformations within the DSL is much more
 tedious, as we perform non-trivial rewrites, and we managed to catch a few
-incorrect ones due to inability to construct a proof.
+incorrect ones due to inability to construct a proof.  Having said that, we
+do not dispute the fact that it would be very nice to have verified compilation
+in place, this is a clear future work, we are only indicating why we did not
+prioritise this task in this work.
 
 ### Reviewer D
 
