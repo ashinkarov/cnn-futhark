@@ -229,7 +229,7 @@ Sure, thanks.
 
 > l136: why call this a sum rather than a fold? this is particularly confusing as later sum is just a sum.
 
-My thought process was as follows.  This is not quite fold because it does not travers the unrolling, instead it recurses through the shape.  However, maybe sum is not the best name, happy to change.
+My thought process was as follows.  This is not quite `fold` because it does not traverse the unrolling, instead it recurses through the shape (hyperplanes).  However, maybe sum is not the best name, happy to change.
 
 > l136: "pattern" -- quickly recall pattern syntax for readers less familiar with Agda
 > 
@@ -286,7 +286,7 @@ Will do.  The point is that constructors are polymorphic in shapes and proofs in
 > l401: "imaps" -- isn't this normally called build or generate. Why stray from that? 
 > l402:  "sels" -- isn't this just indexing? why not call it that?
 
-I am not sure about build/generate.  The intuition here is that constructor is an index map (maps the value per index) and destructor `sel`ects a scalar therefore `sels`.  I do not have a strong opinion about these names.
+I am not sure about build/generate.  The intuition here is that the constructor is an index map (maps the value per index) and the destructor `sel`ects a scalar, hence `sels`.  I do not have a strong opinion about these names and happy to change them.
 > 
 > l401-402: say in words what imap(s/b) and sel(s/b) are supposed to do.
 > 
@@ -302,11 +302,11 @@ Will do.
 
 > l501-552: isn't this all standard? is the only point to introduce your notation?
 
-It is standard.  However, I was criticised before that without these definitions it is hard to understand some of the expressions that use weakening, `skip`, etc.  So I thought it would be a good idea to show basic definitions.
+It is standard.  However, I was criticised before that when these definitions are omitted it is hard to understand some of the expressions that use weakening, `skip`, etc.  So I thought it would be a good idea to show basic definitions.
  
 > l554-694: Interesting! I didn't know this technique. Is this a novel contribution? If so, maybe list it in the intro?
 
-The basic idea is old, but I think that this hasn't been done for an intrinsically-typed language.  Happy to add this.
+I have seen the basic idea before, but I do not think that this has been applied for an intrinsically-typed language.  Happy to add this to the introduction.
  
 > l702-735: Why so much white space? This seems like a perfect place to insert some diagrams/graphs!
 > 
@@ -335,11 +335,11 @@ It is mainly 935-937 that does this.  We took a compromise here by keeping the l
 > l942-944: :-(
 
 This is surely not ideal, but this is pretty much inevitable state in optimising compilers.
-Specifically when languages are high-level, the quality of generated code crucially depends on the set of optimisations and even the order of running them.  Given that people make research careers on applying machine learning to figure the best optimisation strategy, this is still unsolved problem.
+Specifically when languages are high-level, the quality of generated code crucially depends on the set of optimisations and even the order of running them.  Given that people make research careers on applying machine learning to figure the best optimisation strategy, this is still an unsolved problem.
  
 > l1079: What about even larger datasets?
 
-The structure of the code is such that there is a fixed-size kernel that runs backpropagation, and the size of input only indicates how many times this kernel will be launched (sequentially).  Therefore, it is very unlikely that bigger input sizes would change the behaviour.  However, you are right, we are happy to run a bigger dataset and report the results. 
+The structure of the code is such that there is a fixed-size kernel that runs backpropagation, and the size of input only indicates how many times this kernel will be launched (sequentially).  Therefore, it is very unlikely that bigger input sizes would change the behaviour.  However, we are happy to run a bigger dataset and report the results. 
  
 > l1122: You may want to include some comparisons here to
 > de Vilhena, Paulo Emílio, and François Pottier. "Verifying an Effect-Handler-Based Define-By-Run Reverse-Mode AD Library." Logical Methods in Computer Science 19 (2023).
@@ -393,7 +393,7 @@ Sure, thanks.
 It is a usual approach in array languages and tensor calculus to define rank zero arrays/tensors
 to be isomorphic to scalars.  This becomes intuitive if you think about the product of the empty
 list, which is typically defined to be 1.  Also, if rank-zero array is always a trivial vector,
-for array (a : Ar [] (Ar [2,2] Nat)), what does `unnest a : Ar [2,2] Nat` should return?
+for array (a : Ar [] (Ar [2,2] X)), how could `unnest a : Ar [2,2] X` ever produce a result?
 
 For example [this link](https://www.damtp.cam.ac.uk/user/tong/vc/vc7.pdf) says: A tensor of rank 0 is just a
 number, or scalar, T . Under a rotation, it doesn’t change: T 0 = T . A tensor of rank 1
@@ -406,10 +406,10 @@ is a vector, while a tensor of rank 2 is a matrix.
 
 What do you mean by representable?  Any array that contains zero as one of its shape components
 is an empty array, and we have infinitely many of these.  Empty arrays do not contain elements
-(product of the shape is zero) but they are valid values, here is an example:
+(product of the shape is zero), but they are valid values, here is an example:
 ```
   x : Ar (2 ∷ 0 ∷ []) ℕ
-  x (i ∷ () ∷ [])  -- absurd pattern indicates that such index component couldn't possibly exist
+  x (i ∷ () ∷ [])  -- absurd pattern indicates that such an index component couldn't possibly exist
 ```
 They can be defined because the index space of an empty array is isomorphic to the empty type,
 and we can define a function from the empty type to any other type.  This is entirely standard
@@ -420,7 +420,7 @@ has the same treatment of empty arrays.
 >    `Ar s (X × Y) ≅ Ar s X × Arr s Y` (so this is pointed cartesian functor), but this is neither
 >    this is a matter of aesthetics :)
 
-Sure, I agree, but we use `zipWith` in the code and do not really use the iso.
+Sure, I agree, but we use `zipWith` in the code and we do not really use the iso.
 
 >  - 130: this is another "X is just Y" of the highest order, but I suppose one can remark that `nest`
 >    and `unnest` ensure that `Ar - X` is a monoidal functor from `Shape` to `Type → Type` (with the
@@ -443,17 +443,17 @@ Oh, I learned something, thank you!  I was under the impression that footnotes g
 >  - 221: Incidentally, why is this specialized to natural numbers? Surely this works fine for an
 >    arbitrary type A.
 
-Sure, then `a`, `b`, `c` has to become `List A`, but they are currently of type `S`.  It is just
-we only use this for shapes, so we didn't generalise it.
+Sure, then `a`, `b`, `c` has to become `List A`, but they are currently of type `S`.
+We only use these relations for shapes, so we didn't generalise it.
 
 >  - 465: I'm surprised that passing the environment as an instance argument is a safe idea here:
 >    could Agda not always update in the future to make this code just pass the empty environment
 >    instead?
 
-The type of environment is `Env Γ` where `Γ` is a parameter, whereas empty environment has the type
-`Env 𝜖`, so it wouldn't typecheck.  Secondly, the instance search wouldn't do such search, as `Env`
+The type of environment is `Env Γ` where `Γ` is a parameter, whereas the empty environment has the type
+`Env 𝜖`, so such an instance wouldn't typecheck.  Secondly, the instance search wouldn't do such search, as `Env`
 is a function.  Finally, even if it were to find the empty environment that somehow magically fits,
-it would (potentially) contradict with the instance `𝜌`, and if more than one instance is found it
+it would (potentially) clash with the instance `𝜌`, and if more than one instance is found it
 reports a type error.
 
 >  - 716: "revers" to "reverse"
@@ -496,7 +496,7 @@ Not really, so one could use `[ n ]` instead.
 
 > - l137ff What is called `sum` is really a `fold`, even if you only use it with addition later.
 
-Kind of, except it doesn't fold the unrolling of the array, it folds a hyperplane ar a time, so I am not sure whether the name fold helps here.
+Kind of, except it doesn't fold the unrolling of the array, it folds a hyperplane ar a time, so I am not sure whether the name fold helps here. I am not opposed to changing the name though.
 
 > - l142 Why is the base case not simply `sum {s = []} f ε a = a []`?
 >   I tried this out with your Agda artifact and it works, one can simplify some proofs.
@@ -505,11 +505,11 @@ Kind of, except it doesn't fold the unrolling of the array, it folds a hyperplan
 >   but maybe thinking in terms of non-empty folds (`fold1`) is more appropriate here.
 
 Exactly as you say, if `ε` is neutral to `f` then it doesn't matter.
-However, with lists, if you fold a singleteon list `fold f e [ x ]` you end up with `f x e` rather than `e`.  As arrays of shape `[]` are singletons, I thought it is consistent to do the application of `f`.
+However, with lists, if you fold a singleton list `fold f e [ x ]` you end up with `f x e` rather than `e`.  As arrays of shape `[]` are singletons, it seems reasonable to do the application of `f`.
 
 > - l169 I think the surprise goes away if the second hypothesis is written as $j ≤ n$ rather than $j + 1 < n$.
 
-My line of thought was: `i : Fin m` translates to `i < m` and `j : Fin (1 + n)` translates to `j < 1 + n` (as I explained in line 163).  Then, for premises `a < b` and `c < d` it feels natural to conclude `a + c < b + d`, which is true, but it is also an overaproximation.  I am happy to add the comment saying that `j < 1 + n` is the same as `j ≤ n`.
+My line of thought was: `i : Fin m` translates to `i < m` and `j : Fin (1 + n)` translates to `j < 1 + n` (as I explained in line 163).  Then, for premises `a < b` and `c < d` it feels natural to conclude `a + c < b + d`, which is true, but it is also an overapproximation.  I am happy to add the comment saying that `j < 1 + n` is the same as `j ≤ n`.
 
 
 > - l205 "fot" → for 
@@ -522,7 +522,7 @@ Sure, thanks for spotting those.
 
 > - l295ff A picture would help in the visualization of block formation (for low dimensions).
 
-We are a bit pressed on space, but I can try to add it.
+We are a bit pressed on space, but I can try to add this.
 
 > - l299 "introducing blocked selections" insert `selp` here
 
@@ -595,7 +595,7 @@ This is a typo, thanks.
 Yes, you are right, it would be nicer to prove safe translation to Futhark by
 defining a model of Futhark, and then relating the interpretation of futhark programs
 and evaluation of E.  This does require more work though, and in practice,
-code generation seemd to be the least interesting part of the work.
+code generation seemed to be the least interesting part of the work.
 We thought that the proposed way might be a reasonable compromise that gets
 us NBE without introducing much scaffolding.
 
@@ -615,5 +615,5 @@ us NBE without introducing much scaffolding.
 > - `inject-left = _↑ˡ_`
 > - ...
 
-Sure, I recall that we had troubles with different versions of the standard library, so we just replicated some of the functions.  We can clean fix the library version and do a little cleanup.
+Sure, I recall that we had troubles when collaborators used different versions of the standard library, so we just replicated some of the functions.  We can clean fix the library version and do a little cleanup.
 
