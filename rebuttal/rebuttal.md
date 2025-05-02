@@ -96,7 +96,7 @@ returns $m$ arguments (for our benchmark, $m=1$).
 
 > - On l899 you say "direct compilation of the AD-generated expressions may be computationally inefficient". What are the main sources of inefficiency? Is there any way to classify them and address them systematically? Are your optimizations guaranteed to fix the problems on any other programs than your one example.
 
-As mentioned above there are two sources of inefficiency: excessive copying and
+As mentioned above, there are two sources of inefficiency: excessive copying and
 `zero-but` representation.  Excessive copying is a known problem in array languages,
 and there seem to be no universal solution found so far.  However, the proposed
 heuristics (e.g. fusion is controlled by inserting let bindings) gives good practical
