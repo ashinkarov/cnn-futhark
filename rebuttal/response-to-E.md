@@ -557,7 +557,7 @@ Absolutely, see our original rebuttal response to this.  In the ideal
 world we would introduce embedding of Futhark in Agda, semantics for it
 and prove that our normalisation/compilation is semantics-preserving.
 This is very obvious future work, but it is not on a critical path
-in the following sense: Futhark's syntax is somewhat similar to Agda
+in the following sense: Futhark's semantics is somewhat similar to Agda
 and the entire normalisation/extraction takes about 50 lines of code.
 Therefore, given that we can compile and run extracted programs, the
 chances of mistakes in the translation process is relatively small.
