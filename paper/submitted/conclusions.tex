@@ -1,0 +1,49 @@
+\section{Conclusions\label{sec:conclusions}}
+
+We have demonstrated a technique of developing high performance
+applications with strong correctness guarantees, including the absence
+of out-of-bound indexing, certain functions being inverses,
+well-scopedness and well-typedness of the embedded DSL, and
+semantics-preserving optimisations.
+
+The key insight lies in using a proof assistant in cooperation with a
+high-performance language of choice. This gives a clear separation of
+concerns that is very difficult to achieve within a single language.
+The proof assistant is used to design a specification, prove all the
+correctness invariants of interest and performs an extraction into a
+high-performance language, in our case Futhark, although only a
+relatively small part of our work is specific to that language.
+
+Having a trusted specification as well as entire code generation
+pipeline within a dependently-typed framework is incredibly
+powerful. As we have demonstrated at the example of the neural
+network, we can introduce domain-specific optimisations and
+transformations, such as automatic differentiation. For our example,
+the entire framework that includes array theory, DSL, optimisations
+and extraction is about 2000 lines of Agda code.
+
+A lot of pieces that we have developed in this paper can be reused in
+other numerical applications. However, there are many more
+opportunities that we did not yet explore. We can formalise other
+correctness criteria for our specification spanning from verified
+extraction to functional correctness of the actual application such
+as CNN robustness.
+Choosing DSL primitives so that specificational clarity and
+performance requirements are at balance is an interesting question.
+Guaranteeing asymptotic efficiency of the AD implementation is another
+interesting research direction.  Currently we rely on
+optimisations which is known to be a fragile technique, despite its efficiency 
+in many cases.  Identifying a normal form for the optimisations would
+be a more fundamental approach.  Richer languages with more
+control flow may require us choosing more powerful
+encoding for the adjoint structures.
+
+
+There are indeed plenty of opportunities, but the key point is this.
+Correctness and performance are competing requirements when it comes
+to application design. Therefore, such a cooperation between
+correctness-oriented and performance-oriented tools is likely to
+persist. With this work we demonstrate that such cooperation can be
+done using fairly straightforward means, by Agda standards, and obtain
+compelling practical performance.
+

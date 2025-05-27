@@ -1,0 +1,66 @@
+\section{Introduction\label{sec:intro}}
+
+The year is 2025, and we still have to make a formidable choice between
+correctness and performance for all the programming projects that we start.
+Low level programming languages such as C or Fortran make it possible to leverage
+intricate hardware features for the price of poor analysability and
+correctness guarantees.  Dependently-typed systems such as Lean or Agda make it possible
+to describe arbitrary invariants within the given program, yet they can
+rarely generate high-performance code.
+
+The idealist inside of us is exasperated, because there should be a
+perfect solution that caters for both cases. However, the practitioner
+within us proposes a different perspective. Instead of using a single
+language, we may use two languages in cooperation. Specifically, we
+envision an alliance between a proof assistant and some
+high-performance language of our choice, where we extract code from
+the latter to the former.
+
+To explore this idea, we investigate the concrete problem of automatic differentiation (AD) which
+is often found in machine learning applications.  This is a convenient case study
+as it comes with the following challenges.  From the correctness perspective,
+it is crucially important to track the shapes and ranks of the tensors,
+guaranteeing the absence of out-of-bound indexing.
+This is a very common source of errors that can be difficult
+to find.   Secondly, we have to compute derivatives of the given tensor expressions,
+preserve safe indexing guarantees while we do so, and we have to be able to translate
+the computed expressions into some high-performance language.
+As machine learning applications
+are known to be numerically intensive problems, our performance challenge lies
+in running the program as fast as we can on the chosen hardware architecture.
+
+We follow~\cite{cnn-array} which demonstrates that it is possible to implement
+one of the canonical convolutional neural network (CNN) in the array
+language SaC~\cite{sac1, sac2}, obtaining good sequential and parallel performance
+that is competitive with TensorFlow~\cite{ad-tf} and PyTorch~\cite{ad-pytorch}.
+Focussing on correctness, we propose
+a theory of rank-polymorphic arrays~\cite{rank-poly} in Agda~\cite{agda-2-6-3}.
+Within this framework, we encode the CNN from~\cite{cnn-array} and lift it 
+into an embedded DSL.  We implement AD
+(reverse mode) and domain-specific optimisations for expressions in that DSL.
+Finally, we implement an extraction 
+into Futhark (a functional array language), apply the CNN to the MNIST digit recognition problem,
+and compare performance with TensorFlow.
+
+As a result, we demonstrate an approach where the entire specification,
+optimiser, AD and code generation are available to us within a proof
+assistant of our choice.  We can prove facts about all the
+stages of the pipeline and easily adjust them to our liking.
+We argue that such a liberating
+approach is feasible in practice, at least for the times of dialectic
+of correctness and performance.
+
+
+The contributions of this paper are as follows:
+\begin{enumerate}
+  \item a rank-polymorphic array theory and implementation of
+        the CNN from~\cite{cnn-array} in Agda;
+  \item an embedded DSL in Agda which supports AD (reverse mode);
+  \item an extraction mechanism for generating Futhark code from the DSL; and
+  \item an experimental evaluation of the generated codes.
+\end{enumerate}
+
+This paper is written in literate Agda, which guarantees that all the code
+snippets have been type-checked.
+
+
