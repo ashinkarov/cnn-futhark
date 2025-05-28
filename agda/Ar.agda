@@ -278,3 +278,7 @@ module ArTests where
   _ : suc (4 ∷ 4 ∷ []) ≈ (5 ∷ 5 ∷ [])
   _ = it
 
+  
+  _ : {f : Y → Z} {g : X → Y} → ∀ (a : Ar s X) → map f (map g a) ≡ map (f ∘ g) a
+  _ = λ _ → refl
+
