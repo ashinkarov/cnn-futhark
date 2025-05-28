@@ -349,7 +349,7 @@ to apply \AB{f} to all the elements of \AB{a}; and \AF{zipWith}\ \AB{f}
 
 Array shapes can be concatenated as lists.  We call this operation
 \emph{shape product} and we denote it with \AF{\_⊗\_} (because this
-correspond to the shape of tensor product).  Positions of sub-shapes
+corresponds to the shape of tensor product).  Positions of sub-shapes
 can be joined into a position of a product shape using the \AF{\_⊗ₚ\_}
 operation.  Dually, positions of a product shape can be split into
 positions of the corresponding subshapes using \AF{split}.  The types
@@ -1610,7 +1610,7 @@ and then sum it up.
 \end{code}}
 \end{mathpar}
 Note that in the definition of \AF{conv₁} we use a standard array language
-trick --- we pull summation to the outside.  For example, fot $m = 3$, $n = 2$,
+trick --- we pull summation to the outside.  For example, for $m = 3$, $n = 2$,
 a straight-forward way to compute (\AF{conv₁} $[a_1, a_2, a_3, a_4, a_5]$
 $[w_1, w_2, w_3]$) would be $[a_1w_1 + a_2w_2 + a_3w_3, a_2w_1 + a_3w_2 +
 a_4w_3,\dots]$.  However, the above definition proceeds as $w_1[a_1,a_2,a_3] +
@@ -1635,7 +1635,7 @@ of $p$ and $q$.  A similar relation \AF{suc\_≈\_} is introduced for $1 + n$
 case, and \AF{\_*\_≈\_} witnesses point-wise
 multiplication that will be needed for blocking.  We define these relations
 in two steps.  Firstly, we give a generalised pointwise relations for binary
-and trenary relations on natural numbers:
+and ternary relations on natural numbers:
 \begin{mathpar}
 \codeblock{\begin{code}%
 %
@@ -2465,10 +2465,10 @@ The logistic function computes ${1}/(1 + e^{-x})$ for every element in the array
 One of the steps of the machine learning algorithm is average pooling which
 splits an array into sub-blocks and computes the average for every such
 block.  Implementing this pattern generally is tricky as we have to
-preserve local neighbourhood within the blocks.  Working with a
-pre-blocked array would be inconvenient as the blocked shaped
+preserve the local neighbourhood within the blocks.  Working with a
+blocked array would be inconvenient as the blocked shape
 does not go well with \AF{slides}.  We solve this by introducing
-blocked selections into arrays of shape $(s * p)$ as well
+blocked selections \AF{selb} into arrays of shape $(s * p)$ as well
 as blocked array constructor \AF{imapb} that builds an array of
 shape $(s * p)$ out of $s$ blocks of shape $p$.  Defining these
 operations we require pairing and projections of the blocked indices

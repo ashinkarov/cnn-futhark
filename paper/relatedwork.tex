@@ -41,8 +41,8 @@ are tightly integrated with the tools. The problem here is that most of of these
 have very large and sophisticated implementations typically comprising
 of hundreds of thousands of lines of code.  Note that while our work
 does not give a formal proof that AD implementation is correct (it is
-not clear how to formulate correcntess criteria for it), the entire
-implementatuion of AD is about 20 lines of code, so it is easy to
+not clear how to formulate correctness criteria for it), the entire
+implementation of AD is about 20 lines of code, so it is easy to
 understand and modify.
 
 Another line of work studies high-level principles of AD using
@@ -85,7 +85,7 @@ Accelerate~\cite{10.1145/1926354.1926358} (a Haskell library for
 accelerator programming) in Agda~\cite{thiemann2013agda}. Their
 approach was based on dynamic code generation by invoking Accelerate
 through Agda's foreign function interface, which posed various
-unresolved implementation challenges. Even though our for support rank
+unresolved implementation challenges. Even though our support for rank
 polymorphism results in having even more complicated types, our code
 extraction, which is essentially ahead-of-time compilation, is fairly
 unproblematic.
@@ -104,22 +104,22 @@ and this is one of the reasons why we can map them so easily to GPUs.
 
 \paragraph{Type systems}
 
-Verifying index operations is a classic application of dependent
-types, as seen in for example Dependent
-ML~\cite{10.1145/292540.292560}, although most work assumes static
-ranks. Our target language, Futhark, supports size-dependent
-types~\cite{10.1145/3609024.3609412}, but this information is used
-only to ensure shape conformance (e.g., that the operands to a matrix
-multiplication have the same size), not to ensure the correctness of
-array indexing. Single-Assignment C~\cite{sac2} (SaC) supports rank
-polymorphism, including dynamic ranks, but does not guarantee that
-absence of indexing errors.
+Verifying index operations is a classic application of dependent types, as seen
+in for example Dependent ML~\cite{10.1145/292540.292560}, although most work
+assumes static ranks. Our target language, Futhark, supports size-dependent
+types~\cite{10.1145/3609024.3609412}, but this information is used only to
+ensure shape conformance (e.g., that the operands to a matrix multiplication
+have the same size), and does not guarantee that array indexing is in-bounds.
+Single-Assignment C~\cite{sac2} (SaC) supports rank polymorphism, including
+dynamic ranks, but does not guarantee that absence of indexing errors.
 
-Gibbons showed how to express rank polymorphism in Haskell, through
-the use of \emph{Naperian functors}~\cite{10.1145/2976022.2976023}.
-This form of rank polymorphism is more limited than ours; in
-particular, it imposes static ranks. Further, Gibbons' work focused
-solely on the embedding in Haskell, while our system also supports
-code extraction and demonstrates good real-world performance.
-Similarly, Remora~\cite{rank-poly} is a dependently typed
-rank-polymorphic language that also supports only static ranks.
+Gibbons showed how to express rank polymorphism in Haskell, through the use of
+\emph{Naperian functors}~\cite{10.1145/2976022.2976023}. This form of rank
+polymorphism is more limited than ours; in particular, it imposes static ranks.
+This is also the case for libraries that provide rank polymorphic array
+operations, such as Accelerate~\cite{10.1145/1926354.1926358} and
+Repa~\cite{10.1145/1932681.1863582}. Further, Gibbons' work focused solely on
+the embedding in Haskell, while our system also supports code extraction and
+demonstrates good real-world performance. Similarly, Remora~\cite{rank-poly} is
+a dependently typed rank-polymorphic language that also supports only static
+ranks.

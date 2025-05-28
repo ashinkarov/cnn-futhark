@@ -708,15 +708,15 @@ Let us motivate the presence of three flavours of \AC{imap}/\AC{sel}
 constructors.  The difference between \AC{imap} and \AC{imapb} follows
 from the previous definitions: the former turns an $s$-shaped array
 of $p$-shaped arrays into a $(s ⊗ p)$-shaped array, whereas \AF{imapb}
-performs tiling based on the $s * p ≈ q$ equation.  Strictly speaking, 
-scalar version of imap, that we call \AC{imaps}, is not needed, because
+performs tiling based on the $s * p ≈ q$ equation.  Strictly speaking, the
+scalar version of imap (\AC{imaps}) is not needed, because
 the same functionality can be achieved with \AC{imap}/\AC{sel}.
 However, if \AF{imap} computes a scalar in the body, its resulting shape 
 is $s ⊗ \AF{unit}$ which is not definitionally equal to $s$.  Using
 \AC{sel} for selecting a scalar from an $s$-shaped array requires
 casting the shape into $s ⊗ \AF{unit}$.  Hence every scalar imap or
 selection will require transporting over the $s ⊗ \AF{unit} ≡ s$ equality,
-This significantly clutters expressivity.  One could quotient the shape
+This significantly clutters equality.  One could quotient the shape
 type by the above equality, but this requires switching to a more
 powerful type theory such as setoid- or cubical type theory.
 
@@ -1392,7 +1392,7 @@ in recursive calls when it is passed unchanged.
 \AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
 \AgdaSymbol{⦄}\<%
 \end{code}
-Mostly, the interpretation is a straightforward mapping into the \AF{Ar} constructors.
+Mostly, the interpretation is a straightforward mapping to the \AF{Ar} constructors.
 In the \AC{imaps} case we can see how the implicit conversion from what would be a
 shape $s ⊗ \AF{unit}$ into $s$.  In case of \AC{sels} we make a singleton array
 using \AF{K}. Note that \AC{sum} has explicit summation index like in a mathematical

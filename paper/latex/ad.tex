@@ -64,15 +64,14 @@ $\frac{\partial y}{\partial x}
     \frac{\partial w_2}{\partial w_1}
     \frac{\partial w_1}{\partial x}$.  The difference between the forward and reverse
     mode lies in the direction that we traverse the chain rule.  In forward mode we
-    traverse the chain inside-out, and the revers mode traverses the chain outside-in,
-    thus computing the recursive relation:
+    traverse function compositions from right to left (following normal evaluation rules), and the reverse mode traverses from left to right, thus computing the recursive relation:
 $\frac{\partial y}{\partial w_i}
   = \frac{\partial y}{\partial w_{i+1}}
     \frac{\partial w_{i+1}}{\partial w_i}$.  For our example, we compute
 $\frac{\partial y}{\partial w_2}$, then $\frac{\partial w_2}{\partial w_1}$ and
 finally $\frac{\partial w_1}{\partial x}$.  While there seem to be no difference for
 functions of one variable, there is a big difference for functions of $n$ variables
-as we can compute derivatives of all the non-dependent variables simultaneously.
+as we can compute partial derivatives with respect to all of the inputs simultaneously.
 Consider an example of the $z = f\ x\ y = sin(xy + x)$:
 \begin{eqnarray*}
   w_0 &=& x \\
@@ -82,7 +81,7 @@ Consider an example of the $z = f\ x\ y = sin(xy + x)$:
   w_4 &=& \sin w_3 = z
 \end{eqnarray*}
 We compute the adjoints $\bar{w}_i = \frac{\partial y}{\partial w_i}$ using the following
-rule.  If $w_i$ has successors in the computational graph, we can apply the chain rule
+rule.  Denoting by $succ\ i$ the index of those variables that reference $w_i$ in their definitions\footnote{If we model the computation as a graph with edges from uses to definitions of variables, as is commonly done in the AD literature, then this corresponds to the successors of $w_i$.}, we can apply the chain rule
 as follows:
 \[ 
     \bar{w}_i = \sum_{j \in succ\ i} \bar{w}_j\frac{\partial w_j}{\partial w_i}

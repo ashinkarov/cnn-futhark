@@ -4,15 +4,9 @@ List of minor remarks suggested by reviewers. Remove the ones that have been don
 
 l5: "strong correctness guarantees" -- like/namely?
 
-l80: "distinguishes it from most existing approaches" -- Sure, but there are also several rank polymorphic DSLs/libaries already, like Accelerate. Maybe mention them somewhere?
-
-l102: say somewhere that S is simply a list of natural numbers
-
 l102: It would be helpful to say here what the intended semantics of Ar [n1, ..., nk] is, i.e. R^{n1 x ... x nk} = R^{n1} (x) ... (x) R^{nk}.
 
 l111: maybe note that you can define n-ary zipWith's even.
-
-l119: corresponds
 
 l136: why call this a sum rather than a fold? this is particularly confusing as later sum is just a sum.
 
@@ -24,12 +18,6 @@ l160: "\exists" -- Explain. Contrast with "\Sigma". Does the choice matter here?
 
 l172-l180:  This is currently super unclear and should probably be rewritten.
 
-l204: for
-
-l204-205: It is unclear to me what the alternative is.
-
-l220: ternary
-
 l224: Explain instance argument syntax {{}} here.
 
 l220-225: Say in prose what these relations do/capture.
@@ -39,10 +27,6 @@ l235: Remind readers of Agda's notation for identity types.
 l258: Equations relating slide and backslide?
 
 l297: "the local neighbourhood"
-
-l298: rephrase sentence. grammar does not work.
-
-l299: blocked selections "selb"
 
 l329-342: very nice
 
@@ -56,47 +40,21 @@ l401-402: say in words what imap(s/b) and sel(s/b) are supposed to do.
 
 l411: explain how zero-but gives a conditional.
 
-l429: that we call imaps 
-
-l433: equality.
-
-l494: verb missing
-
 l501-552: isn't this all standard? is the only point to introduce your notation?
 
 l554-694: Interesting! I didn't know this technique. Is this a novel contribution? If so, maybe list it in the intro?
 
 l702-735: Why so much white space? This seems like a perfect place to insert some diagrams/graphs!
 
-l714-718: "inside-out....outside-in" -- This is quite vague and does not help the reader understand the difference between forward and reverse mode.
-
-l716: reverse mode
-
-l719: we can compute partial derivatives with respect to all of the inputs
-
-l729: "computational graph" -- what is that? it comes out of nowhere here!
-
 l786-791: please explain a bit more here.
 
 l797-830: What is the complexity of the resulting algorithm? Is it as expected from reverse AD?
-
-l925: is this how you fix expensive one-hot arrays?
-
-l942-944: :-(
-
-l1079: What about even larger datasets?
 
 l1122: You may want to include some comparisons here to
 de Vilhena, Paulo Emílio, and François Pottier. "Verifying an Effect-Handler-Based Define-By-Run Reverse-Mode AD Library." Logical Methods in Computer Science 19 (2023).
 Paszke, Adam, et al. "Getting to the point: index sets and parallelism-preserving autodiff for pointful array programming." Proceedings of the ACM on Programming Languages 5.ICFP (2021): 1-29.
 Smeding, Tom J., and Matthijs IL Vákár. "Efficient CHAD." Proceedings of the ACM on Programming Languages 8.POPL (2024): 1060-1088.
 Smeding, Tom, and Matthijs Vákár. "Parallel dual-numbers reverse ad." arXiv preprint arXiv:2207.03418 (2022).
-
-l1145: correctness 
-
-l1171: "Even though our support for.."
-
-l1185-1187: Explain more please. I don't understand the difference.
 
 l1197: "certain functions being inverses" -- where do you use this?
 
