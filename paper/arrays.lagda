@@ -25,7 +25,7 @@ which is well-suited for specifying numerical applications such as CNNs.
 The work in the rest of the paper is presented in Agda, with which we assume some
 familiarity.
 For gentle introductions to Agda we refer to one of the tutorials that are freely available
-online\footnote{See \url{https://agda.readthedocs.io/en/v2.7.0.1/getting-started/tutorial-list.html}.}.
+online.\footnote{See \url{https://agda.readthedocs.io/en/v2.7.0.1/getting-started/tutorial-list.html}.}
 
 The conciseness of the CNN specification
 in~\cite{cnn-array} relies on rank-polymorphism, which is the ability to operate
@@ -53,9 +53,11 @@ is indexed by shapes \AD{S}.  A position within an array of shape \AB{s}
 is a list of natural numbers of the same length as $s$ where all elements
 are less than the corresponding elements of $s$.
 
-Arrays are given by the type \AF{Ar} \AB{s} \AB{X} where $s$ is a shape of
-the array and $X$ is the type of array elements.  Formal definitions of
-\AF{S}, \AF{P} and \AF{Ar} are as follows:
+Arrays are given by the type \AF{Ar} \AB{s} \AB{X} where $s$ is a shape of the
+array and $X$ is the type of array elements. We allow shapes to be empty, in
+which case the array represents a scalar. Formal definitions of \AF{S}, \AF{P}
+and \AF{Ar} are as follows:
+
 \begin{mathpar}
 \codeblock{\begin{code}
   data S : Set where
@@ -443,7 +445,7 @@ that both shapes
 have the same length.  If they do, their components are added point-wise.
 We define a three-way relation \AF{\_+\_≈\_} that combines the witness and
 the action.  That is, the type \AB{p} \AF{+} \AB{q} \AF{≈} \AB{r} says that
-$p$ and $q$ have the same length and that $q$ is a point-wise addition
+$p$ and $q$ have the same length and that $r$ is a point-wise addition
 of $p$ and $q$.  A similar relation \AF{suc\_≈\_} is introduced for $1 + n$
 case, and \AF{\_*\_≈\_} witnesses point-wise
 multiplication that will be needed for blocking.  We define these relations
@@ -481,7 +483,7 @@ a larger number of cases than if we were to use hidden arguments.
 \end{code}
 
 The second step is to define the actual relations.  With the help of composition
-combinators ($f$ \AF{∘} $g$ = λ x → f (g x)) and ($f$ \AF{∘₂} $g$ = λ x y → f (g x y))
+combinators ($f$ \AF{∘} $g$ = λ x → $f$ ($g$ x)) and ($f$ \AF{∘₂} $g$ = λ x y → $f$ ($g$ x y))
 the definitions are as follows.
 \begin{mathpar}
 \codeblock{\begin{code}
@@ -514,7 +516,7 @@ the cases when the inverse does not exist.
   _⊝ₚ_ : (i : P r) (j : P s) (su : suc p ≈ u) (sp : s + p ≈ r) → Dec (∃ λ k → (j ⊕ₚ k) su sp ≡ i)
 \end{code}}
 \end{mathpar}
-The implementation of \AF{⊕ₚ} and \AF{⊝ₚ} simply apply \AF{⊕} and \AF{⊝}
+The implementations of \AF{⊕ₚ} and \AF{⊝ₚ} simply apply \AF{⊕} and \AF{⊝}.
 In the \AF{⊝} case a little plumbing is required when constructing the
 proof of (non-)existence of the inverse.
 \begin{code}[hide]

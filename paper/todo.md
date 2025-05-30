@@ -60,11 +60,6 @@ l1197: "certain functions being inverses" -- where do you use this?
 
 ## C
 
- - 52: "focussing" should be focusing
-
- - 76: minor stylistic comment: the superscript 1 should be on the period, not the last word in the
-   sentence.
-
  - 86: I'm a little confused, should an array of rank 0 not be simply the trivial vector
    space/module? The space of scalars is dimension 1, not 0 in standard mathematics in my
    experience.
@@ -98,12 +93,6 @@ l1197: "certain functions being inverses" -- where do you use this?
    could Agda not always update in the future to make this code just pass the empty environment
    instead?
 
- - 716: "revers" to "reverse"
-
- - 720: What is a "computational graph" in this context? Is it the dependency graph of expressions?
-
- - 725: 𝑤2= 𝑤1𝑤2 has a typo
-
  - Is the terminology adjoint standard? I've seen "partials" or "1-forms" for these objects.
 
 ## D
@@ -112,8 +101,6 @@ l1197: "certain functions being inverses" -- where do you use this?
 
 - l99 Maybe add a footnote to the extend that `S ▷ P` is a container (I guess that motivated the letters `S` and `P`).
   However, I agree with your choice to not overload the paper with technical terms that do not help understanding.
-
-- l103 It is worth remarking that an array of dimension 0 (shape `[]`) is a singleton ("skalar").
 
 - l136 Is there a reason to use `ι n` instead of the standard `[ n ]` for the singleton `n`?
 
@@ -127,16 +114,6 @@ l1197: "certain functions being inverses" -- where do you use this?
   but maybe thinking in terms of non-empty folds (`fold1`) is more appropriate here.
 
 - l169 I think the surprise goes away if the second hypothesis is written as $j ≤ n$ rather than $j + 1 < n$.
-
-- l205 "fot" → for
-
-- l216 "that $q$ is a point-wise addition" → that $r$ is ...
-
-- l220 "trenary" → ternary
-
-- l232 "f (g x)" and "f (g x y)" are in the wrong font
-
-- l246 "The implementation[s] of..."  Grammar and missing full stop.
 
 - l295ff A picture would help in the visualization of block formation (for low dimensions).
 
@@ -153,29 +130,15 @@ l1197: "certain functions being inverses" -- where do you use this?
 
 - Section 5: There is a drop in quality in the exposition of this section.  It deserves some serious polishing.
 
-- l716 "revers[e] mode"
-
 - l717 Having to juggle with the aliases $y = w₃$ and $x = w₀$ obstructs the pattern.
 
 - l720 What role is served by $f x y$ here?  Why not simply $z = \sin(xy + x)$.
-
-- l720 $sin$ should be $\sin$.
-
-- l724 $w₂ = w₁ w₂$ I guess this should be $w₂ = w₀ w₁$.  The aliases even confuse you.
-
-- l729 ∂y should be ∂z, should it?
-
-- l729 Please state what a "successor in the computational graph is", by example.
-       E.g. for $w₂$ is $w₃$ the successor or are these $w₀$ and $w₁$?
-       Make sure to include an example with more than one successor!
 
 - l737ff I am totally lost here.  Please provide more calculation steps for each line.
          You got plenty of unused horizontal space here!
 
 - l746 "If we inline all the $\bar{w}ᵢ$ definitions"  Again more steps please.
     If I do this myself, I am left with $\bar{w}₀ = \cos w₃ + (\cos w₃)²·x$ which isn't close to the results you report.
-
-- l1000 This parenthesis never closes.
 
 - l1015 So Futhark code is represented just by a `String`?
         Why don't you model the relevant parts by some abstract syntax?

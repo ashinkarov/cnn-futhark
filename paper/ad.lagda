@@ -43,15 +43,15 @@ $\frac{\partial y}{\partial w_2}$, then $\frac{\partial w_2}{\partial w_1}$ and
 finally $\frac{\partial w_1}{\partial x}$.  While there seem to be no difference for
 functions of one variable, there is a big difference for functions of $n$ variables
 as we can compute partial derivatives with respect to all of the inputs simultaneously.
-Consider an example of the $z = f\ x\ y = sin(xy + x)$:
+Consider an example of the $z = f\ x\ y = \sin(xy + x)$:
 \begin{eqnarray*}
   w_0 &=& x \\
   w_1 &=& y \\
-  w_2 &=& w_1w_2\\
+  w_2 &=& w_0 w_1\\
   w_3 &=& w_2 + w_0 \\
   w_4 &=& \sin w_3 = z
 \end{eqnarray*}
-We compute the adjoints $\bar{w}_i = \frac{\partial y}{\partial w_i}$ using the following
+We compute the adjoints $\bar{w}_i = \frac{\partial z}{\partial w_i}$ using the following
 rule.  Denoting by $succ\ i$ the index of those variables that reference $w_i$ in their definitions\footnote{If we model the computation as a graph with edges from uses to definitions of variables, as is commonly done in the AD literature, then this corresponds to the successors of $w_i$.}, we can apply the chain rule
 as follows:
 \[ 
@@ -770,7 +770,7 @@ have a significant performance cost.  For example, in the expression
 allocates memory for $a$ and manifests elements in memory, and within the
 body of the let, selection fetches array elements from memory.  If we were
 to inline $a$ by replacing $a[f\ j]$ with $e[i := f\ j]$, we would loose sharing,
-potentially recomputing $e$ (at index $f\ j$ much more often than needed.
+potentially recomputing $e$ (at index $f\ j$) much more often than needed.
 \Eg{} assume that $i$ ranges over 10 elements, but $j$ over $10^5$.
 Resolving when such inlining is beneficial for performance is non-trivial,
 so Futhark (and many other array languages) does not inline 
