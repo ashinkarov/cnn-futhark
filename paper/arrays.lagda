@@ -80,8 +80,9 @@ the array and $X$ is the type of array elements.  Formal definitions of
   Ar s X = P s → X
 \end{code}}
 \end{mathpar}
+The type \AF{Fin} $n$ represents natural numbers bounded by $n$.
 As arrays are functions, selections are function applications and
-array constructor is a function definition (\eg{} via $\lambda$-abstraction).
+the array constructor is a function definition (\eg{} via $\lambda$-abstraction).
 
 \paragraph{Array Combinators} It is helpful to invest a little time
 in defining array combinators.  First, we can observe that \AD{Ar} of

@@ -58,19 +58,6 @@ Smeding, Tom, and Matthijs Vákár. "Parallel dual-numbers reverse ad." arXiv pr
 
 l1197: "certain functions being inverses" -- where do you use this?
 
-## B
-
-
-* Line 76, "The work in the rest of the paper is presented in Agda, with which
-  we assume some familiarity." I appreciated the comment upfront. The paper
-  assumes a fair bit of Agda knowledge even for someone who has used other proof
-  assistants and dependently typed programming languages.
-
-* Line 162, "Recall that the type Fin n is a type for natural numbers i that are
-  bounded by n (i.e. i < n)." This should come at first use. See Line 104.
-
-* Line 1145, "implementatuion" implementation.
-
 ## C
 
  - 52: "focussing" should be focusing
