@@ -122,10 +122,6 @@ l1197: "certain functions being inverses" -- where do you use this?
 
 - l456 "expressions in E Γ _is_" use parentheses "(E Γ _is_)"
 
-- l696ff This section may offer opportunities for salvaging some space if you are struggling with the page limit:
-  it feels things are spaced out much more generously than in the other sections.
-
-
 - l1015 So Futhark code is represented just by a `String`?
         Why don't you model the relevant parts by some abstract syntax?
         Can you even prove something about your normalization function when you juggle with monsters like `String → String` to represent a Futhark context?

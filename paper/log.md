@@ -10,6 +10,8 @@ typos, and addressed the following comments of the reviewers:
 > - Is the terminology adjoint standard? I've seen "partials" or "1-forms" for these objects.
 
 > (D)
+> - l696ff This section may offer opportunities for salvaging some space if you are struggling with the page limit:
+>   it feels things are spaced out much more generously than in the other sections.
 > - Section 5: There is a drop in quality in the exposition of this section.  It deserves some serious polishing.
 > 
 > - l717 Having to juggle with the aliases $y = w₃$ and $x = w₀$ obstructs the pattern.
