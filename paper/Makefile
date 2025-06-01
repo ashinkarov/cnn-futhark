@@ -5,7 +5,10 @@ all: paper.pdf
 
 
 .PHONY: paper.tex
-paper.tex : latex/arrays.tex latex/lang.tex latex/ad.tex
+paper.tex : latex/arrays.tex latex/lang.tex latex/ad.tex ad-example.pdf
+
+ad-example.pdf: ad-example.tex
+	TEXINPUTS=./latex:$$TEXINPUTS latexmk -pdf -f -pdflatex='pdflatex -halt-on-error' $<
 
 latex/%.tex : %.lagda
 	agda --latex -l standard-library -i . $< #--only-scope-checking $<

@@ -42,68 +42,95 @@
 
 \section{Automatic Differentiation\label{sec:ad}}
 
-We implement the reverse mode of automatic differentiation
-for expressions in \AF{E}.  We focus on reverse mode because it is
-of most interest in machine learning, and it is more challenging to implement.
-We start with a brief introduction of the AD, for much more in-depth
-explanations refer to~\cite{autodiff-survey, backprop-stlc}.   Consider differentiating
-a function composition consisting of three functions:
-\[ 
-   y = (f \circ g \circ h)\ x
-\]
-We rewrite it using temporary variables:
-\begin{eqnarray*}
-  w_0 &=& x \\
-  w_1 &=& h\ w_0 \\
-  w_2 &=& g\ w_1 \\
-  w_3 &=& f\ w_2 = y
-\end{eqnarray*}
-The chain rule gives us 
-$\frac{\partial y}{\partial x} 
-  = \frac{\partial y}{\partial w_2}
-    \frac{\partial w_2}{\partial w_1}
-    \frac{\partial w_1}{\partial x}$.  The difference between the forward and reverse
-    mode lies in the direction that we traverse the chain rule.  In forward mode we
-    traverse function compositions from right to left (following normal evaluation rules), and the reverse mode traverses from left to right, thus computing the recursive relation:
-$\frac{\partial y}{\partial w_i}
-  = \frac{\partial y}{\partial w_{i+1}}
-    \frac{\partial w_{i+1}}{\partial w_i}$.  For our example, we compute
-$\frac{\partial y}{\partial w_2}$, then $\frac{\partial w_2}{\partial w_1}$ and
-finally $\frac{\partial w_1}{\partial x}$.  While there seem to be no difference for
-functions of one variable, there is a big difference for functions of $n$ variables
-as we can compute partial derivatives with respect to all of the inputs simultaneously.
-Consider an example of the $z = f\ x\ y = \sin(xy + x)$:
-\begin{eqnarray*}
-  w_0 &=& x \\
-  w_1 &=& y \\
-  w_2 &=& w_0 w_1\\
-  w_3 &=& w_2 + w_0 \\
-  w_4 &=& \sin w_3 = z
-\end{eqnarray*}
-We compute the adjoints $\bar{w}_i = \frac{\partial z}{\partial w_i}$ using the following
-rule.  Denoting by $succ\ i$ the index of those variables that reference $w_i$ in their definitions\footnote{If we model the computation as a graph with edges from uses to definitions of variables, as is commonly done in the AD literature, then this corresponds to the successors of $w_i$.}, we can apply the chain rule
-as follows:
-\[ 
-    \bar{w}_i = \sum_{j \in succ\ i} \bar{w}_j\frac{\partial w_j}{\partial w_i}
-\]
-For our example:
-\begin{eqnarray*}
-  \bar{w}_4 &=& 1 = \frac{\partial z}{\partial z} \\
-  \bar{w}_3 &=& \bar{w}_4 \cos w_3\\
-  \bar{w}_2 &=& \bar{w}_3 \cdot 1 \\
-  \bar{w}_1 &=& \bar{w}_2 w_0 \\
-  \bar{w}_0 &=& \bar{w}_3 + \bar{w}_2 w_1
-\end{eqnarray*}
-If we inline all the $\bar{w}_i$ definitions and inspect the values of partial derivatives
-with respect to $x$ and $y$ we obtain expected results:
-$\frac{\partial z}{\partial x} = \cos (xy + x)(y + 1)$ and
-$\frac{\partial z}{\partial y} = \cos (xy + x)x$.
+
+We implement the reverse mode of automatic differentiation for expressions in
+\AF{E}. Our focus on reverse mode is due to its significance in machine
+learning and the increased complexity associated with its implementation. We
+begin with a brief introduction to automatic differentiation; for more
+comprehensive explanations, please refer to~\cite{autodiff-survey,
+backprop-stlc}.
+
+Consider the differentiation of a function composition consisting of the
+functions \(f\), \(g\), and \(h\):
+\(
+y = (f \circ g \circ h)\ x.
+\)
+By introducing temporary variables (on the left-hand side), the
+chain rule (on the right-hand side) is defined as follows:
+\begin{mathpar}
+  w_0 = x; \quad w_1 = h\ w_0; \quad w_2 = g\ w_1; \quad y = f\ w_2
+  \and
+  \frac{\partial y}{\partial x} = \frac{\partial y}{\partial w_0} 
+    = \frac{\partial y}{\partial w_2}
+      \frac{\partial w_2}{\partial w_1}
+      \frac{\partial w_1}{\partial w_0}.
+\end{mathpar}
+The primary distinction between the forward and reverse differentiation modes
+lies in the direction in which the chain rule is traversed. In forward mode, we
+traverse function compositions from right to left (following the order of
+evaluation), whereas in reverse mode, we traverse from left to right, thereby
+computing the recursive relation:
+\(
+\frac{\partial y}{\partial w_i} = \frac{\partial y}{\partial w_{i+1}} \frac{\partial w_{i+1}}{\partial w_i}.
+\)
+In our example, we compute \(\frac{\partial y}{\partial w_2}\), followed by
+\(\frac{\partial w_2}{\partial w_1}\), and finally \(\frac{\partial
+w_1}{\partial w_0}\). While the direction appears to make no difference for functions of
+a single variable, a significant difference arises for functions of \(n\)
+variables, as we can compute partial derivatives with respect to all inputs
+simultaneously.
+
+\paragraph{Example of Reverse AD}
+We illustrate the process using the function \(\sin(xy + x)\) of two arguments \(x\)
+and \(y\)
+(on the left-hand side) with temporary variables introduced on the right-hand side:
+\begin{mathpar}
+  z = \sin(xy + x)
+  \and
+  w_0 = xy; \quad w_1 = w_0 + x; \quad z = \sin w_1.
+\end{mathpar}
+
+\begin{wrapfigure}{r}{.4\linewidth}
+  \includegraphics[width=\linewidth]{ad-example.pdf}
+  \caption{\label{fig:ad-graph}Reverse AD for \(z = \sin(xy+x)\)}
+\end{wrapfigure}
+
+The individual steps of the process are depicted in Fig.~\ref{fig:ad-graph},
+where the nodes represent variable definitions, and the edges connect variable
+definitions with their uses, as is commonly done in the literature on automatic
+differentiation. The steps of the reverse mode of automatic differentiation
+compute the \textit{adjoints}\footnote{In the literature these objects can be
+also called \emph{partials} or \emph{1-forms}.} \(\bar{t}\), which correspond to the partial
+derivative of \(z\) with respect to \(t\), that is, \(\bar{t} = \frac{\partial
+z}{\partial t}\). We denote by \(\mathtt{succ}\, t\) those variables that
+reference \(t\) in their definitions (the direct neighbours of \(t\) in
+Fig.~\ref{fig:ad-graph}). The chain rule provides the following formula for
+computing \(\bar{t}\) for those \(t\) that have successors:
+\(
+\bar{t} = \sum_{u \in \mathtt{succ}\, t} \bar{u} \frac{\partial u}{\partial t}.
+\)
+
+We conceptually traverse the graph in Fig.~\ref{fig:ad-graph} from the bottom
+to the top (hence the term \emph{reverse} AD) and compute the
+adjoints for \(\bar{w}_1\), \(\bar{w}_0\), \(\bar{x}\), and \(\bar{y}\). Since
+\(z\) does not have successors, we compute \(\bar{z}\) directly: \(\bar{z} =
+\frac{\partial z}{\partial z} = 1\). It is important to note that \(x\) has two
+successors; therefore, \(\bar{x}\) is the sum of \(\bar{x}_l\) and
+\(\bar{x}_r\).
+
+Let us verify the correctness of \(\bar{x}\) and \(\bar{y}\) by inlining the
+adjoints of the temporary variables:
+\begin{align*}
+  \bar{x} &= \bar{x}_l + \bar{x}_r = \bar{w}_1 + \bar{w}_0\cdot y 
+          = \cos(w_1) + \cos(w_1)\cdot y = \cos(xy +x)(1 + y)\\
+  \bar{y} &= \bar{w}_0\cdot x = \bar{w}_1 \cdot x = \cos(w_1)\cdot x = \cos(xy + x)x
+\end{align*}
 
 
 \subsection{AD for \AD{E}}
 
-We implement reverse mode AD for the embedded language \AD{E}.  Opposed to
-the above description, we are not going to introduce temporary
+Opposed to the above description, in the implementation we are not
+going to introduce temporary
 variables for all sub-expressions, instead we rely on existing
 let bindings.  We traverse the expression with the given adjoint and
 we collect partial derivatives for each variable within the context that

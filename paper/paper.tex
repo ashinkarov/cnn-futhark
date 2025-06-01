@@ -49,6 +49,17 @@
 % Do we need this?
 \usepackage{microtype} 
 
+%\usepackage{tikz}
+\usepackage{float}
+\usepackage{wrapfig}
+
+% Fixing overfull lines
+\emergencystretch=2pt % default 0.0pt
+% This removes vertical gaps in the wrapfigure, not sure
+% whether there is a more elegant way of doing this.
+\setlength{\intextsep}{0pt}
+
+
 \newcommand\codeblock[1]{%
   %{\fbox{\begin{varwidth}{0.9\textwidth}#1\end{varwidth}}}
   {\begin{varwidth}{0.9\textwidth}#1\end{varwidth}}
