@@ -747,10 +747,8 @@ of the primitives are as follows:
 \AgdaBound{ε}\AgdaSpace{}%
 \AgdaBound{a}\AgdaSpace{}%
 \AgdaSymbol{=}\AgdaSpace{}%
-\AgdaBound{f}\AgdaSpace{}%
-\AgdaBound{ε}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaBound{a}\AgdaSpace{}%
-\AgdaInductiveConstructor{[]}\AgdaSymbol{)}\<%
+\AgdaBound{a}\AgdaSpace{}%
+\AgdaInductiveConstructor{[]}\<%
 \\
 %
 \>[2]\AgdaFunction{sum}\AgdaSpace{}%
@@ -776,11 +774,23 @@ of the primitives are as follows:
 \end{code}}
 \end{mathpar}
 
-Note that our reduction forces the types of the arguments of the binary
-operation to be the same, which is different from usual definitions of foldr.
-While this generality is not required for our example,
-it is worth noting that the standard behaviour can be recovered\footnote{
-We recover regular fold behaviour by running \AD{sum} over function composition:
+While \AF{sum} resembles \texttt{foldr}, its behaviour differs from that of a
+conventional \texttt{foldr} over a free monad. Intuitively, rather than
+selecting an order for the elements and reducing them, \AF{sum} reduces
+lower-dimensional sub-arrays (conceptually in parallel) and subsequently
+reduces the result. For instance, if we fix the binary operation \AB{f} and the
+neutral element \AB{ε} (for example, \AF{σ} = \AF{sum} \AB{f} \AB{ε}), we can
+demonstrate that \AF{σ} (\AF{map} \AF{σ} \AB{a}) \AF{≡} \AF{σ} (\AF{unnest}
+\AB{a}) for all arrays \(a\). This property simplifies some of the proofs;
+however, this subtlety becomes irrelevant when we operate within a monoid where
+\AB{f} is the binary operation and \AB{e} is the neutral element.
+
+It is also important to note that \AF{sum} enforces the types of the arguments
+of the binary operation to be identical, which distinguishes it from the
+conventional definitions of \texttt{foldr}. Although this generality is not
+necessary for the purposes of this paper, it is noteworthy that the standard
+behaviour can be recovered\footnote{We recover the regular fold behaviour by
+applying \AD{sum} over function composition:
 \begin{code}%
 %
 \>[2]\AgdaFunction{sum′}\AgdaSpace{}%
@@ -1132,7 +1142,7 @@ prerequisites for defining convolution:
 \codeblock{\begin{code}%
 %
 \>[2]\AgdaOperator{\AgdaFunction{\AgdaUnderscore{}⊝\AgdaUnderscore{}}}%
-\>[667I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[665I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{i}\AgdaSpace{}%
 \AgdaSymbol{:}\AgdaSpace{}%
 \AgdaDatatype{Fin}\AgdaSpace{}%
@@ -1144,7 +1154,7 @@ prerequisites for defining convolution:
 \AgdaDatatype{Fin}\AgdaSpace{}%
 \AgdaGeneralizable{m}\AgdaSymbol{)}\<%
 \\
-\>[.][@{}l@{}]\<[667I]%
+\>[.][@{}l@{}]\<[665I]%
 \>[6]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaRecord{Dec}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaFunction{∃}\AgdaSpace{}%
@@ -1643,7 +1653,7 @@ and ternary relations on natural numbers:
 \codeblock{\begin{code}%
 %
 \>[2]\AgdaKeyword{data}%
-\>[956I]\AgdaDatatype{Pw₂}\AgdaSpace{}%
+\>[954I]\AgdaDatatype{Pw₂}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{R}\AgdaSpace{}%
 \AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{a}\AgdaSpace{}%
@@ -1653,7 +1663,7 @@ and ternary relations on natural numbers:
 \AgdaSymbol{→}\AgdaSpace{}%
 \AgdaPrimitive{Set}\AgdaSymbol{)}\<%
 \\
-\>[.][@{}l@{}]\<[956I]%
+\>[.][@{}l@{}]\<[954I]%
 \>[7]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{a}\AgdaSpace{}%
 \AgdaBound{b}\AgdaSpace{}%
@@ -1703,7 +1713,7 @@ and ternary relations on natural numbers:
 \codeblock{\begin{code}%
 %
 \>[2]\AgdaKeyword{data}%
-\>[997I]\AgdaDatatype{Pw₃}\AgdaSpace{}%
+\>[995I]\AgdaDatatype{Pw₃}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{R}\AgdaSpace{}%
 \AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{a}\AgdaSpace{}%
@@ -1714,7 +1724,7 @@ and ternary relations on natural numbers:
 \AgdaSymbol{→}\AgdaSpace{}%
 \AgdaPrimitive{Set}\AgdaSymbol{)}\<%
 \\
-\>[.][@{}l@{}]\<[997I]%
+\>[.][@{}l@{}]\<[995I]%
 \>[7]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{a}\AgdaSpace{}%
 \AgdaBound{b}\AgdaSpace{}%
@@ -2001,7 +2011,7 @@ proof of (non-)existence of the inverse.
 %
 \>[2]\AgdaSymbol{((}\AgdaBound{i}\AgdaSpace{}%
 \AgdaOperator{\AgdaInductiveConstructor{∷}}%
-\>[1192I]\AgdaBound{is}\AgdaSymbol{)}\AgdaSpace{}%
+\>[1190I]\AgdaBound{is}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{⊝ₚ}}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{j}\AgdaSpace{}%
 \AgdaOperator{\AgdaInductiveConstructor{∷}}\AgdaSpace{}%
@@ -2021,7 +2031,7 @@ proof of (non-)existence of the inverse.
 \AgdaBound{s+p}\AgdaSpace{}%
 \AgdaSymbol{⦄)}\<%
 \\
-\>[.][@{}l@{}]\<[1192I]%
+\>[.][@{}l@{}]\<[1190I]%
 \>[8]\AgdaKeyword{with}\AgdaSpace{}%
 \AgdaBound{i}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{⊝}}\AgdaSpace{}%
@@ -2780,7 +2790,7 @@ in types.
 \begin{code}%
 %
 \>[2]\AgdaFunction{forward}%
-\>[1733I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[1731I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{inp}%
 \>[18]\AgdaSymbol{:}%
 \>[21]\AgdaFunction{Ar}\AgdaSpace{}%
@@ -2803,7 +2813,7 @@ in types.
 \AgdaInductiveConstructor{[]}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaPostulate{ℝ}\AgdaSymbol{)}\<%
 \\
-\>[.][@{}l@{}]\<[1733I]%
+\>[.][@{}l@{}]\<[1731I]%
 \>[10]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{b₁}%
 \>[18]\AgdaSymbol{:}%

@@ -297,7 +297,7 @@ module Eval (r : Real) where
     sum₁-zero {suc n} = +-neutˡ ∙ sum₁-zero {n}
 
     sum-zero : Ar.sum {s = s} _+_ (fromℕ 0) (λ _ → fromℕ 0) ≡ fromℕ 0
-    sum-zero {s = []} = +-neutʳ
+    sum-zero {s = []} = refl -- +-neutʳ
     sum-zero {s = x ∷ s} = sum₁-cong {n = x} _+_ (fromℕ 0) (λ i → sum-zero {s}) ∙ sum₁-zero {x}
 
     zbs-zero : (t : P (suc n ∷ []) → R) 
@@ -324,7 +324,7 @@ module Eval (r : Real) where
 
     zbs-sum-s : (j : P s) → (t : P s → R)
              → Ar.sum (_+_) (fromℕ 0) (λ i → zbs j i t) ≡ t j
-    zbs-sum-s [] t = +-neutˡ
+    zbs-sum-s [] t = refl --+-neutˡ
     zbs-sum-s (px ∷ j) t = sum₁-cong _+_ (fromℕ 0) {(λ i → Ar.sum _+_ (fromℕ 0)
                                                           (λ j₁ → zbs (px ∷ j) (i ++ j₁) t ))} 
                                         (λ k → sum-cong _+_ (fromℕ 0) {(λ j₁ → zbs (px ∷ j) (k ++ j₁) t)} 

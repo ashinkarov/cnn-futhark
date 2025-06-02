@@ -188,16 +188,28 @@ of the primitives are as follows:
 \and
 \codeblock{\begin{code}
   sum : (X → X → X) → X → Ar s X → X
-  sum {s = []}     f ε a = f ε (a [])
+  sum {s = []}     f ε a = a []
   sum {s = x ∷ s}  f ε a = sum₁ f ε $ map (sum f ε) (nest a)
 \end{code}}
 \end{mathpar}
 
-Note that our reduction forces the types of the arguments of the binary
-operation to be the same, which is different from usual definitions of foldr.
-While this generality is not required for our example,
-it is worth noting that the standard behaviour can be recovered\footnote{
-We recover regular fold behaviour by running \AD{sum} over function composition:
+While \AF{sum} resembles \texttt{foldr}, its behaviour differs from that of a
+conventional \texttt{foldr} over a free monad. Intuitively, rather than
+selecting an order for the elements and reducing them, \AF{sum} reduces
+lower-dimensional sub-arrays (conceptually in parallel) and subsequently
+reduces the result. For instance, if we fix the binary operation \AB{f} and the
+neutral element \AB{ε} (for example, \AF{σ} = \AF{sum} \AB{f} \AB{ε}), we can
+demonstrate that \AF{σ} (\AF{map} \AF{σ} \AB{a}) \AF{≡} \AF{σ} (\AF{unnest}
+\AB{a}) for all arrays \(a\). This property simplifies some of the proofs;
+however, this subtlety becomes irrelevant when we operate within a monoid where
+\AB{f} is the binary operation and \AB{e} is the neutral element.
+
+It is also important to note that \AF{sum} enforces the types of the arguments
+of the binary operation to be identical, which distinguishes it from the
+conventional definitions of \texttt{foldr}. Although this generality is not
+necessary for the purposes of this paper, it is noteworthy that the standard
+behaviour can be recovered\footnote{We recover the regular fold behaviour by
+applying \AD{sum} over function composition:
 \begin{code}
   sum′ : (X → Y → Y) → Y → Ar s X → Y
   sum′ f ε a = sum _∘′_ id (map f a) ε

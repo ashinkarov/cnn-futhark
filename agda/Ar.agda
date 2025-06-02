@@ -86,13 +86,40 @@ module _ where
   ιsuc : P (n ∷ []) → P (suc n ∷ [])
   ιsuc (i ∷ []) = suc i ∷ []
 
+  -- This is an alternative implementation of sum that behaves
+  -- exactly as sum (proven by theorem sum-xsum)
+  xsum : (X → X → X) → X → Ar s X → X
+  xsum {s = []} f e a = a []
+  xsum {s = zero ∷ s} f e a = e
+  xsum {s = suc x ∷ s} f e a = f (xsum f e (nest a (zero ∷ []))) 
+                                 (xsum {s = x ∷ s} f e (unnest (nest a ∘ ιsuc)))
+                                 --(λ { (i ∷ p) → a (suc i ∷ p)}))
+
+  ysum : (X → X → X) → X → Ar s X → X
+  ysum {X}{s = s} f e a = go s e a where
+    go : (s : S) → X → (Ar s X) → X
+    go [] e a = a []
+    go (n ∷ s) e a = foldr' n e (nest a)
+      where
+        foldr' : (n : ℕ) → X → (Ar (n ∷ []) (Ar s X)) → X
+        foldr' zero e a = e
+        foldr' (suc n) e a = go s (foldr' n e (unnest (nest a ∘ ιsuc))) (a (zero ∷ [])) 
+
+  --ysum-inv : (f : X → X → X) (e : X) → {a : Ar s (Ar p X)} 
+  --        → (∀ k → ysum (zipWith f) (K e) a k ≡ map (ysum f e) (λ i j → a j i) k)
+
+
   sum₁ : (X → X → X) → X → Ar (n ∷ []) X → X
   sum₁ {n = zero}   f ε a = ε
   sum₁ {n = suc n}  f ε a = f (a (zero ∷ [])) (sum₁ f ε (a ∘ ιsuc))
   
   sum : (X → X → X) → X → Ar s X → X
-  sum {s = []}    f ε a = f ε (a [])
+  sum {s = []}    f ε a = a [] --f ε (a [])
   sum {s = x ∷ s} f ε a = sum₁ f ε $ map (sum f ε) (nest a)
+
+  -- Generalised sum (foldr-like thing over dimensions).
+  sum’ : (X → Y → Y) → Y → Ar s X → Y
+  sum’ f e a = sum _∘′_ id (map f a) e
 
   sum₁-cong : (f : X → X → X) (e : X) → ∀ {a b : Ar (n ∷ []) X} → (∀ i → a i ≡ b i) 
             → sum₁ f e a ≡ sum₁ f e b 
@@ -100,8 +127,41 @@ module _ where
   sum₁-cong {n = suc n} f e pf = cong₂ f (pf (zero ∷ [])) (sum₁-cong f e (λ i → pf (ιsuc i)))
 
   sum-cong : (f : X → X → X) (e : X) → ∀ {a b : Ar s X} → (∀ i → a i ≡ b i) → sum f e a ≡ sum f e b 
-  sum-cong {s = []} f e pf = cong (f e) (pf _)
+  sum-cong {s = []} f e pf = pf [] --cong (f e) (pf _)
   sum-cong {s = x ∷ s} f e {a}{b} pf = sum₁-cong f e (λ j → sum-cong f e (λ i → pf (j ++ i))) 
+
+  sum-sum₁-agree : {a : Ar (n ∷ []) X} {f : X → X → X} {e : X} → sum₁ f e a ≡ sum f e a
+  sum-sum₁-agree {n = zero} = refl
+  sum-sum₁-agree {n = suc n} {f = f} = cong₂ f refl (sum₁-cong {n = n} _ _ λ { (i ∷ []) → refl })
+
+
+
+  xsum-cong : {f : X → X → X} {e : X} {a b : Ar s X} → (∀ i → a i ≡ b i)
+            → xsum f e a ≡ xsum f e b
+  xsum-cong {s = []} p = p []
+  xsum-cong {s = zero ∷ s} p = refl
+  xsum-cong {s = suc x ∷ s}{f = f} p = cong₂ f (xsum-cong {s = s} (λ i → p ((zero ∷ []) ++ i)))
+                                               (xsum-cong {s = x ∷ s} λ { (i ∷ s) → p (suc i ∷ s)})
+
+  sum₁-xsum : {f : X → X → X} {e : X} {a : Ar (n ∷ []) X} → sum₁ f e a ≡ xsum f e a
+  sum₁-xsum {n = zero} = refl
+  sum₁-xsum {n = suc n} {f = f}{e}{a} = cong₂ f refl (sym $ trans (sym $ sum₁-xsum {a = unnest (nest a ∘ ιsuc)}) (sum₁-cong {n = n} _ _ λ { (i ∷ []) → refl }))
+
+  
+  sum-xsum-step : {f : X → X → X} {e : X} {a : Ar (n ∷ s) X} 
+                → sum₁ f e (map (xsum f e) (nest a)) ≡ xsum f e a
+  sum-xsum-step {n = zero} {s = s} {f = f} {e} = refl
+  sum-xsum-step {n = suc n} {s = s} {f = f} {e} {a} = cong₂ f refl
+      (sym $ trans (sym $ sum-xsum-step {n = n}{s = s} {a = unnest (λ x → nest a (ιsuc x))})
+                   (sum₁-cong {n = n} f e λ { (i ∷ []) → refl }))
+
+  sum-xsum : {f : X → X → X} {e : X} {a : Ar s X} → sum f e a ≡ xsum f e a
+  sum-xsum {s = []} = refl
+  sum-xsum {s = zero ∷ s} = refl
+  sum-xsum {s = suc x ∷ s}{f = f}{e} 
+    = cong₂ f (sum-xsum {s = s})
+              (sym $ trans (sym $ sum-xsum-step {n = x})
+                           (sum₁-cong {n = x} f e λ { (i ∷ []) → (sym $ sum-xsum {s = s})}))
 
   sum₁-inv : (f : X → X → X) (e : X) → {a : Ar (n ∷ []) (Ar p X)}
            → (∀ k → sum₁ (zipWith f) (K e) a k ≡ map (sum₁ f e) (λ i j → a j i) k)
@@ -116,6 +176,15 @@ module _ where
     sum₁-inv f e {λ i → sum (zipWith f) (K e) (λ j → a (i ++ j))} k
     ∙ sum₁-cong f e {(λ j → sum (zipWith f) (K e) (λ i → a (j ++ i)) k)} 
               (λ i → sum-inv f e {λ j → a (i ++ j)} k)
+
+
+  sum-map : (f : X → X → X) (e : X) → {a : Ar s (Ar p X)} 
+          → let 
+              σ : ∀ {q} → Ar q X → X
+              σ = sum f e
+            in σ (map σ a) ≡ σ (unnest a)
+  sum-map {s = []} f e = refl
+  sum-map {s = x ∷ s}{p = p} f e = sum₁-cong {n = x} f e λ { (i ∷ []) → sum-map {s = s} f e}
 
   _≟ₚ_ : (i j : P s) → Dec (i ≡ j)
   _≟ₚ_ {[]} [] [] = yes refl
@@ -281,4 +350,6 @@ module ArTests where
   
   _ : {f : Y → Z} {g : X → Y} → ∀ (a : Ar s X) → map f (map g a) ≡ map (f ∘ g) a
   _ = λ _ → refl
+
+
 

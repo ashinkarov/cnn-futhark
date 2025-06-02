@@ -8,8 +8,6 @@ l102: It would be helpful to say here what the intended semantics of Ar [n1, ...
 
 l111: maybe note that you can define n-ary zipWith's even.
 
-l136: why call this a sum rather than a fold? this is particularly confusing as later sum is just a sum.
-
 l136: "pattern" -- quickly recall pattern syntax for readers less familiar with Agda
 
 l160: "Dec" -- Just give the definition! It is not that hard and your current description is not enough to understand what it does.
@@ -100,15 +98,6 @@ l1197: "certain functions being inverses" -- where do you use this?
   However, I agree with your choice to not overload the paper with technical terms that do not help understanding.
 
 - l136 Is there a reason to use `ι n` instead of the standard `[ n ]` for the singleton `n`?
-
-- l137ff What is called `sum` is really a `fold`, even if you only use it with addition later.
-
-- l142 Why is the base case not simply `sum {s = []} f ε a = a []`?
-  I tried this out with your Agda artifact and it works, one can simplify some proofs.
-
-  An array of zero dimensions is a single scalar.  A combination of all its elements is thus just this one scalar.
-  I think your starting point was the `foldr` intuition where the result always in corporates the neutral element,
-  but maybe thinking in terms of non-empty folds (`fold1`) is more appropriate here.
 
 - l169 I think the surprise goes away if the second hypothesis is written as $j ≤ n$ rather than $j + 1 < n$.
 
