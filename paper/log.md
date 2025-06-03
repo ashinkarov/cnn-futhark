@@ -51,3 +51,17 @@ compute the same result on 1-d arrays.  This addresses the following comments:
 >   f e` and `sum {s = ι n} f e` are *not* extensionally equal unless
 >   `f e` is the identity function. Did you intend this? If so, please
 >   explain why.
+
+* We changed the title of the paper, as suggested by the reviewer E:
+
+> p.1
+> This perhaps does mean you can get away with some of the more
+> rhetorical flourishes in the Introduction, but I think that the title
+> is a bit misleading ("Correctness meets Performance: from Agda to
+> Futhark" seems as though it would be a slightly more honest version?
+> the second paragraph of the introduction makes that pipeline/trade-off
+> more explicit), and the Abstract reads a bit flat in the context of
+> the more dramatic Intro.
+
+I agree with the newly proposed title, and I am happy to improve the abstract.
+
