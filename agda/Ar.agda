@@ -305,7 +305,7 @@ module _ where
   ix-combine (i ∷ is) (j ∷ js) (cons ⦃ refl ⦄ ⦃ ps ⦄) 
     = F.combine i j ∷ ix-combine is js ps
   
-  selb : Ar q X → p * s ≈ q → P p → Ar s X
+  selb : Ar q X → s * p ≈ q → P s → Ar p X
   selb a p i j = a (ix-combine i j p)
 
   imapb : Ar s (Ar p X) → s * p ≈ q → Ar q X

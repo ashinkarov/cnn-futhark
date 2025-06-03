@@ -78,8 +78,6 @@ l1197: "certain functions being inverses" -- where do you use this?
    a bit more Agda-specific than what has come before. I think it can be guessed from context, but a
    footnote or just a description of what to search in the Agda docs might be helpful.
 
- - 218: "that 𝑞 is a point-wise addition of 𝑝 and 𝑞" should be r.
-
  - 228: Again, this footnote should be on the period.
 
  - 221: Incidentally, why is this specialized to natural numbers? Surely this works fine for an
@@ -102,10 +100,6 @@ l1197: "certain functions being inverses" -- where do you use this?
 - l169 I think the surprise goes away if the second hypothesis is written as $j ≤ n$ rather than $j + 1 < n$.
 
 - l295ff A picture would help in the visualization of block formation (for low dimensions).
-
-- l299 "introducing blocked selections" insert `selp` here
-
-- l309 in the type you could have `Ar p (Ar s X)` instead of `P p → Ar s X` which would make it more symmetrical with `imapb`
 
 - l419 why does `scaledown` take an `ℕ` and not an `ℝ`?
 

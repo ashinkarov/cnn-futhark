@@ -666,7 +666,7 @@ are:
 
 \begin{mathpar}
 \codeblock{\begin{code}
-  selb : Ar q X → p * s ≈ q → P p → Ar s X
+  selb : Ar q X → s * p ≈ q → Ar s (Ar p X)
   selb a p i j = a (ix-combine i j p)
 \end{code}}
 \and
