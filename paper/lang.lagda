@@ -243,7 +243,7 @@ module Eval (real : Real) where
   open Real real
 \end{code}
 
-We interpret expressions in \AF{E} \AB{Γ} \AB{is} as a value of type
+We interpret expressions in (\AF{E} \AB{Γ} \AB{is}) as a value of type
 (\AF{Val} \AB{is}) in the environment (\AF{Env} \AB{Γ}).  The values are either
 arrays or positions of the corresponding shape.  Environments for the given context
 \AB{Γ} are tuples of values of the corresponding shapes.  The \AF{lookup} function
