@@ -83,6 +83,14 @@ module _ where
   unnest : Ar s (Ar p X) → Ar (s ⊗ p) X
   unnest a i = Prod.uncurry a (splitP i) 
 
+  -- Ar is a monoidal functor
+  -- F : S → (Set → Set)
+  -- F s = Ar s
+  -- 
+  -- Monoidal part
+  -- F (s + p) = F s ∘ F p
+  -- F [] = λ X → Ar [] X ≅ id, because Ar [] X ≅ X
+
   ιsuc : P (n ∷ []) → P (suc n ∷ [])
   ιsuc (i ∷ []) = suc i ∷ []
 

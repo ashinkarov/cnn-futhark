@@ -78,8 +78,6 @@ l1197: "certain functions being inverses" -- where do you use this?
    a bit more Agda-specific than what has come before. I think it can be guessed from context, but a
    footnote or just a description of what to search in the Agda docs might be helpful.
 
- - 228: Again, this footnote should be on the period.
-
  - 221: Incidentally, why is this specialized to natural numbers? Surely this works fine for an
    arbitrary type A.
 
