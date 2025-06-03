@@ -255,7 +255,7 @@ module _ where
   slide₁ (i ∷ []) v (j ∷ []) = v ((i ⊕ j) ∷ [])
 
   conv₁ : Vec (m + n) ℕ → Vec m ℕ → Vec (1 + n) ℕ
-  conv₁ a w = sum (zipWith _+_) (K 0) (λ i → map (w i *_) (slide₁ i a))
+  conv₁ a w = sum₁ (zipWith _+_) (K 0) (λ i → map (w i *_) (slide₁ i a))
  
   data Pointw₂ (R : (a b : ℕ) → Set) : (a b : S) → Set where
    instance

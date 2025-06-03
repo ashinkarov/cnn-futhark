@@ -201,23 +201,6 @@ This terminological confusion that you describe was exactly the motivation
 to avoid this discussion entirely.  If we fix element types then I would
 call `Ar - X` a monoidal functor.  I am happy to mention this.
 
-> Similarly to the above,
-> 
-> * why go the trouble of defining 1-dimensional versions of `sum`
->   etc. and end up with definitions which are mismatched/off-by-one
->   between the 1-dimensional and general cases? Eg. the definitions of
->   `sum₁ : (A → A → A) → A → Vec n A → A` and `sum : (A → A → A) → A →
->   Ar s A → A` do *not* agree in the case `s = ι n`, ie. `sum₁ {n = n}
->   f e` and `sum {s = ι n} f e` are *not* extensionally equal unless
->   `f e` is the identity function. Did you intend this? If so, please
->   explain why.
-
-Originally, the idea was that `sum₁` is just a helper function, and
-as `sum` folds over dimensions, we typically want fold of a singleton
-(`fold f [x] e`) to be `f e x`.  However, for the purposes of this work,
-we are interested in the cases where `e` is neutral to `f`, so indeed
-we can simplify this and make it less confusing.
- 
 > p.4
 > I don't see the need for *decidability* of the `_⊖_` operation (and
 > those which build on it later, etc.), rather than simply returning a
@@ -245,16 +228,6 @@ replying to the one of the reviewer's comment from the previous submission
 attempt who said: your definition of `⊕` is overly complicated, surely
 you can simplify this through the mentioned isomorphism...   I am happy
 to have another go at explaining this bit.
-
-> p.5
-> line 202 Should this be `sum` or `sum₁` in the definition of `conv₁` (see also above)?
-
-As mentioned above, I would define them to be equivalent in this case
-this would be a moot point.
-
-> line 205 Typo: "for" in place of "fot"
-
-Sure, thanks!
 
 > Section 3.2
 > 

@@ -433,7 +433,7 @@ and then sum it up.
   slide₁ (ι i) v (ι j) = v (ι (i ⊕ j))
 
   conv₁ : Vec (m + n) ℕ → Vec m ℕ → Vec (1 + n) ℕ
-  conv₁ a w = sum (zipWith _+_) (K 0) (λ i → map (w i *_) (slide₁ i a))
+  conv₁ a w = sum₁ (zipWith _+_) (K 0) (λ i → map (w i *_) (slide₁ i a))
 \end{code}}
 \end{mathpar}
 Note that in the definition of \AF{conv₁} we use a standard array language
