@@ -19,10 +19,15 @@ a broader scope we refer the reader to~\cite{autodiff-survey}.
 
 There has been a number of programming-language-oriented approaches that explain
 how to add AD to a programming language of choice. Examples of these include
-Futhark~\cite{futhark/sc22ad}, Haskell~\cite{ad-haskell}, and
-Jax~\cite{ad-jax,radul2023you}. Furthermore, a number of machine learning
+Futhark~\cite{futhark/sc22ad} and Haskell~\cite{ad-haskell}.
+%
+Furthermore, a number of machine learning
 frameworks that incorporate AD have been proposed in recent years: TensorFlow~\cite{ad-tf},
 PyTorch~\cite{ad-pytorch}, MXNet~\cite{ad-mxnet} and many more.
+%
+Most of these approaches are largely similar to ours (although naturally more
+complete), as they involve a syntactically driven transformation of the program.
+
 While in particular the dedicated frameworks tend to find widespread 
 acceptance by practitioners, both, correctness and performance leave
 two open questions: (i) how is it possible to
@@ -45,12 +50,20 @@ not clear how to formulate correctness criteria for it), the entire
 implementation of AD is about 20 lines of code, so it is easy to
 understand and modify.
 
-Another line of work studies high-level principles of AD using
-category theory~\cite{ad-theor1, ad-theor2, ad-theor3}.
-While this indeed comes with great correctness guarantees due to
-some naturality principles, it is not always clear how to implement
-this in a way that leads to efficiently executable specifications.  Also, the
-entire treatment of index-safe tensors is unclear.
+The AD transformations in Dex~\cite{10.1145/3473593} and Jax~\cite{ad-jax} are
+in this respect interesting, as they are based on first \emph{linearising} the
+function of interest in a given point (essentially a forward mode
+transformation), then \emph{transposing} the resulting linear map to obtain a
+reverse mode linear map~\cite{radul2023you}. This approach might make be easier
+to implement in a fully verified manner, as linearisation and transposition have
+well-defined properties and could be verified independently.
+
+Another line of work studies high-level principles of AD using category
+theory~\cite{ad-theor1, ad-theor2, ad-theor3}. While this indeed comes with
+great correctness guarantees due to some naturality principles, it is not always
+clear how to implement this in a way that leads to efficiently executable
+specifications, although some efforts are underway~\cite{10.1145/3632878}. Also,
+the entire treatment of index-safe tensors is unclear.
 
 In~\cite{ad-elliott} the author proposes to view AD problem using
 the language of cartesian categories.  It has been shown that

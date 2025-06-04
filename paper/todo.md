@@ -48,9 +48,6 @@ l797-830: What is the complexity of the resulting algorithm? Is it as expected f
 
 l1122: You may want to include some comparisons here to
 de Vilhena, Paulo Emílio, and François Pottier. "Verifying an Effect-Handler-Based Define-By-Run Reverse-Mode AD Library." Logical Methods in Computer Science 19 (2023).
-Paszke, Adam, et al. "Getting to the point: index sets and parallelism-preserving autodiff for pointful array programming." Proceedings of the ACM on Programming Languages 5.ICFP (2021): 1-29.
-Smeding, Tom J., and Matthijs IL Vákár. "Efficient CHAD." Proceedings of the ACM on Programming Languages 8.POPL (2024): 1060-1088.
-Smeding, Tom, and Matthijs Vákár. "Parallel dual-numbers reverse ad." arXiv preprint arXiv:2207.03418 (2022).
 
 l1197: "certain functions being inverses" -- where do you use this?
 
