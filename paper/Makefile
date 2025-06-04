@@ -21,7 +21,7 @@ paper.zip: $(SRC) latex/arrays.tex # paper.bbl acmart.cls
 	zip paper.zip $(SRC) latex/model.tex paper.bbl acmart.cls
 
 diff/%.tex: %.tex
-	latexdiff --config PICTUREENV=code submitted/$*.tex $*.tex > $@
+	latexdiff --config PICTUREENV='code|wrapfigure' --graphics-markup=none submitted/$*.tex $*.tex > $@
 
 paper-diff.pdf: $(SRC_TEX:%=diff/%) diff/latex/arrays.tex diff/latex/lang.tex diff/latex/ad.tex
 	TEXINPUTS=./diff/latex:$$TEXINPUTS latexmk -output-directory=diff -pdf -f -pdflatex='pdflatex -halt-on-error' paper.tex

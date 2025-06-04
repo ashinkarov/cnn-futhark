@@ -90,10 +90,11 @@ and \(y\)
   w_0 = xy; \quad w_1 = w_0 + x; \quad z = \sin w_1.
 \end{mathpar}
 
-\begin{wrapfigure}{r}{.4\linewidth}
-  \includegraphics[width=\linewidth]{ad-example.pdf}
+% TODO: Turn this back into a wrapfigure once we no longer need latexdiff.
+\begin{figure}
+  \includegraphics{ad-example.pdf}
   \caption{\label{fig:ad-graph}Reverse AD for \(z = \sin(xy+x)\)}
-\end{wrapfigure}
+\end{figure}
 
 The individual steps of the process are depicted in Fig.~\ref{fig:ad-graph},
 where the nodes represent variable definitions, and the edges connect variable
