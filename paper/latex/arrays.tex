@@ -165,27 +165,24 @@ representation is driven by proof considerations only --- low-level
 details will be handled by the backend.
 This is why we represent arrays as functions from indices to values.
 
-Absence of out-of-bound errors means that all array indices fall within
-the shapes of the arrays that they are selecting from.
-The shape of array describes the extent of each of its axes.  We represent
-shapes as lists of natural numbers using the data type \AD{S}.
-The \AC{[]} shape describes an array of rank zero that contains exactly one
-element (arrays of such shape are often called \emph{scalars} and we use this
-terminology in the rest of the paper).
-The cons operation \AC{\_∷\_} prepends a new axis to the left of the shape.
-Note on the notation: underscores in \AC{\_∷\_} specify positions where
-arguments go, turning \AC{∷} into an infix binary operation.
+Another goal of this development is to guarantee absence of out-of-bound errors,
+meaning that all array indices fall within the shapes of the arrays that
+they are selecting from.  The shape of array describes the extent of each
+of its axes.  
 
-Array positions (indices) are given by the dependent type \AD{P} which
-is indexed by shapes \AD{S}.  A position within an array of shape \AB{s}
-is a list of natural numbers of the same length as $s$ where all elements
-are less than the corresponding elements of $s$.
-
-Arrays are given by the type \AF{Ar} \AB{s} \AB{X} where $s$ is a shape of the
-array and $X$ is the type of array elements. We allow shapes to be empty, in
-which case the array represents a scalar. Formal definitions of \AF{S}, \AF{P}
-and \AF{Ar} are as follows:
-
+Let us consider a 1-dimensional representation of the $n$-element array
+$X^n$.  The shape of such array is a natural number (\AB{n} : \AD{ℕ}),
+Positions (indices) into this array can be given by
+(\AB{i} : \AD{Fin} \AB{n}) which ensures bounds safety for indexing operations.
+Recall that the type (\AF{Fin} $n$) represents natural numbers bounded by $n$.
+The data of the array can is given by the function of type (\AD{Fin} \AB{n} → \AB{X}). 
+When generalising to higher dimensions: the shape is not a single natural number,
+but a list of natural numbers (\AB{s} : \AF{S}); positions are lists
+of corresponding \AF{Fin} elements (\AB{i} : \AF{P} \AB{s}); and the
+array data is given by function as before.  This structure is known
+as container~\cite{cont1,cont2,ix-containers}, and it can be defined by means of a 
+(\AF{List ℕ} \AF{◃} \AF{All} \AF{Fin}) container.  More explicitly,
+here are formal definitions of \AF{S}, \AF{P} and \AF{Ar}:
 \begin{mathpar}
 \codeblock{\begin{code}%
 %
@@ -290,9 +287,30 @@ and \AF{Ar} are as follows:
 \AgdaBound{X}\<%
 \end{code}}
 \end{mathpar}
-The type \AF{Fin} $n$ represents natural numbers bounded by $n$.
+
+Shapes \AD{S} have two constructors. The \AC{[]} shape describes an array of
+rank zero (rank is the length of shape) that contains exactly one
+element (arrays of such shape are often called \emph{scalars} and we use this
+terminology in the rest of the paper).
+The cons operation\footnote{
+Note on the notation: underscores in \AC{\_∷\_} specify positions where
+arguments go, turning \AC{∷} into an infix binary operation.}%
+\AC{\_∷\_} prepends a new axis to the left of the shape.
+
+Array positions (indices) are given by the dependent type \AD{P} which
+is indexed by shapes \AD{S}.  A position within an array of shape \AB{s}
+is a list of natural numbers of the same length as $s$ where all elements
+are less than the corresponding elements of $s$.
+
+Arrays are given by the type \AF{Ar} \AB{s} \AB{X} where $s$ is a shape of the
+array and $X$ is the type of array elements. Once again, arrays of empty shapes
+represents scalars.  Another way to look at \AF{Ar} is through tensor product:
+\AF{Ar} $[n_1, \dots, n_k]$ $X$ represent components of a tensor $X^{n_1} \otimes
+\cdots \otimes X^{n_k}$.
+
 As arrays are functions, selections are function applications and
 the array constructor is a function definition (\eg{} via $\lambda$-abstraction).
+
 
 \paragraph{Array Combinators} It is helpful to invest a little time
 in defining array combinators.  First, we can observe that \AD{Ar} of
@@ -914,7 +932,7 @@ applying \AD{sum} over function composition:
 % \end{mathpar}
 % From the perspective of category theory, if \AF{S} is an object then \AF{Reshape}
 % is a Hom set, where \AC{eq} is identity and \AC{\_∙\_} is a composition with
-% the expected properties.  In the language of containers~\cite{containers}, \AF{Ar} is
+% the expected properties.  In the language of containers~\cite{ix-containers}, \AF{Ar} is
 % a container and \AF{Reshape} is an inductive subset of cartesian container morphisms.
 % 
 

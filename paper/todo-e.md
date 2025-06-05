@@ -77,26 +77,6 @@ notions into new revision, but finding a good balance is difficult.
 > Detailed comments
 
  
-> You introduce the fundamental representation of higher-rank tensors
-> (arrays) as a container type, in terms of 'shapes' and 'positions',
-> without any mention of the pioneering work in this area by Abbott et
-> al. ("Categories of Containers", 2003), or that of Joyal et al. at
-> UQAM on combinatorial species.
-
-I should definitely mention this.  I didn't want to introduce too much
-theoretical constructions here, but I will definitely reference this work
-which I am perfectly aware of.
-
-> Similarly, you launch into the discussion of the Agda representation
-> without taking the small amount of space to explain that a
-> 1-dimensional array (vector) $X^n$ can be represented in terms of the
-> shape (dimension) `n : ℕ`, positions (indices) `i : Fin n` (thereby
-> ensuring bounds safety for indexing operations), as a function `Fin n
-> → X`, and that your `Ar` construction then generalises this to
-> higher-rank via *lists* of such dimensions. For the non-Agda
-> specialist, this little bit of hand-holding might go a long way!
-
-Good idea, thanks, will do.
 
 > p.3
 > You do a lot of heavy lifting here for the non-specialist, while not

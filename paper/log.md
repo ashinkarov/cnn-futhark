@@ -74,3 +74,28 @@ compute the same result on 1-d arrays.  This addresses the following comments:
 > not least to prime the reader to accept that the eventual Agda
 > implementation is indeed faithful to the original.
 
+* Rewrote the way we introduce `Ar` datatype, providing more intuition
+  and referring to containers.  This resolves:
+
+> (A)
+> l102: It would be helpful to say here what the intended semantics of Ar [n1, ..., nk] is, i.e. R^{n1 x ... x nk} = R^{n1} (x) ... (x) R^{nk}.
+> 
+> (C)
+> - l99 Maybe add a footnote to the extend that `S ▷ P` is a container (I guess that motivated the letters `S` and `P`).
+>   However, I agree with your choice to not overload the paper with technical terms that do not help understanding.
+>
+> (E)
+> You introduce the fundamental representation of higher-rank tensors
+> (arrays) as a container type, in terms of 'shapes' and 'positions',
+> without any mention of the pioneering work in this area by Abbott et
+> al. ("Categories of Containers", 2003), or that of Joyal et al. at
+> UQAM on combinatorial species.
+>
+> Similarly, you launch into the discussion of the Agda representation
+> without taking the small amount of space to explain that a
+> 1-dimensional array (vector) $X^n$ can be represented in terms of the
+> shape (dimension) `n : ℕ`, positions (indices) `i : Fin n` (thereby
+> ensuring bounds safety for indexing operations), as a function `Fin n
+> → X`, and that your `Ar` construction then generalises this to
+> higher-rank via *lists* of such dimensions. For the non-Agda
+> specialist, this little bit of hand-holding might go a long way!

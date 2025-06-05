@@ -4,8 +4,6 @@ List of minor remarks suggested by reviewers. Remove the ones that have been don
 
 l5: "strong correctness guarantees" -- like/namely?
 
-l102: It would be helpful to say here what the intended semantics of Ar [n1, ..., nk] is, i.e. R^{n1 x ... x nk} = R^{n1} (x) ... (x) R^{nk}.
-
 l111: maybe note that you can define n-ary zipWith's even.
 
 l136: "pattern" -- quickly recall pattern syntax for readers less familiar with Agda
@@ -86,9 +84,6 @@ l1197: "certain functions being inverses" -- where do you use this?
 ## D
 
 - l50ff "follow [36]" here and everywhere: do not use citations as nouns
-
-- l99 Maybe add a footnote to the extend that `S ▷ P` is a container (I guess that motivated the letters `S` and `P`).
-  However, I agree with your choice to not overload the paper with technical terms that do not help understanding.
 
 - l136 Is there a reason to use `ι n` instead of the standard `[ n ]` for the singleton `n`?
 
