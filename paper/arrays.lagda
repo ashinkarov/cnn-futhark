@@ -18,23 +18,57 @@ module Array where
   open import Data.Product as Prod using (∃; _,_; _×_; uncurry)
 \end{code}
 
-The central data structure of our case study is a multi-dimensional array (ML
-uses the term \emph{tensor}).  This section presents a minimalist array theory in Agda
-which is well-suited for specifying numerical applications such as CNNs.
 
+
+\begin{wrapfigure}{r}{.6\linewidth}
+\begin{lstlisting}[caption=SaC implementation of MNIST from~\cite{cnn-array},%
+  label=fig:sac-code]
+float [10,1,1,1,1] 
+forward (float [28,28] I, float [6,5,5] k1,
+         float [6] b1, float [12,6,5,5] k2,
+         float [12] b2, float [10,12,1,4,4] k3,
+         float [10] b) {
+  c1 = logisitc (mconv(I, k1, b1));
+  s1 = avgpool (c1);
+  c2 = logisitc (mconv(s1, k2, b2 ));
+  s2 = avgpool (c2);
+  return logisitc (mconv(s2, k3, b));
+}
+\end{lstlisting}
+\end{wrapfigure}
+The running example that we use throughout this paper is the implementation of
+a classical convolutional neural network that recognised hand-written digits.
+Consider an implementation of the forward part of the network in the array 
+language SaC~\cite{sac2}
+from~\cite{cnn-array} which is presented in Listing~\ref{fig:sac-code}.
+This is a function
+that takes the image $I$, the weights $k_i$, biases $b_i$, and it computes
+a vector of probabilities indicating which digit was depicted on that image.
+The language does not provide any built-in CNN-specific operations, so all the
+combinators such as \texttt{mconv}, \texttt{avgpool} and \texttt{logistic}
+are defined as functions within the language. 
+
+The conciseness of the specification
+relies on all the above combinators being defined\footnote{We omit the
+definition for spaces reasons, but all the details can be found in~\cite{cnn-array}.}
+\emph{rank-polymorphically}, which means that they can operate
+on arrays of \emph{arbitrary ranks}.  
+
+The goal of this section is to define a minimalist theory of multi-dimensional
+arrays (ML calls them \emph{tensors}) in Agda, which is well-suited for
+specifying numerical applications such as the above example.
+We also require our array theory to allow rank polymorphic definitions
+which distinguishes it from most existing approaches.
 The work in the rest of the paper is presented in Agda, with which we assume some
 familiarity.
 For gentle introductions to Agda we refer to one of the tutorials that are freely available
 online.\footnote{See \url{https://agda.readthedocs.io/en/v2.7.0.1/getting-started/tutorial-list.html}.}
 
-The conciseness of the CNN specification
-in~\cite{cnn-array} relies on rank-polymorphism, which is the ability to operate
-on arrays of arbitrary ranks.  Our array theory is rank polymorphic
-which distinguishes it from most existing approaches.
 The central consideration when working with dependent types is how to represent data.
 Some encodings are better suited for reasoning, others are more efficient
-at runtime.  Due to our two-language setup, our choice of representation is
-driven by proof considerations only.
+at runtime.  Due to our two-language setup, our choice of
+representation is driven by proof considerations only --- low-level
+details will be handled by the backend.
 This is why we represent arrays as functions from indices to values.
 
 Absence of out-of-bound errors means that all array indices fall within

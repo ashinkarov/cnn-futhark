@@ -76,18 +76,6 @@ notions into new revision, but finding a good balance is difficult.
 > 
 > Detailed comments
 
-> p.2
-> The 'running example' of the SAC implementation of a CNN in fact only
-> appears eventually on p.7, and it might be better to at least show the
-> original code (or fragments) before diving into Agda; few readers will
-> be expert in both, possibly neither, so some handholding would help,
-> not least to prime the reader to accept that the eventual Agda
-> implementation is indeed faithful to the original.
-
-My reasoning here was that (a) SaC is quite an esoteric language for the
-ICFP audience, and (b) the full code listing is relatively big, so I
-decided to skip the SaC code entirely.  I agree with you regarding handholding,
-and I am happy to summarise the SaC code before diving into Agda.
  
 > You introduce the fundamental representation of higher-rank tensors
 > (arrays) as a container type, in terms of 'shapes' and 'positions',

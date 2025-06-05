@@ -63,5 +63,14 @@ compute the same result on 1-d arrays.  This addresses the following comments:
 > more explicit), and the Abstract reads a bit flat in the context of
 > the more dramatic Intro.
 
-I agree with the newly proposed title, and I am happy to improve the abstract.
+* We added the example in SaC in section two, as proposed bu reviewer E,
+  thus resolving:
+
+> p.2
+> The 'running example' of the SAC implementation of a CNN in fact only
+> appears eventually on p.7, and it might be better to at least show the
+> original code (or fragments) before diving into Agda; few readers will
+> be expert in both, possibly neither, so some handholding would help,
+> not least to prime the reader to accept that the eventual Agda
+> implementation is indeed faithful to the original.
 
