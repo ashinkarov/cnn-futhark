@@ -4,8 +4,6 @@ List of minor remarks suggested by reviewers. Remove the ones that have been don
 
 l5: "strong correctness guarantees" -- like/namely?
 
-l111: maybe note that you can define n-ary zipWith's even.
-
 l136: "pattern" -- quickly recall pattern syntax for readers less familiar with Agda
 
 l160: "Dec" -- Just give the definition! It is not that hard and your current description is not enough to understand what it does.
@@ -63,11 +61,6 @@ l1197: "certain functions being inverses" -- where do you use this?
  - 112: As a small side, zipWith should come from a more primitive operation which witnesses
    `Ar s (X × Y) ≅ Ar s X × Arr s Y` (so this is pointed cartesian functor), but this is neither
    this is a matter of aesthetics :)
-
- - 130: this is another "X is just Y" of the highest order, but I suppose one can remark that `nest`
-   and `unnest` ensure that `Ar - X` is a monoidal functor from `Shape` to `Type → Type` (with the
-   latter monoidal product coming from composition). Hardly the a pressing issue, but I found it
-   neat.
 
  - 136: I think one should briefly explain what "pattern" does in Agda, since this sort of syntax is
    a bit more Agda-specific than what has come before. I think it can be guessed from context, but a

@@ -99,3 +99,23 @@ compute the same result on 1-d arrays.  This addresses the following comments:
 > → X`, and that your `Ar` construction then generalises this to
 > higher-rank via *lists* of such dimensions. For the non-Agda
 > specialist, this little bit of hand-holding might go a long way!
+
+* We added a comment about categorical structure of combinators,
+  which resolves:
+
+> (A)
+> l111: maybe note that you can define n-ary zipWith's even.
+>
+> (C)
+> - 130: this is another "X is just Y" of the highest order, but I suppose one can remark that `nest`
+>   and `unnest` ensure that `Ar - X` is a monoidal functor from `Shape` to `Type → Type` (with the
+>   latter monoidal product coming from composition). Hardly the a pressing issue, but I found it
+>   neat.
+> (E)
+> l.109 Rather than merely consider `Ar s` for fixed `s` to be an
+> Applicative functor, wouldn't it be better to say that `Ar` is a
+> *graded* applicative, graded with respect to the monoid structure on
+> ranks-as-lists of dimensions? Not only that, but the `nest`/`unnest`
+> isomorphism exhibit a corresponding 'linear'/'monoidal closed' structure (scare
+> quotes because I'm not even sure what the correct terminology is here
+> for graded functors)

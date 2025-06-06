@@ -146,18 +146,6 @@ point is that with the proposed definition we will loose definitional
 fusion: `map f (map g a) ≡ map (f ∘ g) a` which holds currently and
 makes some of the proofs nicer.
 
-> l.109 Rather than merely consider `Ar s` for fixed `s` to be an
-> Applicative functor, wouldn't it be better to say that `Ar` is a
-> *graded* applicative, graded with respect to the monoid structure on
-> ranks-as-lists of dimensions? Not only that, but the `nest`/`unnest`
-> isomorphism exhibit a corresponding 'linear'/'monoidal closed' structure (scare
-> quotes because I'm not even sure what the correct terminology is here
-> for graded functors)
-
-This terminological confusion that you describe was exactly the motivation
-to avoid this discussion entirely.  If we fix element types then I would
-call `Ar - X` a monoidal functor.  I am happy to mention this.
-
 > p.4
 > I don't see the need for *decidability* of the `_⊖_` operation (and
 > those which build on it later, etc.), rather than simply returning a

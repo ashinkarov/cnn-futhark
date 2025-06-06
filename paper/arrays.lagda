@@ -21,7 +21,7 @@ module Array where
 
 
 \begin{wrapfigure}{r}{.6\linewidth}
-\begin{lstlisting}[caption=SaC implementation of MNIST from~\cite{cnn-array},%
+\begin{lstlisting}[caption=SaC implementation of the CNN from~\cite{cnn-array},%
   label=fig:sac-code]
 float [10,1,1,1,1] 
 forward (float [28,28] I, float [6,5,5] k1,
@@ -46,16 +46,19 @@ that takes the image $I$, the weights $k_i$, biases $b_i$, and it computes
 a vector of probabilities indicating which digit was depicted on that image.
 The language does not provide any built-in CNN-specific operations, so all the
 combinators such as \texttt{mconv}, \texttt{avgpool} and \texttt{logistic}
-are defined as functions within the language. 
+are defined as functions within the language.  The function that adjusts
+the weights and biases based on data constitutes training process.  It is
+defined manually in~\cite{cnn-array}, but in this paper we
+will derive it automatically in later sections.
 
-The conciseness of the specification
-relies on all the above combinators being defined\footnote{We omit the
+The above specification is concise
+because all the combinators are defined\footnote{We omit the
 definition for spaces reasons, but all the details can be found in~\cite{cnn-array}.}
 \emph{rank-polymorphically}, which means that they can operate
 on arrays of \emph{arbitrary ranks}.  
 
 The goal of this section is to define a minimalist theory of multi-dimensional
-arrays (ML calls them \emph{tensors}) in Agda, which is well-suited for
+arrays (ML calls them \emph{tensors}), which is well-suited for
 specifying numerical applications such as the above example.
 We also require our array theory to allow rank polymorphic definitions
 which distinguishes it from most existing approaches.
@@ -68,7 +71,7 @@ The central consideration when working with dependent types is how to represent 
 Some encodings are better suited for reasoning, others are more efficient
 at runtime.  Due to our two-language setup, our choice of
 representation is driven by proof considerations only --- low-level
-details will be handled by the backend.
+details will be handled in the backend.
 This is why we represent arrays as functions from indices to values.
 
 Another goal of this development is to guarantee absence of out-of-bound errors,
@@ -78,17 +81,17 @@ of its axes.
 
 Let us consider a 1-dimensional representation of the $n$-element array
 $X^n$.  The shape of such array is a natural number (\AB{n} : \AD{ℕ}),
-Positions (indices) into this array can be given by
-(\AB{i} : \AD{Fin} \AB{n}) which ensures bounds safety for indexing operations.
+positions (indices) into this array can be given by
+(\AB{i} : \AD{Fin} \AB{n}), which ensures bounds safety for indexing operations.
 Recall that the type (\AF{Fin} $n$) represents natural numbers bounded by $n$.
-The data of the array can is given by the function of type (\AD{Fin} \AB{n} → \AB{X}). 
+The data of the array is given by the function of type (\AD{Fin} \AB{n} → \AB{X}). 
 When generalising to higher dimensions: the shape is not a single natural number,
 but a list of natural numbers (\AB{s} : \AF{S}); positions are lists
 of corresponding \AF{Fin} elements (\AB{i} : \AF{P} \AB{s}); and the
 array data is given by function as before.  This structure is known
-as container~\cite{cont1,cont2,ix-containers}, and it can be defined by means of a 
-(\AF{List ℕ} \AF{◃} \AF{All} \AF{Fin}) container.  More explicitly,
-here are formal definitions of \AF{S}, \AF{P} and \AF{Ar}:
+as container~\cite{cont1,cont2,ix-containers}, and our array type can
+be defined by means of the (\AF{List ℕ} \AF{◃} \AF{All} \AF{Fin}) container.
+More explicit formal definitions of \AF{S}, \AF{P} and \AF{Ar} follow.
 \begin{mathpar}
 \codeblock{\begin{code}
   data S : Set where
@@ -114,10 +117,11 @@ here are formal definitions of \AF{S}, \AF{P} and \AF{Ar}:
 \end{code}}
 \end{mathpar}
 
-Shapes \AD{S} have two constructors. The \AC{[]} shape describes an array of
+The type of shapes \AD{S} has two constructors. The \AC{[]} shape describes
+an array of
 rank zero (rank is the length of shape) that contains exactly one
-element (arrays of such shape are often called \emph{scalars} and we use this
-terminology in the rest of the paper).
+element. Arrays of empty shape are often called \emph{scalars} and we use this
+terminology in the rest of the paper.
 The cons operation\footnote{
 Note on the notation: underscores in \AC{\_∷\_} specify positions where
 arguments go, turning \AC{∷} into an infix binary operation.}%
@@ -131,20 +135,23 @@ are less than the corresponding elements of $s$.
 Arrays are given by the type \AF{Ar} \AB{s} \AB{X} where $s$ is a shape of the
 array and $X$ is the type of array elements. Once again, arrays of empty shapes
 represents scalars.  Another way to look at \AF{Ar} is through tensor product:
-\AF{Ar} $[n_1, \dots, n_k]$ $X$ represent components of a tensor $X^{n_1} \otimes
-\cdots \otimes X^{n_k}$.
+\AF{Ar} $[]$ $X$ = $X$, and \AF{Ar} $[n_1, \dots, n_k]$ $X$ represents
+components of a tensor $X^{n_1} \otimes \cdots \otimes X^{n_k}$.
 
 As arrays are functions, selections are function applications and
 the array constructor is a function definition (\eg{} via $\lambda$-abstraction).
 
 
 \paragraph{Array Combinators} It is helpful to invest a little time
-in defining array combinators.  First, we can observe that \AD{Ar} of
+in defining array combinators.  While arrays have a lot of categorical structure,
+here we only present the parts that are essential for our running example.
+Firstly, we can observe that \AD{Ar} of
 a fixed shape is an applicative functor~\cite{applicative}, so we can trivially derive:
 \AF{K}\ \AB{x} to produce a constant array; \AF{map}\ \AB{f}\ \AB{a}
 to apply \AB{f} to all the elements of \AB{a}; and \AF{zipWith}\ \AB{f}
 \ \AB{a}\ \AB{b} to point-wise apply the binary operation 
-\AB{f} to \AB{a} and \AB{b}.
+\AB{f} to \AB{a} and \AB{b} (note that \AF{zipWith} can be generalised
+to $n$-ary case as well).
 \begin{mathpar}
 \codeblock{\begin{code}
   K : X → Ar s X
@@ -217,6 +224,11 @@ achieve this are named \AF{nest} and \AF{unnest} and their definitions are:
   unnest a i = uncurry a (split i)
 \end{code}}
 \end{mathpar}
+
+One helpful categorical view on the above definition is:
+\AF{Ar} is a monoidal functor between monoidal categories (\AF{S},\AF{⊗},\AC{[]})
+and (\AF{Set} → \AF{Set}, \AF{∘}, \AF{id}), which is ensured
+by \AF{nest} and \AF{unnest}.
 
 
 \paragraph{Reduction} We implement reduction of the binary operations
