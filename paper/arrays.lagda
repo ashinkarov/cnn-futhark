@@ -15,7 +15,7 @@ module Array where
   open import Data.Fin.Properties using (suc-injective; toℕ<n; splitAt-inject+)
   --open import Fin2 using (Fin; #_; combine; remQuot; zerof; sucf; _⊕_; _⊝_)
   open import Data.Sum using (_⊎_; inj₁; inj₂)
-  open import Data.Product as Prod using (∃; _,_; _×_; uncurry)
+  open import Data.Product as Prod hiding (map; zipWith) -- using (∃; ∃[_]_; _,_; _×_; uncurry)
 \end{code}
 
 
@@ -136,10 +136,17 @@ Arrays are given by the type \AF{Ar} \AB{s} \AB{X} where $s$ is a shape of the
 array and $X$ is the type of array elements. Once again, arrays of empty shapes
 represents scalars.  Another way to look at \AF{Ar} is through tensor product:
 \AF{Ar} $[]$ $X$ = $X$, and \AF{Ar} $[n_1, \dots, n_k]$ $X$ represents
-components of a tensor $X^{n_1} \otimes \cdots \otimes X^{n_k}$.
+components of a tensor $X^{n_1} \otimes \cdots \otimes X^{n_k}$.  
 
 As arrays are functions, selections are function applications and
 the array constructor is a function definition (\eg{} via $\lambda$-abstraction).
+Note that \AF{Ar} definition could have pattern-matched on the shape,
+in which case (\AF{Ar} [] $X$ = $X$) would hold definitionally.
+We chose not to do this as we would need to introduce a constructor
+for array creation, array selection, and we would loose
+definitional array fusion (\AF{map} $f$ \AF{∘} \AF{map} $g$ = \AF{map} (f ∘ g))
+which would make further proofs a bit more verbose.
+
 
 
 \paragraph{Array Combinators} It is helpful to invest a little time
@@ -394,7 +401,7 @@ prerequisites for defining convolution:
 \and
 \codeblock{\begin{code}
   _⊝_ : (i : Fin (m + n)) (j : Fin m)
-      → Dec (∃ λ k → j ⊕ k ≡ i)
+      → Dec (∃[ k ] j ⊕ k ≡ i)
 \end{code}}
 \end{mathpar}
 \begin{code}[hide]

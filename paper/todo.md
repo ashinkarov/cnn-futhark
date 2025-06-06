@@ -49,10 +49,6 @@ l1197: "certain functions being inverses" -- where do you use this?
 
 ## C
 
- - 86: I'm a little confused, should an array of rank 0 not be simply the trivial vector
-   space/module? The space of scalars is dimension 1, not 0 in standard mathematics in my
-   experience.
-
  - 101: I can see why given the code things work out as they do, but this seems like an artifact of
    how the indexing is set up: the smallest representable array is 1 by 1, not 0 by 0... Presumably
    this is fine, because we do not need something like this, but is this really the standard

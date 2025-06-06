@@ -119,3 +119,38 @@ compute the same result on 1-d arrays.  This addresses the following comments:
 > isomorphism exhibit a corresponding 'linear'/'monoidal closed' structure (scare
 > quotes because I'm not even sure what the correct terminology is here
 > for graded functors)
+
+* We motivated our choice why we do not define `Ar [] X = X`,
+  hopefully resolving:
+
+> (C)
+> 
+>  - 86: I'm a little confused, should an array of rank 0 not be simply the trivial vector
+>    space/module? The space of scalars is dimension 1, not 0 in standard mathematics in my
+>    experience.
+> 
+> (E)
+> * given that you define `Ar s X = P s → X`, presumably to take
+>   advantage in the back-end of arrays as 'purely functional', why do
+>   you not discuss the trade-offs (esp. wrt elimination of those
+>   iterated products defining `P`, including the troublesome case `s =
+>   []`, introducing a redundant unit type representation) between this
+>   version and a direct *recursive* implementation such as
+>   
+>   Ar : S → Set → Set
+>   Ar [] X = X
+>   Ar (n ∷ s) X = Fin n → Arr s X
+>   
+>   which would have the advantage(s) of:
+>   
+>   - avoiding having to distinguish scalars, at shape `[]`, from
+>     functions from `P []` to scalars; similarly in the 1-dimensional
+>     (vector) case
+>   
+>   - avoiding the marshalling/unmarshalling of iterated products of
+>     positions via your `nest`/`unnest` operations, in favour of
+>     iterated function composition
+> 
+>   - avoiding most, if not all, of the explicit operations on
+>     positions, `_⊗ₚ_`, `split` etc. in favour of direct implementation
+>     on the `Ar s X` types themselves (more on this later)
