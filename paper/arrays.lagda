@@ -88,10 +88,12 @@ The data of the array is given by the function of type (\AD{Fin} \AB{n} → \AB{
 When generalising to higher dimensions: the shape is not a single natural number,
 but a list of natural numbers (\AB{s} : \AF{S}); positions are lists
 of corresponding \AF{Fin} elements (\AB{i} : \AF{P} \AB{s}); and the
-array data is given by function as before.  This structure is known
-as container~\cite{cont1,cont2,ix-containers}, and our array type can
-be defined by means of the (\AF{List ℕ} \AF{◃} \AF{All} \AF{Fin}) container.
-More explicit formal definitions of \AF{S}, \AF{P} and \AF{Ar} follow.
+array data is given by function as before.  This approach to defining
+data structure through shapes, positions and a function from positions
+to elements is known as container~\cite{cont1,cont2,ix-containers}.
+Our array type can be defined by means of the
+(\AF{List ℕ} \AF{◃} \AF{All} \AF{Fin}) container.
+More explicit formal definitions of \AF{S}, \AF{P} and \AF{Ar} are as follows.
 \begin{mathpar}
 \codeblock{\begin{code}
   data S : Set where
@@ -443,7 +445,7 @@ bounds on the right hand side.
 \end{code}}
 \and
 \codeblock{\[
-   \inferrule*[right=⊝]
+   \inferrule*
     {r < m + n \and j < m}
     {\exists (k < 1 + n). j + k = r}
 \]}
