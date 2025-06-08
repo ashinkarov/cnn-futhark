@@ -164,6 +164,9 @@ compute the same result on 1-d arrays.  This addresses the following comments:
 > 
 > l172-l180:  This is currently super unclear and should probably be rewritten.
 >
+> (C)
+> - l169 I think the surprise goes away if the second hypothesis is written as $j ≤ n$ rather than $j + 1 < n$.
+>
 > (E)
 > p.4
 > I don't see the need for *decidability* of the `_⊖_` operation (and
@@ -188,4 +191,28 @@ compute the same result on 1-d arrays.  This addresses the following comments:
 >   a bit more Agda-specific than what has come before. I think it can be guessed from context, but a
 >   footnote or just a description of what to search in the Agda docs might be helpful.
 >
+
+* Rewrote explanation of generalised slide, resolving comments:
+
+> (A)
+> 
+> l224: Explain instance argument syntax {{}} here.
+> 
+> l220-225: Say in prose what these relations do/capture.
+> 
+> l235: Remind readers of Agda's notation for identity types.
+>
+> (C)
+> 
+>  - 221: Incidentally, why is this specialized to natural numbers? Surely this works fine for an
+>    arbitrary type A.
+> 
+> (E)
+> Section 3.2
+> ...
+
+While I attempted to do some suggested inlining, the overall result did look
+uglier (in my opinion) and took more space.  Therefore, I left the structure,
+but I tried to clarify all the concerns raised in the reviews.
+
 

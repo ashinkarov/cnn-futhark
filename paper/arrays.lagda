@@ -560,19 +560,28 @@ nicely to higher ranks.
 
 
 \subsection{Generalisation\label{sec:general-ix-ops}}
-Now we generalise 1-dimensional slide for arrays of higher ranks.
+We generalise 1-dimensional slide for arrays of higher ranks.
 This requires generalising vector shapes $m + n$ and $1 + n$ for the cases
-when $m$ and $n$ for arbitrary shapes.  In case of addition, we need a witness
-that both shapes
-have the same length.  If they do, their components are added point-wise.
-We define a three-way relation \AF{\_+\_≈\_} that combines the witness and
-the action.  That is, the type \AB{p} \AF{+} \AB{q} \AF{≈} \AB{r} says that
+when $m$ and $n$ for arbitrary shapes.  
+We do not define these operations as computations on shapes, because
+we want to maintain the same arguments in the definition of the
+generalised slide here and the corresponding constructor in the
+embedded DSL that we define in Section~\ref{sec:edsl}; and computations
+in the type indices of the DSL constructors do not behave nicely.
+Instead, we introduce relations.  In case of addition, we define a three-way
+relation \AF{\_+\_≈\_}.  That is, the type \AB{p} \AF{+} \AB{q} \AF{≈} \AB{r}
+says that
 $p$ and $q$ have the same length and that $r$ is a point-wise addition
 of $p$ and $q$.  A similar relation \AF{suc\_≈\_} is introduced for $1 + n$
 case, and \AF{\_*\_≈\_} witnesses point-wise
 multiplication that will be needed for blocking.  We define these relations
-in two steps.  Firstly, we give a generalised pointwise relations for binary
-and ternary relations on natural numbers:
+in two steps.  
+Firstly we defined \AF{Pw₂} and \AF{Pw₃} which lift a relation on
+two (or three) natural numbers into corresponding pointwise relations on
+two (or three) lists of natural numbers:\footnote{
+This could be generalised even further by lifting relations over
+types $X$ and $Y$ into relation of lists of $X$ and $Y$, but this
+is not needed for the paper.}
 \begin{mathpar}
 \codeblock{\begin{code}
   data Pw₂ (R : (a b : ℕ) → Set) 
@@ -591,11 +600,13 @@ and ternary relations on natural numbers:
 \end{code}}
 \end{mathpar}
 While the definition is straight-forward, note that we mark constructors
-with the keyword \AK{instance} and we turn the arguments of \AC{cons}
-into instance arguments.\footnote{See \url{https://agda.readthedocs.io/en/v2.7.0.1/language/instance-arguments.html} for more details.}  These arguments
+with the keyword \AK{instance} and we wrap the arguments of \AC{cons}
+with \AF{⦃} \AF{⦄} brackets, turning them into instance arguments.\footnote{See \url{https://agda.readthedocs.io/en/v2.7.0.1/language/instance-arguments.html} for more details.}  These arguments
 behave like the hidden arguments, except Agda will apply an instance
 search when solving them.  This allows us to omit these proofs in
 a larger number of cases than if we were to use hidden arguments.
+This becomes useful in the definition of \AF{forward} at the end of
+Section~\ref{sec:ar-cnn-prim}.
 
 \begin{code}[hide]
   infix 5 _+_≈_
@@ -604,8 +615,12 @@ a larger number of cases than if we were to use hidden arguments.
   infixl 8 _⊝ₚ_
 \end{code}
 
-The second step is to define the actual relations.  With the help of composition
-combinators ($f$ \AF{∘} $g$ = λ x → $f$ ($g$ x)) and ($f$ \AF{∘₂} $g$ = λ x y → $f$ ($g$ x y))
+The second step is to define\footnote{
+Recall that the type of propositional equality \AF{\_≡\_} is ($X$ → $X$ → \AF{Set}).
+In this particular case, $X$ is \AF{ℕ}.}
+the actual relations.  With the help of composition
+combinators ($f$ \AF{∘} $g$ = λ $x$ → $f$ ($g$ $x$)) and 
+($f$ \AF{∘₂} $g$ = λ $x$ $y$ → $f$ ($g$ $x$ $y$))
 the definitions are as follows.
 \begin{mathpar}
 \codeblock{\begin{code}
@@ -635,7 +650,7 @@ the cases when the inverse does not exist.
 \begin{mathpar}
 \codeblock{\begin{code}
   _⊕ₚ_ : P s → P u → suc p ≈ u → s + p ≈ r → P r
-  _⊝ₚ_ : (i : P r) (j : P s) (su : suc p ≈ u) (sp : s + p ≈ r) → Dec (∃ λ k → (j ⊕ₚ k) su sp ≡ i)
+  _⊝ₚ_ : (i : P r) (j : P s) (su : suc p ≈ u) (sp : s + p ≈ r) → Dec (∃[ k ] (j ⊕ₚ k) su sp ≡ i)
 \end{code}}
 \end{mathpar}
 The implementations of \AF{⊕ₚ} and \AF{⊝ₚ} simply apply \AF{⊕} and \AF{⊝}.
@@ -689,9 +704,11 @@ like a free monad over a \AD{Vec} type, which can be easily defined.  Now,
 consider defining a generalised transpose on such representation.  Transpose of
 an \AD{Ar} array is simply a selection on a reversed index: λ ix → a
 (\AF{reverse} ix). In case of free monads, this is a significantly more
-complicated recursive expression.  Finally, when arrays are
-functions, fusion equalities (\eg{} map f ∘ map g $\cong$ map (f ∘ g))
-come for free through normalisation, which makes formal reasoning easier.
+complicated recursive expression.
+
+%Finally, when arrays are
+%functions, fusion equalities (\eg{} map f ∘ map g $\cong$ map (f ∘ g))
+%come for free through normalisation, which makes formal reasoning easier.
 
 
 

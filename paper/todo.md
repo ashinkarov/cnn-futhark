@@ -4,12 +4,6 @@ List of minor remarks suggested by reviewers. Remove the ones that have been don
 
 l5: "strong correctness guarantees" -- like/namely?
 
-l224: Explain instance argument syntax {{}} here.
-
-l220-225: Say in prose what these relations do/capture.
-
-l235: Remind readers of Agda's notation for identity types.
-
 l258: Equations relating slide and backslide?
 
 l297: "the local neighbourhood"
@@ -51,9 +45,6 @@ l1197: "certain functions being inverses" -- where do you use this?
    this is a matter of aesthetics :)
 
 
- - 221: Incidentally, why is this specialized to natural numbers? Surely this works fine for an
-   arbitrary type A.
-
  - 465: I'm surprised that passing the environment as an instance argument is a safe idea here:
    could Agda not always update in the future to make this code just pass the empty environment
    instead?
@@ -64,8 +55,6 @@ l1197: "certain functions being inverses" -- where do you use this?
 - l50ff "follow [36]" here and everywhere: do not use citations as nouns
 
 - l136 Is there a reason to use `ι n` instead of the standard `[ n ]` for the singleton `n`?
-
-- l169 I think the surprise goes away if the second hypothesis is written as $j ≤ n$ rather than $j + 1 < n$.
 
 - l295ff A picture would help in the visualization of block formation (for low dimensions).
 

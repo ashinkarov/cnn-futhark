@@ -102,6 +102,7 @@ significant gain.
 
 
 
+> WON'T FIX
 > * why define the Positions type family `P` directly as a `data` type
 >   definition, rather than as a definition by recursion on `S`, as an
 >   iterated product type?
@@ -109,8 +110,7 @@ significant gain.
 You can pattern-match on indices directly, which sometimes look nicer.
 Otherwise there isn't much difference.
 
-
-
+> PARTIALLY FIXED (explained)
 > Section 3.2
 > 
 > This seems needlessly over-elaborate, at the potential cost of losing
@@ -161,6 +161,16 @@ it easier for the readers to grasp constructors of E.
 
 I agree, but I would use the same argument here --- `Maybe` does not prevent
 me from saying `nothing` where there is actually something.
+
+
+
+
+
+
+
+
+
+
  
 > The types of `slide` and `backslide` I found to be very difficult to
 > read, combining as they do, in two different argument orders, appeal
