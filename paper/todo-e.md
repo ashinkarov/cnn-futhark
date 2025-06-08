@@ -185,16 +185,7 @@ a good way to introduce something like `sucₛ` that expands to a point-wise
 equation and the array.
 
 
-
-
-> NB. the `conv` and `mconv` constructions are moreover generic in any
-> particular (semi)ring structure on `R`, so that `conv₁` can (should?)
-> be seen in terms of the semiring instance for `R = ℕ` etc.
-
-Yes, this is true, I am happy to mention this, but I didn't want to add
-extra level of abstraction, parametrising the entire construction by a
-semiring.  I can certainly mention this in the text or in the footnote.
- 
+FIXED 
 > p.7
 > The "running example" finally makes an appearance, but without ever
 > having been explicitly mentioned (nor the role that the `forward`
@@ -203,16 +194,10 @@ semiring.  I can certainly mention this in the text or in the footnote.
 
 Sure, happy to expand.
 
-> The definition of `forward` is given in terms of Agda's `let`
-> construct, when it might be smoother simply to give a definition using
-> `where` clauses, not least because Agda's `let` actually gives rise to
-> inlined substitution in the typechecked code, and thus potentially a
-> loss of sharing upfront.
 
-One reason why I used `let` instead of `where` is because it rhymes
-better with the definition of `cnn` in line 670.  Also, we are not too
-interested in performance of shallowly-embedded `forward` here, and this
-is something that I am happy to mention.
+
+
+
 
 > Section 4 The embedded DSL
 > 

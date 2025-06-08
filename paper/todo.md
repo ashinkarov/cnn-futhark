@@ -4,8 +4,6 @@ List of minor remarks suggested by reviewers. Remove the ones that have been don
 
 l5: "strong correctness guarantees" -- like/namely?
 
-l297: "the local neighbourhood"
-
 l329-342: very nice
 
 l375: "use non-trivial dependencies within constructors" -- Please explain.

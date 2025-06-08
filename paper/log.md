@@ -220,4 +220,20 @@ compute the same result on 1-d arrays.  This addresses the following comments:
 > (A)
 > l258: Equations relating slide and backslide?
 
+* Mentioning generality of the conv/mconv construction on arbitrary semiring,
+  resolving:
 
+> (E)
+> NB. the `conv` and `mconv` constructions are moreover generic in any
+> particular (semi)ring structure on `R`, so that `conv₁` can (should?)
+> be seen in terms of the semiring instance for `R = ℕ` etc.
+
+* Mentioned why we are using lets in the definition of forward in section 3,
+  resolving:
+
+> (E)
+> The definition of `forward` is given in terms of Agda's `let`
+> construct, when it might be smoother simply to give a definition using
+> `where` clauses, not least because Agda's `let` actually gives rise to
+> inlined substitution in the typechecked code, and thus potentially a
+> loss of sharing upfront.

@@ -769,6 +769,10 @@ Generalised convolution is given by \AF{conv}, and it is almost identical to its
 1-dimensional counterpart (except it uses \AF{slide} instead of \AF{slide₁}).
 The \AF{mconv} runs $u$ \AF{conv}s (conceptually in parallel) and then it adds a
 corresponding bias from the array $b$ (of shape $u$) to each convolution.
+Note that \AF{conv}/\AF{mconv} are generic in a semiring structure on \AD{ℝ},
+and \AF{conv₁} can be seen as a 1-dimensional version of \AF{conv} in terms
+of the semiring on \AD{ℕ}.
+
 \begin{code}[hide]
 module CNN where
   open import Data.Nat as ℕ using (ℕ)
@@ -858,14 +862,21 @@ Note that \AF{avgp₂} forces a programmer to provide explicit sizes
 of the blocked array, and it will not admit arrays of shape such as
 $2 * m \times 2 * n$, because $m * 2$ is not definitionally equal to $2 * m$.
 
-With these primitives we implement a forward part of the CNN
-as follows.  The \AB{inp} argument is the image of a hand-written digit, all
+With these primitives we implement a forward part of the CNN using
+Listing~\ref{fig:sac-code} as a blueprint.
+The \AB{inp} argument is the image of a hand-written digit, all
 the other arguments are weights, and the function returns the 10-element vector
-with probabilities which digit that is.  Note that type annotations in let are
-purely for documentation --- Agda infers them automatically and these lines
+with probabilities which digit that is. Note that type annotations in 
+\AK{let}s\footnote{
+We use \AK{let} instead of \AK{where} so that the definition of \AF{forward}
+can be easily translated to the embedded DSL which only has lets.  While Agda's
+lets are always inlined, which might be inefficient, we never intend to
+run this particular code.
+}
+are purely for documentation --- Agda infers them automatically and these lines
 can be removed.  Note also that all the \AF{mconv} applications do not require
 explicit proofs as Agda can compute them from the shape information provided
-in types.
+in types. 
 %\begin{mathpar}
 %\codeblock{
 \begin{code}
