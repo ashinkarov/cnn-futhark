@@ -77,7 +77,7 @@ notions into new revision, but finding a good balance is difficult.
 > Detailed comments
 
  
-
+> WON'T FIX
 > p.3
 > You do a lot of heavy lifting here for the non-specialist, while not
 > really discussing trade-offs in the details of the representation:
@@ -100,6 +100,8 @@ that our `Ar` module is about 250 lines of code.  A small part of it
 could be replaced with constructions from stdlib, but this is not a
 significant gain.
 
+
+
 > * why define the Positions type family `P` directly as a `data` type
 >   definition, rather than as a definition by recursion on `S`, as an
 >   iterated product type?
@@ -108,33 +110,6 @@ You can pattern-match on indices directly, which sometimes look nicer.
 Otherwise there isn't much difference.
 
 
-> p.4
-> I don't see the need for *decidability* of the `_⊖_` operation (and
-> those which build on it later, etc.), rather than simply returning a
-> `Maybe` option type, as the `slide` function (and subsequent friends)
-> are going to use the `nothing` case to return a default, so full
-> decidability, while impressive, seems like overkill.
-
-Actually, I tend to disagree.  The trouble is that Maybe (specifically
-in this case) can actually introduce off-by-one errors.  One can return
-`nothing` in the case where the value actually exists.  We did find a
-bug while translating the implementation of this particular function
-from another language.  Therefore, while it is a bit of an overkill,
-this is a useful safety measure.  I am happy to motivate this a little
-bit more in the text.
- 
-> Similarly, the discussion of the type isomorphism seems muddled, when
-> what is really going seems to be that are going to some lengths to
-> skilfully avoid having to negotiate the equality `m + suc n ≡ suc (m +
-> n)` in the type of positions?
-
-It is a bit more subtle, as for `i : Fin m`, `j : Fin (1 + n)` their sum
-(when using`+` from Fin's) is `i + j : Fin (toℕ i + suc n)`, but we need
-`Fin (m + n)`.  As for the discussion about isomorphism, this is me literally
-replying to the one of the reviewer's comment from the previous submission
-attempt who said: your definition of `⊕` is overly complicated, surely
-you can simplify this through the mentioned isomorphism...   I am happy
-to have another go at explaining this bit.
 
 > Section 3.2
 > 

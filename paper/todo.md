@@ -6,12 +6,6 @@ l5: "strong correctness guarantees" -- like/namely?
 
 l136: "pattern" -- quickly recall pattern syntax for readers less familiar with Agda
 
-l160: "Dec" -- Just give the definition! It is not that hard and your current description is not enough to understand what it does.
-
-l160: "\exists" -- Explain. Contrast with "\Sigma". Does the choice matter here?
-
-l172-l180:  This is currently super unclear and should probably be rewritten.
-
 l224: Explain instance argument syntax {{}} here.
 
 l220-225: Say in prose what these relations do/capture.

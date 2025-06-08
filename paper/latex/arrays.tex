@@ -105,11 +105,10 @@
 \AgdaModule{Data.Product}\AgdaSpace{}%
 \AgdaSymbol{as}\AgdaSpace{}%
 \AgdaModule{Prod}\AgdaSpace{}%
-\AgdaKeyword{using}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaFunction{∃}\AgdaSymbol{;}\AgdaSpace{}%
-\AgdaOperator{\AgdaInductiveConstructor{\AgdaUnderscore{},\AgdaUnderscore{}}}\AgdaSymbol{;}\AgdaSpace{}%
-\AgdaOperator{\AgdaFunction{\AgdaUnderscore{}×\AgdaUnderscore{}}}\AgdaSymbol{;}\AgdaSpace{}%
-\AgdaFunction{uncurry}\AgdaSymbol{)}\<%
+\AgdaKeyword{hiding}\AgdaSpace{}%
+\AgdaSymbol{(}\AgdaFunction{map}\AgdaSymbol{;}\AgdaSpace{}%
+\AgdaFunction{zipWith}\AgdaSymbol{)}\AgdaSpace{}%
+\AgdaComment{--\ using\ (∃;\ ∃[\AgdaUnderscore{}]\AgdaUnderscore{};\ \AgdaUnderscore{},\AgdaUnderscore{};\ \AgdaUnderscore{}×\AgdaUnderscore{};\ uncurry)}\<%
 \end{code}
 
 
@@ -694,7 +693,7 @@ achieve this are named \AF{nest} and \AF{unnest} and their definitions are:
 \end{mathpar}
 
 One helpful categorical view on the above definition is:
-\AF{Ar} is a monoidal functor between monoidal categories (\AF{S},\AF{⊗},\AC{[]})
+\AF{Ar} is a monoidal functor between monoidal categories (\AF{S}, \AF{⊗}, \AC{[]})
 and (\AF{Set} → \AF{Set}, \AF{∘}, \AF{id}), which is ensured
 by \AF{nest} and \AF{unnest}.
 
@@ -846,7 +845,8 @@ of the primitives are as follows:
 \end{mathpar}
 
 While \AF{sum} resembles \texttt{foldr}, its behaviour differs from that of a
-conventional \texttt{foldr} over a free monad. Intuitively, rather than
+conventional \texttt{foldr} over a free monad of a foldable functor.
+Intuitively, rather than
 selecting an order for the elements and reducing them, \AF{sum} reduces
 lower-dimensional sub-arrays (conceptually in parallel) and subsequently
 reduces the result. For instance, if we fix the binary operation \AB{f} and the
@@ -985,7 +985,10 @@ define the primitives that are needed for the CNN.
 
 \subsection{One-dimensional convolution}
 We start with plus and minus operations for 1-d indices which are
-prerequisites for defining convolution:
+prerequisites for defining convolution.  Consider definition of plus
+(denoted \AF{⊕}) which adds two bounded indices $i$ and $j$ ---
+we have Agda implementation on the left hand side, and the information
+about bounds on the right hand side.
 \begin{code}[hide]%
 %
 \>[2]\AgdaFunction{inject-left}\AgdaSpace{}%
@@ -1210,10 +1213,39 @@ prerequisites for defining convolution:
 \AgdaBound{j}\AgdaSymbol{)}\<%
 \end{code}}
 \and
+\codeblock{\[
+ \inferrule*
+    {i < m \and j < 1 + n}
+    {i+j < m + n}
+  \and
+\]}
+\end{mathpar}
+Recall that the type \AF{Fin} $n$ is a type for natural numbers $i$ that
+are bounded by $n$ (\ie{} $i < n$).  The type of \AF{⊕} carries non-trivial
+information about the index bounds.  We
+add indices $i < m$ and $j < 1 + n$ as natural numbers, and the result of
+addition is bound by $m + n$.  While this might be a little surprising, this
+indeed holds for natural numbers.  Readers may convince themselves by
+recalling that $j < 1 + n$ is the same as $j \le n$, or by considering
+maximal values that $i$ and $j$ could possibly take.
+Note that as indices $i$ and $j$ are added as natural numbers, there seem to be
+no easy way to define \AF{⊕} in terms of (\AD{Fin} $(m + n)$ $\cong$
+\AD{Fin} $m$ $⊎$ \AD{Fin} n) isomorphism, hence we use a direct definition.
+
+While \AF{⊕} is a non-injective operation, we can define \emph{partial}
+inverses which give rise to left and right subtraction.\footnote{
+For the given $a$ and $b$, \emph{left} subtraction ($a -_{l} b$) means that we
+solve $b + x = a$ for $x$, whereas \emph{right} subtraction ($a -_{r} b$)
+means that we solve $x + b = a$ for $x$.
+}
+In the paper we consider left subtraction (denoted \AF{⊝}) --- its
+Agda definition is given on the left hand side, and the information about
+bounds on the right hand side.
+\begin{mathpar}
 \codeblock{\begin{code}%
 %
 \>[2]\AgdaOperator{\AgdaFunction{\AgdaUnderscore{}⊝\AgdaUnderscore{}}}%
-\>[665I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[664I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{i}\AgdaSpace{}%
 \AgdaSymbol{:}\AgdaSpace{}%
 \AgdaDatatype{Fin}\AgdaSpace{}%
@@ -1225,19 +1257,24 @@ prerequisites for defining convolution:
 \AgdaDatatype{Fin}\AgdaSpace{}%
 \AgdaGeneralizable{m}\AgdaSymbol{)}\<%
 \\
-\>[.][@{}l@{}]\<[665I]%
+\>[.][@{}l@{}]\<[664I]%
 \>[6]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaRecord{Dec}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaFunction{∃}\AgdaSpace{}%
-\AgdaSymbol{λ}\AgdaSpace{}%
+\AgdaSymbol{(}\AgdaFunction{∃[}\AgdaSpace{}%
 \AgdaBound{k}\AgdaSpace{}%
-\AgdaSymbol{→}\AgdaSpace{}%
+\AgdaFunction{]}\AgdaSpace{}%
 \AgdaBound{j}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{⊕}}\AgdaSpace{}%
 \AgdaBound{k}\AgdaSpace{}%
 \AgdaOperator{\AgdaDatatype{≡}}\AgdaSpace{}%
 \AgdaBound{i}\AgdaSymbol{)}\<%
 \end{code}}
+\and
+\codeblock{\[
+   \inferrule*[right=⊝]
+    {r < m + n \and j < m}
+    {\exists (k < 1 + n). j + k = r}
+\]}
 \end{mathpar}
 \begin{code}[hide]%
 %
@@ -1534,34 +1571,29 @@ prerequisites for defining convolution:
 %
 \>[2]\AgdaComment{--\ minusx\ \{suc\ m\}\ \{suc\ n\}\ (suc\ i)\ (suc\ j)\ =\ ?\ }\<%
 \end{code}
-Recall that the type \AF{Fin} $n$ is a type for natural numbers $i$ that
-are bounded by $n$ (\ie{} $i < n$).  Plus adds two bounded indices $i$ and $j$
-where $i < m$ and $j < 1 + n$ (both $i$ and $j$ are non-negative as any
-element of \AF{Fin}).
-The indices $i$ and $j$ are added as natural numbers, so there is
-no easy way to apply type isomorphisms such as \AD{Fin} $(m + n)$ $\cong$
-\AD{Fin} $m$ $⊎$ \AD{Fin} n.  Minus is a partial inverse of plus described below.
+The return type of \AF{⊝} says that there exists a decision procedure
+(\AF{Dec} A = A \AF{⊎} \AF{¬} A) for finding a dependent pair\footnote{%
+The \AF{∃} syntax makes it possible to omit the type of $k$, and it is
+expands to \AF{Σ} (\AF{Fin} (\AB{n} + 1)) λ k → j \AF{⊕} k \AF{≡} i. 
+}
+with the first projection of type
+\AF{Fin} (1 + \AB{n}) (that we bind to $k$), and the second projection
+is a proof that $k$ is an inverse of \AF{⊕}.  The pair is needed to
+ensure that if the index is returned it is actually the inverse.
+The \AF{Dec} type serves two purposes.  Firstly, it ensures that the
+function is partial (we could have achieved this with \AF{Maybe}).
+Secondly, if the function does not return a result, it provides a
+proof that the result could not possibly exist.  The latter guarantees,
+thanks to dependent types,  that partial inverse is implemented correctly,
+and the function does not return \AC{nothing} where there is actually
+something.
 
-While both definitions look innocent, their types carry non-trivial
-information about the bounds.  Consider the bounds in the \AF{\_⊕\_} operation:
-\begin{mathpar}
-  \inferrule*
-    {i < m \and j < 1 + n}
-    {i+j < m + n}
-\end{mathpar}
-This looks a little surprising, but this indeed holds for natural numbers.
-Readers may convince themselves by considering the maximum value that $i$ and $j$
-can possibly take.  The \AF{\_⊕\_} operation have partial inverses making it possible
-to define left and right subtraction.  We consider left subtraction \AF{\_⊝\_}.
-Its type says that there exists a decision procedure for finding $k$ of type
-\AF{Fin} (1 + \AB{n}) (\eg{} $k < 1 + n$) together with the proof that $k$ is
-an inverse of \AF{⊕}.
-In some sense \AF{Dec} is similar to \AF{Maybe} type, except it forces one
-to prove why the value does not exist as opposed to just returning \AC{nothing}.
-For example, if we were to evaluate $i ⊝ j$ where $i = 1 < 3 + 5$ and $j = 2 < 3$,
-we will get a proof that there is no natural number $k < 1 + 5$ such that $2 ⊕ k ≡ 1$.
-Here dependent types come very useful, as we eliminate the possibility of
-introducing off-by-one errors in the definition of \AF{⊝}.
+% In some sense \AF{Dec} is similar to \AF{Maybe} type, except it forces one
+% to prove why the value does not exist as opposed to just returning \AC{nothing}.
+% For example, if we were to evaluate $i ⊝ j$ where $i = 1 < 3 + 5$ and $j = 2 < 3$,
+% we will get a proof that there is no natural number $k < 1 + 5$ such that $2 ⊕ k ≡ 1$.
+% Here dependent types come very useful, as we eliminate the possibility of
+% introducing off-by-one errors in the definition of \AF{⊝}.
 
 
 Now we are ready to define a 1-dimensional convolution.
@@ -1724,7 +1756,7 @@ and ternary relations on natural numbers:
 \codeblock{\begin{code}%
 %
 \>[2]\AgdaKeyword{data}%
-\>[954I]\AgdaDatatype{Pw₂}\AgdaSpace{}%
+\>[952I]\AgdaDatatype{Pw₂}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{R}\AgdaSpace{}%
 \AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{a}\AgdaSpace{}%
@@ -1734,7 +1766,7 @@ and ternary relations on natural numbers:
 \AgdaSymbol{→}\AgdaSpace{}%
 \AgdaPrimitive{Set}\AgdaSymbol{)}\<%
 \\
-\>[.][@{}l@{}]\<[954I]%
+\>[.][@{}l@{}]\<[952I]%
 \>[7]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{a}\AgdaSpace{}%
 \AgdaBound{b}\AgdaSpace{}%
@@ -1784,7 +1816,7 @@ and ternary relations on natural numbers:
 \codeblock{\begin{code}%
 %
 \>[2]\AgdaKeyword{data}%
-\>[995I]\AgdaDatatype{Pw₃}\AgdaSpace{}%
+\>[993I]\AgdaDatatype{Pw₃}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{R}\AgdaSpace{}%
 \AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{a}\AgdaSpace{}%
@@ -1795,7 +1827,7 @@ and ternary relations on natural numbers:
 \AgdaSymbol{→}\AgdaSpace{}%
 \AgdaPrimitive{Set}\AgdaSymbol{)}\<%
 \\
-\>[.][@{}l@{}]\<[995I]%
+\>[.][@{}l@{}]\<[993I]%
 \>[7]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{a}\AgdaSpace{}%
 \AgdaBound{b}\AgdaSpace{}%
@@ -2082,7 +2114,7 @@ proof of (non-)existence of the inverse.
 %
 \>[2]\AgdaSymbol{((}\AgdaBound{i}\AgdaSpace{}%
 \AgdaOperator{\AgdaInductiveConstructor{∷}}%
-\>[1190I]\AgdaBound{is}\AgdaSymbol{)}\AgdaSpace{}%
+\>[1188I]\AgdaBound{is}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{⊝ₚ}}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{j}\AgdaSpace{}%
 \AgdaOperator{\AgdaInductiveConstructor{∷}}\AgdaSpace{}%
@@ -2102,7 +2134,7 @@ proof of (non-)existence of the inverse.
 \AgdaBound{s+p}\AgdaSpace{}%
 \AgdaSymbol{⦄)}\<%
 \\
-\>[.][@{}l@{}]\<[1190I]%
+\>[.][@{}l@{}]\<[1188I]%
 \>[8]\AgdaKeyword{with}\AgdaSpace{}%
 \AgdaBound{i}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{⊝}}\AgdaSpace{}%
@@ -2860,7 +2892,7 @@ in types.
 \begin{code}%
 %
 \>[2]\AgdaFunction{forward}%
-\>[1730I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[1728I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{inp}%
 \>[18]\AgdaSymbol{:}%
 \>[21]\AgdaFunction{Ar}\AgdaSpace{}%
@@ -2883,7 +2915,7 @@ in types.
 \AgdaInductiveConstructor{[]}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaPostulate{ℝ}\AgdaSymbol{)}\<%
 \\
-\>[.][@{}l@{}]\<[1730I]%
+\>[.][@{}l@{}]\<[1728I]%
 \>[10]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{b₁}%
 \>[18]\AgdaSymbol{:}%

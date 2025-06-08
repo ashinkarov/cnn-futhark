@@ -154,3 +154,26 @@ compute the same result on 1-d arrays.  This addresses the following comments:
 >   - avoiding most, if not all, of the explicit operations on
 >     positions, `_⊗ₚ_`, `split` etc. in favour of direct implementation
 >     on the `Ar s X` types themselves (more on this later)
+
+* Rewrote explanation about + and - for indices, resolving:
+
+> (A)
+> l160: "Dec" -- Just give the definition! It is not that hard and your current description is not enough to understand what it does.
+> 
+> l160: "\exists" -- Explain. Contrast with "\Sigma". Does the choice matter here?
+> 
+> l172-l180:  This is currently super unclear and should probably be rewritten.
+>
+> (E)
+> p.4
+> I don't see the need for *decidability* of the `_⊖_` operation (and
+> those which build on it later, etc.), rather than simply returning a
+> `Maybe` option type, as the `slide` function (and subsequent friends)
+> are going to use the `nothing` case to return a default, so full
+> decidability, while impressive, seems like overkill.
+>
+> Similarly, the discussion of the type isomorphism seems muddled, when
+> what is really going seems to be that are going to some lengths to
+> skilfully avoid having to negotiate the equality `m + suc n ≡ suc (m +
+> n)` in the type of positions?
+
