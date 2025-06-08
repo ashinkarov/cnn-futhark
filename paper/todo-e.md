@@ -162,16 +162,7 @@ it easier for the readers to grasp constructors of E.
 I agree, but I would use the same argument here --- `Maybe` does not prevent
 me from saying `nothing` where there is actually something.
 
-
-
-
-
-
-
-
-
-
- 
+WON'T FIX THIS 
 > The types of `slide` and `backslide` I found to be very difficult to
 > read, combining as they do, in two different argument orders, appeal
 > to both the `p + q ≈ r` and `suc p ≈ q` invariants. Moreover, here, as
@@ -192,6 +183,9 @@ Your definitions do look nice, but as I was saying, I was trying to keep
 computations out of array indices.  I'd have to think whether there is
 a good way to introduce something like `sucₛ` that expands to a point-wise
 equation and the array.
+
+
+
 
 > NB. the `conv` and `mconv` constructions are moreover generic in any
 > particular (semi)ring structure on `R`, so that `conv₁` can (should?)

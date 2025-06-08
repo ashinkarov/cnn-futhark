@@ -672,7 +672,12 @@ proof of (non-)existence of the inverse.
 
 Generalised \AF{slide} looks very similar to its 1-dimensional
 counterpart, except that \AF{⊕} is replaced with \AF{⊕ₚ}
-We also introduce a section of \AF{slide} that we call \AF{backslide}.
+We also introduce a section\footnote{
+If we apply \AF{slide} after \AF{backslide} we get the same array back.
+Formally, we prove: ∀ $j$ → \AF{slide} $i$ $sp$ (\AF{backslide}
+$i$ $a$ $su$ $e$ $sp$) $su$ $j$ \AF{≡} $a$ $j$.
+}
+of \AF{slide} that we call \AF{backslide}.
 It embeds a $(1+p)$-dimensional array into a $(s+p)$-dimensional
 one at the offset $i$ using \AB{def} to fill the outer region.
 \begin{mathpar}
@@ -686,6 +691,45 @@ one at the offset $i$ using \AB{def} to fill the outer region.
   ... | _            = def
 \end{code}}
 \end{mathpar}
+\begin{code}[hide]
+  -- Here we prove that slide i (backslide i a) ≡ a
+  inject-+-inj : ∀ n (i j : Fin m) → inject+ n i ≡ inject+ n j → i ≡ j
+  inject-+-inj n zero zero p = refl
+  inject-+-inj n (suc i) (suc j) p = cong suc (inject-+-inj n i j (suc-injective p))
+
+  inject-left-inj : (i j : Fin (suc m)) 
+                  → inject-left {n = n} i ≡ inject-left j
+                  → i ≡ j
+  inject-left-inj {m = m}{n} i j pf rewrite +-comm n m = inject-+-inj _ _ _ pf
+
+  thm₁ : (i : Fin m) (j k : Fin (suc n))
+      → (i ⊕ k) ≡ (i ⊕ j)
+      → k ≡ j
+  thm₁ zero j k pf = inject-left-inj _ _ pf
+  thm₁ (suc i) j k pf = thm₁ i j k (suc-injective pf) 
+
+  ∷-eq₁ : ∀ {i j : Fin n}{xs ys : P s} →  i ∷ xs ≡ j ∷ ys → i ≡ j
+  ∷-eq₁ refl = refl 
+  ∷-eq₂ : ∀ {i j : Fin n}{xs ys : P s} →  i ∷ xs ≡ j ∷ ys → xs ≡ ys 
+  ∷-eq₂ refl = refl 
+
+  thm : (i : P s) (j k : P u) (su : suc p ≈ u) (sp : s + p ≈ r)
+      → (i ⊕ₚ k) su sp ≡ (i ⊕ₚ j) su sp
+      → k ≡ j
+  thm i j k [] [] pf = pf
+  thm (x ∷ i) (x₁ ∷ j) (x₂ ∷ k) (cons ⦃ refl ⦄ ⦃ su ⦄) (cons ⦃ refl ⦄ ⦃ sp ⦄) pf 
+    = cong₂ _∷_ (thm₁ x _ _ (∷-eq₁ pf)) (thm _ _ _ _ _ (∷-eq₂ pf)) 
+
+  slide-back : ∀ (i : P s) (sp : s + p ≈ r) a (su : suc p ≈ u) (e : X)
+             → ∀ j → slide i sp (backslide i a su e sp) su j ≡ a j
+  slide-back {s = s}{p}{r}{u} i sp a su e j 
+      with ((i ⊕ₚ j) su sp ⊝ₚ i) su sp
+  ... | yes (k , pf) rewrite thm i j k _ _ pf = refl
+  ... | no ¬p = ⊥-elim (¬p (j , refl))
+\end{code}
+Note that we keep explicit shape relations in the type signature of
+\AF{slide}/\AF{backslide}, as we intend to introduce builtin operations
+of that type in the embedded DSL in Section~\ref{sec:edsl}.
 
 \paragraph{Remark on indexing} We would like to address a general remark that
 is often made by functional programmers that index-oriented definitions such as

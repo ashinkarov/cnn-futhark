@@ -211,8 +211,13 @@ compute the same result on 1-d arrays.  This addresses the following comments:
 > Section 3.2
 > ...
 
-While I attempted to do some suggested inlining, the overall result did look
-uglier (in my opinion) and took more space.  Therefore, I left the structure,
-but I tried to clarify all the concerns raised in the reviews.
+  While I attempted to do some suggested inlining, the overall result did look
+  uglier (in my opinion) and took more space.  Therefore, I left the structure,
+  but I tried to clarify all the concerns raised in the reviews.
+
+* Introduced a proof that backslide is a section of slide, resolving:
+
+> (A)
+> l258: Equations relating slide and backslide?
 
 
