@@ -239,7 +239,12 @@ by \AF{nest} and \AF{unnest}.
 
 
 \paragraph{Reduction} We implement reduction of the binary operations
-over arrays in two steps.  Firstly, we define 1-d reductions  that
+over arrays in two steps.  Firstly, we define\footnote{
+We define a \emph{pattern} \AF{ι} for singleton shapes.  Patterns are
+definitions that can appear in pattern-matching
+cases, such as in the definition of \AF{ιsuc}.  For more details, see
+\url{https://agda.readthedocs.io/en/v2.7.0.1/language/pattern-synonyms.html}.
+} 1-d reductions  that
 we call \AD{sum₁} which is similar to right fold on lists.
 Arrays of higher ranks iterate \AF{sum₁} bottom-up.  The definition
 of the primitives are as follows:

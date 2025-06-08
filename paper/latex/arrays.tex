@@ -699,7 +699,12 @@ by \AF{nest} and \AF{unnest}.
 
 
 \paragraph{Reduction} We implement reduction of the binary operations
-over arrays in two steps.  Firstly, we define 1-d reductions  that
+over arrays in two steps.  Firstly, we define\footnote{
+We define a \emph{pattern} \AF{ι} for singleton shapes.  Patterns are
+definitions that can appear in pattern-matching
+cases, such as in the definition of \AF{ιsuc}.  For more details, see
+\url{https://agda.readthedocs.io/en/v2.7.0.1/language/pattern-synonyms.html}.
+} 1-d reductions  that
 we call \AD{sum₁} which is similar to right fold on lists.
 Arrays of higher ranks iterate \AF{sum₁} bottom-up.  The definition
 of the primitives are as follows:
@@ -1576,7 +1581,7 @@ The return type of \AF{⊝} says that there exists a decision procedure
 The \AF{∃} syntax makes it possible to omit the type of $k$, and it is
 expands to \AF{Σ} (\AF{Fin} (\AB{n} + 1)) λ k → j \AF{⊕} k \AF{≡} i. 
 }
-with the first projection of type
+where the first projection is the result of subtraction of type
 \AF{Fin} (1 + \AB{n}) (that we bind to $k$), and the second projection
 is a proof that $k$ is an inverse of \AF{⊕}.  The pair is needed to
 ensure that if the index is returned it is actually the inverse.
@@ -1585,7 +1590,7 @@ function is partial (we could have achieved this with \AF{Maybe}).
 Secondly, if the function does not return a result, it provides a
 proof that the result could not possibly exist.  The latter guarantees,
 thanks to dependent types,  that partial inverse is implemented correctly,
-and the function does not return \AC{nothing} where there is actually
+and the function does not return \AC{nothing} when there is actually
 something.
 
 % In some sense \AF{Dec} is similar to \AF{Maybe} type, except it forces one

@@ -4,8 +4,6 @@ List of minor remarks suggested by reviewers. Remove the ones that have been don
 
 l5: "strong correctness guarantees" -- like/namely?
 
-l136: "pattern" -- quickly recall pattern syntax for readers less familiar with Agda
-
 l224: Explain instance argument syntax {{}} here.
 
 l220-225: Say in prose what these relations do/capture.
@@ -52,9 +50,6 @@ l1197: "certain functions being inverses" -- where do you use this?
    `Ar s (X × Y) ≅ Ar s X × Arr s Y` (so this is pointed cartesian functor), but this is neither
    this is a matter of aesthetics :)
 
- - 136: I think one should briefly explain what "pattern" does in Agda, since this sort of syntax is
-   a bit more Agda-specific than what has come before. I think it can be guessed from context, but a
-   footnote or just a description of what to search in the Agda docs might be helpful.
 
  - 221: Incidentally, why is this specialized to natural numbers? Surely this works fine for an
    arbitrary type A.

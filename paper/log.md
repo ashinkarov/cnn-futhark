@@ -177,3 +177,15 @@ compute the same result on 1-d arrays.  This addresses the following comments:
 > skilfully avoid having to negotiate the equality `m + suc n ≡ suc (m +
 > n)` in the type of positions?
 
+* Explained pattern synonyms, resolving:
+
+> (A)
+> l136: "pattern" -- quickly recall pattern syntax for readers less familiar with Agda
+>
+> (C)
+>
+> - 136: I think one should briefly explain what "pattern" does in Agda, since this sort of syntax is
+>   a bit more Agda-specific than what has come before. I think it can be guessed from context, but a
+>   footnote or just a description of what to search in the Agda docs might be helpful.
+>
+
