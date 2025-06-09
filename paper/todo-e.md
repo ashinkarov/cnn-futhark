@@ -229,19 +229,6 @@ obvious to me which type encoding is the best.
 
 
 
-
-> Similarly, why postpone the introduction of syntax for `bin plus` and
-> `bin mul` to p.9 ll.423--4, when they would make more sense to be
-> introduced when the `Bop` type is introduced? Better still, why waste
-> a `pattern` synonym, when you could write smart constructors to build
-> in optimisation for the cases of addition of 0, or multiplication by
-> 1, which you both allude to (indirectly) later, and which make use of
-> these units being part of the *syntax* of the language (and hence
-> matchable on, IIUC?)
-
-I agree, we used to have more primitive operations, but we got rid of them
-for the sake of brevity.  We can surely inline these now.
-
 > p.9
 > 
 > The definition of `data E` would surely look better (at the cost of
@@ -249,10 +236,13 @@ for the sake of brevity.  We can surely inline these now.
 
 Sure, I can do this.
 
+WON'T FIX THIS
 > Similar remarks apply here to the types of the DSL analogues of
 > `slide`, `backslide` etc. wrt the use of the complex shape invariants
 
 The same answer as before applies :)
+
+
 
 > It seems a shame that you can't/don't permit a type structure for `E`
 > which supports the `nest`/`unnest` isomorphisms. Perhaps this is now an

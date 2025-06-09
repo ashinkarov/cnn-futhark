@@ -133,6 +133,7 @@ module AD where
   open Array hiding (sum; backslide; slide)
   open WkSub
   open Lang
+  open Syntax
 \end{code}
 \begin{code}
   data Env : Ctx → Ctx → Set where
@@ -306,7 +307,7 @@ below and the explanation of how it works follow.
   ∇ (e ⊠ e₁)               s   = ∇ e (s ⊠ e₁) ∘ ∇ e₁ (s ⊠ e)
   ∇ (scaledown x e)        s   = ∇ e (scaledown x s)
   ∇ (minus e)              s   = ∇ e (minus s)
-  ∇ (logistic e)           s   = ∇ e (let′ (logistic e) ((s ↑) ⊠ var v₀ ⊠ (one ⊞ minus (var v₀))))
+  ∇ (logistic e)           s   = ∇ e (let′ (logistic e) ((s ↑) ⊠ var v₀ ⊠ (one ⊟ var v₀)))
   
   ∇ (let′ e e₁)            s   = λ δ → ∇ₗ e (let′ e (∇ e₁ (s ↑) (δ ▹𝟘)))
 

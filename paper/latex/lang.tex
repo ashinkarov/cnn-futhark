@@ -328,9 +328,8 @@ else branch is zero; \AC{slide} and \AC{backslide} exactly as described before;
 numerical operations which includes \AC{logistic}, plus,
 multiplication, division by a constant \AC{scaledown}, and unary \AC{minus};
 finally, let bindings for arrays are given by \AC{let′}.
-The definition of the embedded language \AF{E} follows.  We also introduce the
-syntax for infix plus and multiplication denoted by \AC{⊞} and \AC{⊠}
-correspondingly.
+The definition of the embedded language \AF{E} follows. We also introduce 
+the syntax for infix minus denoted as \AF{⊟}.
 %\begin{mathpar}
 %\codeblock{
 \begin{code}%
@@ -613,10 +612,9 @@ correspondingly.
 \AgdaGeneralizable{s}\AgdaSymbol{)}\<%
 \\
 %
-\>[4]\AgdaInductiveConstructor{bin}%
+\>[4]\AgdaOperator{\AgdaInductiveConstructor{\AgdaUnderscore{}⊞\AgdaUnderscore{}}}\AgdaSpace{}%
+\AgdaOperator{\AgdaInductiveConstructor{\AgdaUnderscore{}⊠\AgdaUnderscore{}}}%
 \>[15]\AgdaSymbol{:}\AgdaSpace{}%
-\AgdaDatatype{Bop}\AgdaSpace{}%
-\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaDatatype{E}\AgdaSpace{}%
 \AgdaGeneralizable{Γ}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaInductiveConstructor{ar}\AgdaSpace{}%
@@ -685,25 +683,14 @@ correspondingly.
 \\[\AgdaEmptyExtraSkip]%
 %
 \>[2]\AgdaKeyword{pattern}\AgdaSpace{}%
-\AgdaOperator{\AgdaInductiveConstructor{\AgdaUnderscore{}⊠\AgdaUnderscore{}}}\AgdaSpace{}%
+\AgdaOperator{\AgdaInductiveConstructor{\AgdaUnderscore{}⊟\AgdaUnderscore{}}}\AgdaSpace{}%
 \AgdaBound{a}\AgdaSpace{}%
 \AgdaBound{b}\AgdaSpace{}%
 \AgdaSymbol{=}\AgdaSpace{}%
-\AgdaInductiveConstructor{bin}\AgdaSpace{}%
-\AgdaInductiveConstructor{mul}\AgdaSpace{}%
 \AgdaBound{a}\AgdaSpace{}%
-\AgdaBound{b}\<%
-\\
-%
-\>[2]\AgdaKeyword{pattern}\AgdaSpace{}%
-\AgdaOperator{\AgdaInductiveConstructor{\AgdaUnderscore{}⊞\AgdaUnderscore{}}}\AgdaSpace{}%
-\AgdaBound{a}\AgdaSpace{}%
-\AgdaBound{b}\AgdaSpace{}%
-\AgdaSymbol{=}\AgdaSpace{}%
-\AgdaInductiveConstructor{bin}\AgdaSpace{}%
-\AgdaInductiveConstructor{plus}\AgdaSpace{}%
-\AgdaBound{a}\AgdaSpace{}%
-\AgdaBound{b}\<%
+\AgdaOperator{\AgdaInductiveConstructor{⊞}}\AgdaSpace{}%
+\AgdaSymbol{(}\AgdaInductiveConstructor{minus}\AgdaSpace{}%
+\AgdaBound{b}\AgdaSymbol{)}\<%
 \end{code}
 Let us motivate the presence of three flavours of \AC{imap}/\AC{sel}
 constructors.  The difference between \AC{imap} and \AC{imapb} follows
@@ -1816,16 +1803,29 @@ is denoted with \AF{\_↑} and it is defined as follows.
 %
 \>[2]\AgdaFunction{wk}\AgdaSpace{}%
 \AgdaBound{s}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaInductiveConstructor{bin}\AgdaSpace{}%
-\AgdaBound{x}\AgdaSpace{}%
-\AgdaBound{e}\AgdaSpace{}%
+\AgdaSymbol{(}\AgdaBound{e}\AgdaSpace{}%
+\AgdaOperator{\AgdaInductiveConstructor{⊞}}\AgdaSpace{}%
 \AgdaBound{e₁}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaSymbol{=}\AgdaSpace{}%
-\AgdaInductiveConstructor{bin}\AgdaSpace{}%
-\AgdaBound{x}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaFunction{wk}\AgdaSpace{}%
 \AgdaBound{s}\AgdaSpace{}%
 \AgdaBound{e}\AgdaSymbol{)}\AgdaSpace{}%
+\AgdaOperator{\AgdaInductiveConstructor{⊞}}\AgdaSpace{}%
+\AgdaSymbol{(}\AgdaFunction{wk}\AgdaSpace{}%
+\AgdaBound{s}\AgdaSpace{}%
+\AgdaBound{e₁}\AgdaSymbol{)}\<%
+\\
+%
+\>[2]\AgdaFunction{wk}\AgdaSpace{}%
+\AgdaBound{s}\AgdaSpace{}%
+\AgdaSymbol{(}\AgdaBound{e}\AgdaSpace{}%
+\AgdaOperator{\AgdaInductiveConstructor{⊠}}\AgdaSpace{}%
+\AgdaBound{e₁}\AgdaSymbol{)}\AgdaSpace{}%
+\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaSymbol{(}\AgdaFunction{wk}\AgdaSpace{}%
+\AgdaBound{s}\AgdaSpace{}%
+\AgdaBound{e}\AgdaSymbol{)}\AgdaSpace{}%
+\AgdaOperator{\AgdaInductiveConstructor{⊠}}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaFunction{wk}\AgdaSpace{}%
 \AgdaBound{s}\AgdaSpace{}%
 \AgdaBound{e₁}\AgdaSymbol{)}\<%
@@ -2287,17 +2287,30 @@ by \AF{sub}.
 \\
 %
 \>[2]\AgdaFunction{sub}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaInductiveConstructor{bin}\AgdaSpace{}%
-\AgdaBound{x}\AgdaSpace{}%
-\AgdaBound{e}\AgdaSpace{}%
+\AgdaSymbol{(}\AgdaBound{e}\AgdaSpace{}%
+\AgdaOperator{\AgdaInductiveConstructor{⊞}}\AgdaSpace{}%
 \AgdaBound{e₁}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaBound{s}\AgdaSpace{}%
 \AgdaSymbol{=}\AgdaSpace{}%
-\AgdaInductiveConstructor{bin}\AgdaSpace{}%
-\AgdaBound{x}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaFunction{sub}\AgdaSpace{}%
 \AgdaBound{e}\AgdaSpace{}%
 \AgdaBound{s}\AgdaSymbol{)}\AgdaSpace{}%
+\AgdaOperator{\AgdaInductiveConstructor{⊞}}\AgdaSpace{}%
+\AgdaSymbol{(}\AgdaFunction{sub}\AgdaSpace{}%
+\AgdaBound{e₁}\AgdaSpace{}%
+\AgdaBound{s}\AgdaSymbol{)}\<%
+\\
+%
+\>[2]\AgdaFunction{sub}\AgdaSpace{}%
+\AgdaSymbol{(}\AgdaBound{e}\AgdaSpace{}%
+\AgdaOperator{\AgdaInductiveConstructor{⊠}}\AgdaSpace{}%
+\AgdaBound{e₁}\AgdaSymbol{)}\AgdaSpace{}%
+\AgdaBound{s}\AgdaSpace{}%
+\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaSymbol{(}\AgdaFunction{sub}\AgdaSpace{}%
+\AgdaBound{e}\AgdaSpace{}%
+\AgdaBound{s}\AgdaSymbol{)}\AgdaSpace{}%
+\AgdaOperator{\AgdaInductiveConstructor{⊠}}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaFunction{sub}\AgdaSpace{}%
 \AgdaBound{e₁}\AgdaSpace{}%
 \AgdaBound{s}\AgdaSymbol{)}\<%
@@ -2764,11 +2777,11 @@ for more details.} to define a familiar syntax for let bindings in \AF{E}.
 \begin{code}[hide]%
 %
 \>[2]\AgdaFunction{Sum}%
-\>[1664I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[1675I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{∀}\AgdaSpace{}%
 \AgdaSymbol{\{}\AgdaBound{Γ}\AgdaSymbol{\}}\<%
 \\
-\>[1664I][@{}l@{\AgdaIndent{0}}]%
+\>[1675I][@{}l@{\AgdaIndent{0}}]%
 \>[7]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaFunction{GE}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{Γ}\AgdaSpace{}%
@@ -2814,11 +2827,11 @@ for more details.} to define a familiar syntax for let bindings in \AF{E}.
 \\[\AgdaEmptyExtraSkip]%
 %
 \>[2]\AgdaFunction{Imaps}%
-\>[1700I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[1711I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{∀}\AgdaSpace{}%
 \AgdaSymbol{\{}\AgdaBound{Γ}\AgdaSymbol{\}}\<%
 \\
-\>[.][@{}l@{}]\<[1700I]%
+\>[.][@{}l@{}]\<[1711I]%
 \>[8]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaFunction{GE}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{Γ}\AgdaSpace{}%
@@ -2864,11 +2877,11 @@ for more details.} to define a familiar syntax for let bindings in \AF{E}.
 \\[\AgdaEmptyExtraSkip]%
 %
 \>[2]\AgdaFunction{Imapb}%
-\>[1736I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[1747I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{∀}\AgdaSpace{}%
 \AgdaSymbol{\{}\AgdaBound{Γ}\AgdaSymbol{\}}\<%
 \\
-\>[.][@{}l@{}]\<[1736I]%
+\>[.][@{}l@{}]\<[1747I]%
 \>[8]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{*}}\AgdaSpace{}%
@@ -3288,7 +3301,7 @@ For example, consider the expression:
 %
 \>[2]\AgdaSymbol{\AgdaUnderscore{}}\AgdaSpace{}%
 \AgdaSymbol{=}%
-\>[2003I]\AgdaFunction{Lcon}\AgdaSpace{}%
+\>[2014I]\AgdaFunction{Lcon}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaInductiveConstructor{ar}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaInductiveConstructor{ι}\AgdaSpace{}%
 \AgdaNumber{5}\AgdaSymbol{)}\AgdaSpace{}%
@@ -3305,7 +3318,7 @@ For example, consider the expression:
 \AgdaInductiveConstructor{[]}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaInductiveConstructor{ε}\<%
 \\
-\>[.][@{}l@{}]\<[2003I]%
+\>[.][@{}l@{}]\<[2014I]%
 \>[6]\AgdaSymbol{λ}\AgdaSpace{}%
 \AgdaBound{a}\AgdaSpace{}%
 \AgdaBound{b}\AgdaSpace{}%
@@ -3479,7 +3492,7 @@ rank-polymorphic addition and multiplication.
 %
 \>[2]\AgdaFunction{mconv}\AgdaSpace{}%
 \AgdaSymbol{:}%
-\>[2128I]\AgdaSymbol{⦃}\AgdaSpace{}%
+\>[2139I]\AgdaSymbol{⦃}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{+}}\AgdaSpace{}%
 \AgdaGeneralizable{p}\AgdaSpace{}%
@@ -3502,7 +3515,7 @@ rank-polymorphic addition and multiplication.
 \AgdaOperator{\AgdaFunction{⊗}}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSymbol{)))}\<%
 \\
-\>[.][@{}l@{}]\<[2128I]%
+\>[.][@{}l@{}]\<[2139I]%
 \>[10]\AgdaSymbol{(}\AgdaBound{bᵥ}\AgdaSpace{}%
 \AgdaSymbol{:}\AgdaSpace{}%
 \AgdaDatatype{E}\AgdaSpace{}%
@@ -3647,14 +3660,12 @@ which must be of the same shape.
 \AgdaInductiveConstructor{scaledown}\AgdaSpace{}%
 \AgdaNumber{2}\AgdaSpace{}%
 \AgdaSymbol{((}\AgdaBound{r}\AgdaSpace{}%
-\AgdaOperator{\AgdaInductiveConstructor{⊞}}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaInductiveConstructor{minus}\AgdaSpace{}%
-\AgdaBound{o}\AgdaSymbol{))}\AgdaSpace{}%
+\AgdaOperator{\AgdaInductiveConstructor{⊟}}\AgdaSpace{}%
+\AgdaBound{o}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaOperator{\AgdaInductiveConstructor{⊠}}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{r}\AgdaSpace{}%
-\AgdaOperator{\AgdaInductiveConstructor{⊞}}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaInductiveConstructor{minus}\AgdaSpace{}%
-\AgdaBound{o}\AgdaSymbol{)))}\<%
+\AgdaOperator{\AgdaInductiveConstructor{⊟}}\AgdaSpace{}%
+\AgdaBound{o}\AgdaSymbol{))}\<%
 \\
 %
 \\[\AgdaEmptyExtraSkip]%
@@ -3707,8 +3718,8 @@ With these primitives, we embed our running example in $E$ as follows:
 %
 \>[2]\AgdaFunction{cnn}\AgdaSpace{}%
 \AgdaSymbol{=}%
-\>[2316I]\AgdaFunction{Lcon}%
-\>[2317I]\AgdaSymbol{(}%
+\>[2325I]\AgdaFunction{Lcon}%
+\>[2326I]\AgdaSymbol{(}%
 \>[16]\AgdaInductiveConstructor{ar}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaNumber{28}\AgdaSpace{}%
 \AgdaOperator{\AgdaInductiveConstructor{∷}}\AgdaSpace{}%
@@ -3725,7 +3736,7 @@ With these primitives, we embed our running example in $E$ as follows:
 \AgdaOperator{\AgdaInductiveConstructor{∷}}\AgdaSpace{}%
 \AgdaInductiveConstructor{[]}\AgdaSymbol{)}\<%
 \\
-\>[2317I][@{}l@{\AgdaIndent{0}}]%
+\>[2326I][@{}l@{\AgdaIndent{0}}]%
 \>[14]\AgdaOperator{\AgdaInductiveConstructor{∷}}\AgdaSpace{}%
 \AgdaInductiveConstructor{ar}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaNumber{6}\AgdaSpace{}%
@@ -3787,12 +3798,12 @@ With these primitives, we embed our running example in $E$ as follows:
 \>[14]\AgdaOperator{\AgdaInductiveConstructor{∷}}\AgdaSpace{}%
 \AgdaInductiveConstructor{[]}\AgdaSymbol{)}\<%
 \\
-\>[.][@{}l@{}]\<[2317I]%
+\>[.][@{}l@{}]\<[2326I]%
 \>[13]\AgdaSymbol{(}\AgdaInductiveConstructor{ar}\AgdaSpace{}%
 \AgdaInductiveConstructor{[]}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaInductiveConstructor{ε}\<%
 \\
-\>[.][@{}l@{}]\<[2316I]%
+\>[.][@{}l@{}]\<[2325I]%
 \>[8]\AgdaSymbol{λ}\AgdaSpace{}%
 \AgdaBound{inp}\AgdaSpace{}%
 \AgdaBound{k₁}\AgdaSpace{}%

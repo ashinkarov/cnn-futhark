@@ -187,6 +187,10 @@ which is given by the \AF{EE} structure as follows.
 %
 \>[2]\AgdaKeyword{open}\AgdaSpace{}%
 \AgdaModule{Lang}\<%
+\\
+%
+\>[2]\AgdaKeyword{open}\AgdaSpace{}%
+\AgdaModule{Syntax}\<%
 \end{code}
 \begin{code}%
 %
@@ -925,7 +929,7 @@ Finally, we extend the environment by adding \AC{zero} at the top with
 \\
 \>[2][@{}l@{\AgdaIndent{0}}]%
 \>[4]\AgdaKeyword{where}%
-\>[525I]\AgdaFunction{map-let}\AgdaSpace{}%
+\>[526I]\AgdaFunction{map-let}\AgdaSpace{}%
 \AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{∀}\AgdaSpace{}%
 \AgdaSymbol{\{}\AgdaBound{Γ}\AgdaSymbol{\}}\AgdaSpace{}%
@@ -941,7 +945,7 @@ Finally, we extend the environment by adding \AC{zero} at the top with
 \AgdaBound{Γ}\AgdaSpace{}%
 \AgdaBound{Δ}\<%
 \\
-\>[.][@{}l@{}]\<[525I]%
+\>[.][@{}l@{}]\<[526I]%
 \>[10]\AgdaFunction{map-let}\AgdaSpace{}%
 \AgdaInductiveConstructor{ε}\AgdaSpace{}%
 \AgdaSymbol{=}\AgdaSpace{}%
@@ -1475,10 +1479,9 @@ below and the explanation of how it works follow.
 \AgdaInductiveConstructor{v₀}\AgdaSpace{}%
 \AgdaOperator{\AgdaInductiveConstructor{⊠}}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaInductiveConstructor{one}\AgdaSpace{}%
-\AgdaOperator{\AgdaInductiveConstructor{⊞}}\AgdaSpace{}%
-\AgdaInductiveConstructor{minus}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaInductiveConstructor{var}\AgdaSpace{}%
-\AgdaInductiveConstructor{v₀}\AgdaSymbol{))))}\<%
+\AgdaOperator{\AgdaInductiveConstructor{⊟}}\AgdaSpace{}%
+\AgdaInductiveConstructor{var}\AgdaSpace{}%
+\AgdaInductiveConstructor{v₀}\AgdaSymbol{)))}\<%
 \\
 \>[0]\<%
 \\

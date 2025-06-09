@@ -237,3 +237,16 @@ compute the same result on 1-d arrays.  This addresses the following comments:
 > `where` clauses, not least because Agda's `let` actually gives rise to
 > inlined substitution in the typechecked code, and thus potentially a
 > loss of sharing upfront.
+
+* Inlined ⊞, ⊠ definitions, resolving:
+
+> (E)
+> Similarly, why postpone the introduction of syntax for `bin plus` and
+> `bin mul` to p.9 ll.423--4, when they would make more sense to be
+> introduced when the `Bop` type is introduced? 
+
+As for defining smart constructors, I still can't have x + 0 = x and
+0 + x = x definitionally, which means optimisation on plus is still
+needed, so I'll keep just inlined constructors for simplicity.
+
+

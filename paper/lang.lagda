@@ -139,9 +139,8 @@ else branch is zero; \AC{slide} and \AC{backslide} exactly as described before;
 numerical operations which includes \AC{logistic}, plus,
 multiplication, division by a constant \AC{scaledown}, and unary \AC{minus};
 finally, let bindings for arrays are given by \AC{let′}.
-The definition of the embedded language \AF{E} follows.  We also introduce the
-syntax for infix plus and multiplication denoted by \AC{⊞} and \AC{⊠}
-correspondingly.
+The definition of the embedded language \AF{E} follows. We also introduce 
+the syntax for infix minus denoted as \AF{⊟}.
 %\begin{mathpar}
 %\codeblock{
 \begin{code}
@@ -166,13 +165,12 @@ correspondingly.
     backslide  : E Γ (ix s) → E Γ (ar u) → suc p ≈ u → s + p ≈ r → E Γ (ar r)
 
     logistic   : E Γ (ar s) → E Γ (ar s)
-    bin        : Bop → E Γ (ar s) → E Γ (ar s) → E Γ (ar s)
+    _⊞_ _⊠_    : E Γ (ar s) → E Γ (ar s) → E Γ (ar s)
     scaledown  : ℕ → E Γ (ar s) → E Γ (ar s)
     minus      : E Γ (ar s) → E Γ (ar s)
     let′       : E Γ (ar s) → E (Γ ▹ ar s) (ar p) → E Γ (ar p)
 
-  pattern _⊠_ a b = bin mul a b
-  pattern _⊞_ a b = bin plus a b
+  pattern _⊟_ a b = a ⊞ (minus b)
 \end{code}
 Let us motivate the presence of three flavours of \AC{imap}/\AC{sel}
 constructors.  The difference between \AC{imap} and \AC{imapb} follows
@@ -425,7 +423,8 @@ is denoted with \AF{\_↑} and it is defined as follows.
   wk s (slide e x e₁ x₁) = slide (wk s e) x (wk s e₁) x₁
   wk s (backslide e e₁ x x₁) = backslide (wk s e) (wk s e₁) x x₁
   wk s (logistic e) = logistic (wk s e)
-  wk s (bin x e e₁) = bin x (wk s e) (wk s e₁)
+  wk s (e ⊞ e₁) = (wk s e) ⊞ (wk s e₁)
+  wk s (e ⊠ e₁) = (wk s e) ⊠ (wk s e₁)
   wk s (scaledown x e) = scaledown x (wk s e)
   wk s (minus e) = minus (wk s e)
   wk s (let′ e e₁) = let′ (wk s e) (wk (keep s) e₁)
@@ -495,7 +494,8 @@ by \AF{sub}.
   sub (slide e x e₁ x₁) s = slide (sub e s) x (sub e₁ s) x₁
   sub (backslide e e₁ x x₁) s = backslide (sub e s) (sub e₁ s) x x₁
   sub (logistic e) s = logistic (sub e s)
-  sub (bin x e e₁) s = bin x (sub e s) (sub e₁ s)
+  sub (e ⊞ e₁) s = (sub e s) ⊞ (sub e₁ s)
+  sub (e ⊠ e₁) s = (sub e s) ⊠ (sub e₁ s)
   sub (scaledown x e) s = scaledown x (sub e s)
   sub (minus e) s = minus (sub e s)
   sub (let′ e e₁) s = let′ (sub e s) (sub e₁ (skeep s))
@@ -765,7 +765,7 @@ $\sum_i \frac{1}{2}(r_i - o_i)^2$ for the argument arrays $r$ and $o$
 which must be of the same shape.
 \begin{code}
   sqerr : (r o : E Γ (ar [])) → E Γ (ar [])
-  sqerr r o = scaledown 2 ((r ⊞ (minus o)) ⊠ (r ⊞ (minus o)))
+  sqerr r o = scaledown 2 ((r ⊟ o) ⊠ (r ⊟ o))
 
   meansqerr : (r o : E Γ (ar s)) → E Γ (ar [])
   meansqerr r o = Sum λ i → sqerr (sels ⟨ r ⟩ i) (sels ⟨ o ⟩ i) 
