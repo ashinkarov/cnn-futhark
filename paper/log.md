@@ -249,4 +249,24 @@ As for defining smart constructors, I still can't have x + 0 = x and
 0 + x = x definitionally, which means optimisation on plus is still
 needed, so I'll keep just inlined constructors for simplicity.
 
+* Explained imap/sel constructors, lack of nest/unnest, zero-but,
+  removed `unit` definition, which resolves:
 
+> (A)
+> l401-402: say in words what imap(s/b) and sel(s/b) are supposed to do.
+> l411: explain how zero-but gives a conditional.
+> 
+> (E)
+> The introduction of `unit` as a synonym for shape `[]` seems
+> excessive, and pointless, here, compared to other approaches sketched
+> above for dealing with scalar types as an instance of the fundamental
+> `Ar` type.
+>
+> It seems a shame that you can't/don't permit a type structure for `E`
+> which supports the `nest`/`unnest` isomorphisms. Perhaps this is now an
+> artefact of extraction towards Futhark, but if so, this merits a bit
+> more discussion, esp. given that you subsequently consider
+> 'normalisation' of `E` programs before extraction, so that you might
+> (and the reader, this one included) consider a richer DSL type
+> structure, with restrictions to 'Futhark-conformant' types a later
+> phase in the extraction pipeline.

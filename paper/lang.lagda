@@ -114,28 +114,34 @@ embedded programs.% XXX: more explanation?
 
 All arrays in our language are assumed to be arrays of reals.  Our contexts
 do not carry array element types, and we distinguish
-singleton arrays of shape \AF{unit} (\emph{scalars}) that will be mapped
+singleton arrays of shape \AC{[]} (\emph{scalars}) that will be mapped
 into the type that represents real numbers in the backend \eg{} double.
-The language supports two binary operations (addition and multiplication)
-that are given by \AD{Bop}.
-\begin{mathpar}
-\codeblock{\begin{code}
-  unit : S
-  unit = []
-\end{code}}
-\and
-\codeblock{\begin{code}
-  data Bop : Set where
-    plus mul : Bop
-\end{code}}
-\end{mathpar}
+This means that in the language we do not need to introduce
+\AF{nest}/\AF{unnest} operations, as there is no notion of nested arrays.
+We do this to keep the language minimal as well as facilitate extraction
+described in Section~\ref{sec:extraction}. 
+
+% The language supports two binary operations (addition and multiplication)
+% as well as unary minus.
+% \begin{mathpar}
+% \codeblock{\begin{code}
+%   unit : S
+%   unit = []
+% \end{code}}
+% \and
+% \codeblock{\begin{code}
+%   data Bop : Set where
+%     plus mul : Bop
+% \end{code}}
+% \end{mathpar}
 
 The embedded language \AF{E} includes: variables \AC{var}; constants 0 and 1
 (of arbitrary shape) given by \AC{zero} and \AC{one} correspondingly; three
 flavours of array constructor/eliminator pairs given by \AC{imaps}/\AC{sels},
-\AC{imap}/\AC{sel} and \AC{imapb}/\AC{selb}; summation \AC{sum}; conditional
-\AC{zero-but} where the predicate is fixed to equality of two indices and the
-else branch is zero; \AC{slide} and \AC{backslide} exactly as described before;
+\AC{imap}/\AC{sel} and \AC{imapb}/\AC{selb} that we explain below;
+summation \AC{sum}; conditional
+\AC{zero-but} which compares the equality of two indices and returns either
+the third argument or zero; \AC{slide} and \AC{backslide} exactly as described before;
 numerical operations which includes \AC{logistic}, plus,
 multiplication, division by a constant \AC{scaledown}, and unary \AC{minus};
 finally, let bindings for arrays are given by \AC{let′}.
@@ -149,8 +155,8 @@ the syntax for infix minus denoted as \AF{⊟}.
     zero       : E Γ (ar s)
     one        : E Γ (ar s)
 
-    imaps      : E (Γ ▹ ix s) (ar unit) → E Γ (ar s)
-    sels       : E Γ (ar s) → E Γ (ix s) → E Γ (ar unit)
+    imaps      : E (Γ ▹ ix s) (ar []) → E Γ (ar s)
+    sels       : E Γ (ar s) → E Γ (ix s) → E Γ (ar [])
 
     imap       : E (Γ ▹ ix s) (ar p) → E Γ (ar (s ⊗ p))
     sel        : E Γ (ar (s ⊗ p)) → E Γ (ix s) → E Γ (ar p)
@@ -172,21 +178,26 @@ the syntax for infix minus denoted as \AF{⊟}.
 
   pattern _⊟_ a b = a ⊞ (minus b)
 \end{code}
-Let us motivate the presence of three flavours of \AC{imap}/\AC{sel}
-constructors.  The difference between \AC{imap} and \AC{imapb} follows
+
+The \AC{imap}/\AC{sel} pairs are similar to array versions of lambda
+abstraction and application in lambda calculus, except that we
+have three flavours of them.
+The difference between \AC{imap} and \AC{imapb} (imap blocked)
+follows
 from the previous definitions: the former turns an $s$-shaped array
-of $p$-shaped arrays into a $(s ⊗ p)$-shaped array, whereas \AF{imapb}
-performs tiling based on the $s * p ≈ q$ equation.  Strictly speaking, the
-scalar version of imap (\AC{imaps}) is not needed, because
+of $p$-shaped arrays into a $(s ⊗ p)$-shaped array, whereas \AC{imapb}
+performs tiling based on the $s * p ≈ q$ equation.  Strictly speaking,
+\AC{imaps} (imap scalar) is not needed, because
 the same functionality can be achieved with \AC{imap}/\AC{sel}.
-However, if \AF{imap} computes a scalar in the body, its resulting shape 
-is $s ⊗ \AF{unit}$ which is not definitionally equal to $s$.  Using
+However, if \AC{imap} computes a scalar in the body, its resulting shape 
+is $s ⊗ \AF{[]}$ which is not definitionally equal to $s$.  Using
 \AC{sel} for selecting a scalar from an $s$-shaped array requires
-casting the shape into $s ⊗ \AF{unit}$.  Hence every scalar imap or
-selection will require transporting over the $s ⊗ \AF{unit} ≡ s$ equality,
+casting the shape into $s ⊗ \AC{[]}$.  Hence every scalar imap or
+selection will require transporting over the $s ⊗ \AC{[]} ≡ s$ equality,
 This significantly clutters equality.  One could quotient the shape
 type by the above equality, but this requires switching to a more
 powerful type theory such as setoid- or cubical type theory.
+
 
 
 
@@ -316,7 +327,7 @@ in recursive calls when it is passed unchanged.
 \end{code}
 Mostly, the interpretation is a straightforward mapping to the \AF{Ar} constructors.
 In the \AC{imaps} case we can see how the implicit conversion from what would be a
-shape $s ⊗ \AF{unit}$ into $s$.  In case of \AC{sels} we make a singleton array
+shape $s ⊗ \AF{[]}$ into $s$.  In case of \AC{sels} we make a singleton array
 using \AF{K}. Note that \AC{sum} has explicit summation index like in a mathematical
 $\sum$-notation.  We fix the default value of \AC{backslide} to zero for simplicity.
 For arrays of reals, we can get general \AF{backslide} behaviour through masking.
@@ -632,7 +643,7 @@ for more details.} to define a familiar syntax for let bindings in \AF{E}.
   Sum f = sum (f λ {Δ} ⦃ p ⦄ → var ⟨ v₀ ⟩ᵛ)
 
   Imaps : ∀ {Γ}
-        → (GE (Γ ▹ ix s) (ix s) → E (Γ ▹ ix s) (ar unit))
+        → (GE (Γ ▹ ix s) (ix s) → E (Γ ▹ ix s) (ar []))
         → E Γ (ar s)
   Imaps f = imaps (f λ {Δ} ⦃ p ⦄ → var ⟨ v₀ ⟩ᵛ)
 

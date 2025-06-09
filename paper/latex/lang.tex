@@ -286,45 +286,34 @@ embedded programs.% XXX: more explanation?
 
 All arrays in our language are assumed to be arrays of reals.  Our contexts
 do not carry array element types, and we distinguish
-singleton arrays of shape \AF{unit} (\emph{scalars}) that will be mapped
+singleton arrays of shape \AC{[]} (\emph{scalars}) that will be mapped
 into the type that represents real numbers in the backend \eg{} double.
-The language supports two binary operations (addition and multiplication)
-that are given by \AD{Bop}.
-\begin{mathpar}
-\codeblock{\begin{code}%
-%
-\>[2]\AgdaFunction{unit}\AgdaSpace{}%
-\AgdaSymbol{:}\AgdaSpace{}%
-\AgdaDatatype{S}\<%
-\\
-%
-\>[2]\AgdaFunction{unit}\AgdaSpace{}%
-\AgdaSymbol{=}\AgdaSpace{}%
-\AgdaInductiveConstructor{[]}\<%
-\end{code}}
-\and
-\codeblock{\begin{code}%
-%
-\>[2]\AgdaKeyword{data}\AgdaSpace{}%
-\AgdaDatatype{Bop}\AgdaSpace{}%
-\AgdaSymbol{:}\AgdaSpace{}%
-\AgdaPrimitive{Set}\AgdaSpace{}%
-\AgdaKeyword{where}\<%
-\\
-\>[2][@{}l@{\AgdaIndent{0}}]%
-\>[4]\AgdaInductiveConstructor{plus}\AgdaSpace{}%
-\AgdaInductiveConstructor{mul}\AgdaSpace{}%
-\AgdaSymbol{:}\AgdaSpace{}%
-\AgdaDatatype{Bop}\<%
-\end{code}}
-\end{mathpar}
+This means that in the language we do not need to introduce
+\AF{nest}/\AF{unnest} operations, as there is no notion of nested arrays.
+We do this to keep the language minimal as well as facilitate extraction
+described in Section~\ref{sec:extraction}. 
+
+% The language supports two binary operations (addition and multiplication)
+% as well as unary minus.
+% \begin{mathpar}
+% \codeblock{\begin{code}
+%   unit : S
+%   unit = []
+% \end{code}}
+% \and
+% \codeblock{\begin{code}
+%   data Bop : Set where
+%     plus mul : Bop
+% \end{code}}
+% \end{mathpar}
 
 The embedded language \AF{E} includes: variables \AC{var}; constants 0 and 1
 (of arbitrary shape) given by \AC{zero} and \AC{one} correspondingly; three
 flavours of array constructor/eliminator pairs given by \AC{imaps}/\AC{sels},
-\AC{imap}/\AC{sel} and \AC{imapb}/\AC{selb}; summation \AC{sum}; conditional
-\AC{zero-but} where the predicate is fixed to equality of two indices and the
-else branch is zero; \AC{slide} and \AC{backslide} exactly as described before;
+\AC{imap}/\AC{sel} and \AC{imapb}/\AC{selb} that we explain below;
+summation \AC{sum}; conditional
+\AC{zero-but} which compares the equality of two indices and returns either
+the third argument or zero; \AC{slide} and \AC{backslide} exactly as described before;
 numerical operations which includes \AC{logistic}, plus,
 multiplication, division by a constant \AC{scaledown}, and unary \AC{minus};
 finally, let bindings for arrays are given by \AC{let′}.
@@ -382,7 +371,7 @@ the syntax for infix minus denoted as \AF{⊟}.
 \AgdaInductiveConstructor{ix}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaInductiveConstructor{ar}\AgdaSpace{}%
-\AgdaFunction{unit}\AgdaSymbol{)}\AgdaSpace{}%
+\AgdaInductiveConstructor{[]}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
 \AgdaDatatype{E}\AgdaSpace{}%
 \AgdaGeneralizable{Γ}\AgdaSpace{}%
@@ -405,7 +394,7 @@ the syntax for infix minus denoted as \AF{⊟}.
 \AgdaDatatype{E}\AgdaSpace{}%
 \AgdaGeneralizable{Γ}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaInductiveConstructor{ar}\AgdaSpace{}%
-\AgdaFunction{unit}\AgdaSymbol{)}\<%
+\AgdaInductiveConstructor{[]}\AgdaSymbol{)}\<%
 \\
 %
 \\[\AgdaEmptyExtraSkip]%
@@ -692,21 +681,26 @@ the syntax for infix minus denoted as \AF{⊟}.
 \AgdaSymbol{(}\AgdaInductiveConstructor{minus}\AgdaSpace{}%
 \AgdaBound{b}\AgdaSymbol{)}\<%
 \end{code}
-Let us motivate the presence of three flavours of \AC{imap}/\AC{sel}
-constructors.  The difference between \AC{imap} and \AC{imapb} follows
+
+The \AC{imap}/\AC{sel} pairs are similar to array versions of lambda
+abstraction and application in lambda calculus, except that we
+have three flavours of them.
+The difference between \AC{imap} and \AC{imapb} (imap blocked)
+follows
 from the previous definitions: the former turns an $s$-shaped array
 of $p$-shaped arrays into a $(s ⊗ p)$-shaped array, whereas \AF{imapb}
-performs tiling based on the $s * p ≈ q$ equation.  Strictly speaking, the
-scalar version of imap (\AC{imaps}) is not needed, because
+performs tiling based on the $s * p ≈ q$ equation.  Strictly speaking,
+\AC{imaps} (imap scalar) is not needed, because
 the same functionality can be achieved with \AC{imap}/\AC{sel}.
 However, if \AF{imap} computes a scalar in the body, its resulting shape 
-is $s ⊗ \AF{unit}$ which is not definitionally equal to $s$.  Using
+is $s ⊗ \AF{[]}$ which is not definitionally equal to $s$.  Using
 \AC{sel} for selecting a scalar from an $s$-shaped array requires
-casting the shape into $s ⊗ \AF{unit}$.  Hence every scalar imap or
-selection will require transporting over the $s ⊗ \AF{unit} ≡ s$ equality,
+casting the shape into $s ⊗ \AF{[]}$.  Hence every scalar imap or
+selection will require transporting over the $s ⊗ \AF{[]} ≡ s$ equality,
 This significantly clutters equality.  One could quotient the shape
 type by the above equality, but this requires switching to a more
 powerful type theory such as setoid- or cubical type theory.
+
 
 
 
@@ -1382,7 +1376,7 @@ in recursive calls when it is passed unchanged.
 \end{code}
 Mostly, the interpretation is a straightforward mapping to the \AF{Ar} constructors.
 In the \AC{imaps} case we can see how the implicit conversion from what would be a
-shape $s ⊗ \AF{unit}$ into $s$.  In case of \AC{sels} we make a singleton array
+shape $s ⊗ \AF{[]}$ into $s$.  In case of \AC{sels} we make a singleton array
 using \AF{K}. Note that \AC{sum} has explicit summation index like in a mathematical
 $\sum$-notation.  We fix the default value of \AC{backslide} to zero for simplicity.
 For arrays of reals, we can get general \AF{backslide} behaviour through masking.
@@ -2777,11 +2771,11 @@ for more details.} to define a familiar syntax for let bindings in \AF{E}.
 \begin{code}[hide]%
 %
 \>[2]\AgdaFunction{Sum}%
-\>[1675I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[1664I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{∀}\AgdaSpace{}%
 \AgdaSymbol{\{}\AgdaBound{Γ}\AgdaSymbol{\}}\<%
 \\
-\>[1675I][@{}l@{\AgdaIndent{0}}]%
+\>[1664I][@{}l@{\AgdaIndent{0}}]%
 \>[7]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaFunction{GE}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{Γ}\AgdaSpace{}%
@@ -2827,11 +2821,11 @@ for more details.} to define a familiar syntax for let bindings in \AF{E}.
 \\[\AgdaEmptyExtraSkip]%
 %
 \>[2]\AgdaFunction{Imaps}%
-\>[1711I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[1700I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{∀}\AgdaSpace{}%
 \AgdaSymbol{\{}\AgdaBound{Γ}\AgdaSymbol{\}}\<%
 \\
-\>[.][@{}l@{}]\<[1711I]%
+\>[.][@{}l@{}]\<[1700I]%
 \>[8]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaFunction{GE}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{Γ}\AgdaSpace{}%
@@ -2847,7 +2841,7 @@ for more details.} to define a familiar syntax for let bindings in \AF{E}.
 \AgdaInductiveConstructor{ix}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaInductiveConstructor{ar}\AgdaSpace{}%
-\AgdaFunction{unit}\AgdaSymbol{))}\<%
+\AgdaInductiveConstructor{[]}\AgdaSymbol{))}\<%
 \\
 %
 \>[8]\AgdaSymbol{→}\AgdaSpace{}%
@@ -2877,11 +2871,11 @@ for more details.} to define a familiar syntax for let bindings in \AF{E}.
 \\[\AgdaEmptyExtraSkip]%
 %
 \>[2]\AgdaFunction{Imapb}%
-\>[1747I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[1736I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{∀}\AgdaSpace{}%
 \AgdaSymbol{\{}\AgdaBound{Γ}\AgdaSymbol{\}}\<%
 \\
-\>[.][@{}l@{}]\<[1747I]%
+\>[.][@{}l@{}]\<[1736I]%
 \>[8]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{*}}\AgdaSpace{}%
@@ -3301,7 +3295,7 @@ For example, consider the expression:
 %
 \>[2]\AgdaSymbol{\AgdaUnderscore{}}\AgdaSpace{}%
 \AgdaSymbol{=}%
-\>[2014I]\AgdaFunction{Lcon}\AgdaSpace{}%
+\>[2003I]\AgdaFunction{Lcon}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaInductiveConstructor{ar}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaInductiveConstructor{ι}\AgdaSpace{}%
 \AgdaNumber{5}\AgdaSymbol{)}\AgdaSpace{}%
@@ -3318,7 +3312,7 @@ For example, consider the expression:
 \AgdaInductiveConstructor{[]}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaInductiveConstructor{ε}\<%
 \\
-\>[.][@{}l@{}]\<[2014I]%
+\>[.][@{}l@{}]\<[2003I]%
 \>[6]\AgdaSymbol{λ}\AgdaSpace{}%
 \AgdaBound{a}\AgdaSpace{}%
 \AgdaBound{b}\AgdaSpace{}%
@@ -3492,7 +3486,7 @@ rank-polymorphic addition and multiplication.
 %
 \>[2]\AgdaFunction{mconv}\AgdaSpace{}%
 \AgdaSymbol{:}%
-\>[2139I]\AgdaSymbol{⦃}\AgdaSpace{}%
+\>[2128I]\AgdaSymbol{⦃}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{+}}\AgdaSpace{}%
 \AgdaGeneralizable{p}\AgdaSpace{}%
@@ -3515,7 +3509,7 @@ rank-polymorphic addition and multiplication.
 \AgdaOperator{\AgdaFunction{⊗}}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSymbol{)))}\<%
 \\
-\>[.][@{}l@{}]\<[2139I]%
+\>[.][@{}l@{}]\<[2128I]%
 \>[10]\AgdaSymbol{(}\AgdaBound{bᵥ}\AgdaSpace{}%
 \AgdaSymbol{:}\AgdaSpace{}%
 \AgdaDatatype{E}\AgdaSpace{}%
@@ -3718,8 +3712,8 @@ With these primitives, we embed our running example in $E$ as follows:
 %
 \>[2]\AgdaFunction{cnn}\AgdaSpace{}%
 \AgdaSymbol{=}%
-\>[2325I]\AgdaFunction{Lcon}%
-\>[2326I]\AgdaSymbol{(}%
+\>[2314I]\AgdaFunction{Lcon}%
+\>[2315I]\AgdaSymbol{(}%
 \>[16]\AgdaInductiveConstructor{ar}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaNumber{28}\AgdaSpace{}%
 \AgdaOperator{\AgdaInductiveConstructor{∷}}\AgdaSpace{}%
@@ -3736,7 +3730,7 @@ With these primitives, we embed our running example in $E$ as follows:
 \AgdaOperator{\AgdaInductiveConstructor{∷}}\AgdaSpace{}%
 \AgdaInductiveConstructor{[]}\AgdaSymbol{)}\<%
 \\
-\>[2326I][@{}l@{\AgdaIndent{0}}]%
+\>[2315I][@{}l@{\AgdaIndent{0}}]%
 \>[14]\AgdaOperator{\AgdaInductiveConstructor{∷}}\AgdaSpace{}%
 \AgdaInductiveConstructor{ar}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaNumber{6}\AgdaSpace{}%
@@ -3798,12 +3792,12 @@ With these primitives, we embed our running example in $E$ as follows:
 \>[14]\AgdaOperator{\AgdaInductiveConstructor{∷}}\AgdaSpace{}%
 \AgdaInductiveConstructor{[]}\AgdaSymbol{)}\<%
 \\
-\>[.][@{}l@{}]\<[2326I]%
+\>[.][@{}l@{}]\<[2315I]%
 \>[13]\AgdaSymbol{(}\AgdaInductiveConstructor{ar}\AgdaSpace{}%
 \AgdaInductiveConstructor{[]}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaInductiveConstructor{ε}\<%
 \\
-\>[.][@{}l@{}]\<[2325I]%
+\>[.][@{}l@{}]\<[2314I]%
 \>[8]\AgdaSymbol{λ}\AgdaSpace{}%
 \AgdaBound{inp}\AgdaSpace{}%
 \AgdaBound{k₁}\AgdaSpace{}%

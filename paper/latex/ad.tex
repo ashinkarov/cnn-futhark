@@ -2211,7 +2211,7 @@ section.
 % the \AB{seed} by $b$, which is the expected answer.  This reduces complexity
 % of the expression form squared to linear.
 % 
-\subsection{Extraction}
+\subsection{Extraction\label{sec:extraction}}
 
 The embedded language \AF{E} serves two purposes.
 Firstly, \AF{E} makes it possible to implement automatic differentiation
@@ -2845,23 +2845,13 @@ similarly to the way we described above.
 \>[0]\<%
 \\
 %
-\>[2]\AgdaFunction{bop}\AgdaSpace{}%
-\AgdaSymbol{:}\AgdaSpace{}%
-\AgdaDatatype{Bop}\AgdaSpace{}%
-\AgdaSymbol{->}\AgdaSpace{}%
-\AgdaPostulate{String}\<%
+\>[2]\AgdaComment{--\ bop\ :\ Bop\ ->\ String}\<%
 \\
 %
-\>[2]\AgdaFunction{bop}\AgdaSpace{}%
-\AgdaInductiveConstructor{plus}\AgdaSpace{}%
-\AgdaSymbol{=}\AgdaSpace{}%
-\AgdaString{"F.+"}\<%
+\>[2]\AgdaComment{--\ bop\ plus\ =\ "F.+"}\<%
 \\
 %
-\>[2]\AgdaFunction{bop}\AgdaSpace{}%
-\AgdaInductiveConstructor{mul}\AgdaSpace{}%
-\AgdaSymbol{=}\AgdaSpace{}%
-\AgdaString{"F.*"}\<%
+\>[2]\AgdaComment{--\ bop\ mul\ =\ "F.*"}\<%
 \\
 %
 \\[\AgdaEmptyExtraSkip]%
@@ -3302,10 +3292,10 @@ similarly to the way we described above.
 \AgdaBound{i}\AgdaSpace{}%
 \AgdaBound{e}\AgdaSpace{}%
 \AgdaSymbol{=}%
-\>[1742I]\AgdaFunction{printf}\AgdaSpace{}%
+\>[1732I]\AgdaFunction{printf}\AgdaSpace{}%
 \AgdaString{"(imap\%u\ \%s\ (\textbackslash{}\textbackslash{}\ \%s\ ->\ \%s))"}\<%
 \\
-\>[1742I][@{}l@{\AgdaIndent{0}}]%
+\>[1732I][@{}l@{\AgdaIndent{0}}]%
 \>[19]\AgdaSymbol{(}\AgdaFunction{dim}\AgdaSpace{}%
 \AgdaBound{s}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaFunction{shape-args}\AgdaSpace{}%
@@ -3361,13 +3351,13 @@ similarly to the way we described above.
 \AgdaCatchallClause{\AgdaBound{e}}\AgdaSpace{}%
 \AgdaSymbol{=}\AgdaSpace{}%
 \AgdaFunction{printf}%
-\>[1774I]\AgdaString{"(isum\%u\ \%s\ (\textbackslash{}\textbackslash{}\ \%s\ ->\ \%s))"}\AgdaSpace{}%
+\>[1764I]\AgdaString{"(isum\%u\ \%s\ (\textbackslash{}\textbackslash{}\ \%s\ ->\ \%s))"}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaFunction{dim}\AgdaSpace{}%
 \AgdaBound{s}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaFunction{shape-args}\AgdaSpace{}%
 \AgdaBound{s}\AgdaSymbol{)}\<%
 \\
-\>[.][@{}l@{}]\<[1774I]%
+\>[.][@{}l@{}]\<[1764I]%
 \>[25]\AgdaSymbol{(}\AgdaFunction{ix-join}\AgdaSpace{}%
 \AgdaBound{i}\AgdaSpace{}%
 \AgdaString{"\ "}\AgdaSymbol{)}\AgdaSpace{}%
@@ -3377,7 +3367,7 @@ similarly to the way we described above.
 \\[\AgdaEmptyExtraSkip]%
 %
 \>[2]\AgdaFunction{ix-plus}%
-\>[1782I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[1772I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{+}}\AgdaSpace{}%
 \AgdaGeneralizable{p}\AgdaSpace{}%
@@ -3388,7 +3378,7 @@ similarly to the way we described above.
 \AgdaGeneralizable{p}\AgdaSpace{}%
 \AgdaGeneralizable{u}\AgdaSymbol{)}\<%
 \\
-\>[.][@{}l@{}]\<[1782I]%
+\>[.][@{}l@{}]\<[1772I]%
 \>[10]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{i}\AgdaSpace{}%
 \AgdaSymbol{:}\AgdaSpace{}%
@@ -3482,7 +3472,7 @@ similarly to the way we described above.
 \\[\AgdaEmptyExtraSkip]%
 %
 \>[2]\AgdaFunction{ix-minus}%
-\>[1855I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[1845I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{+}}\AgdaSpace{}%
 \AgdaGeneralizable{p}\AgdaSpace{}%
@@ -3493,7 +3483,7 @@ similarly to the way we described above.
 \AgdaGeneralizable{p}\AgdaSpace{}%
 \AgdaGeneralizable{u}\AgdaSymbol{)}\<%
 \\
-\>[.][@{}l@{}]\<[1855I]%
+\>[.][@{}l@{}]\<[1845I]%
 \>[11]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{i}\AgdaSpace{}%
 \AgdaSymbol{:}\AgdaSpace{}%
@@ -3563,7 +3553,7 @@ similarly to the way we described above.
 \\[\AgdaEmptyExtraSkip]%
 %
 \>[2]\AgdaFunction{to-div-mod}%
-\>[1910I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[1900I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{*}}\AgdaSpace{}%
 \AgdaGeneralizable{p}\AgdaSpace{}%
@@ -3573,7 +3563,7 @@ similarly to the way we described above.
 \AgdaDatatype{Ix}\AgdaSpace{}%
 \AgdaGeneralizable{q}\<%
 \\
-\>[.][@{}l@{}]\<[1910I]%
+\>[.][@{}l@{}]\<[1900I]%
 \>[13]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaDatatype{Ix}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSpace{}%
@@ -3612,14 +3602,14 @@ similarly to the way we described above.
 \\
 %
 \>[4]\AgdaFunction{Prod.map}%
-\>[1943I]\AgdaSymbol{(}\AgdaFunction{printf}\AgdaSpace{}%
+\>[1933I]\AgdaSymbol{(}\AgdaFunction{printf}\AgdaSpace{}%
 \AgdaString{"(\%s\ /\ \%s)"}\AgdaSpace{}%
 \AgdaBound{x}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaFunction{show-nat}\AgdaSpace{}%
 \AgdaBound{n}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaOperator{\AgdaInductiveConstructor{∷\AgdaUnderscore{}}}\AgdaSymbol{)}\<%
 \\
-\>[.][@{}l@{}]\<[1943I]%
+\>[.][@{}l@{}]\<[1933I]%
 \>[13]\AgdaSymbol{(}\AgdaFunction{printf}\AgdaSpace{}%
 \AgdaString{"(\%s\ \%\%\ \%s)"}\AgdaSpace{}%
 \AgdaBound{x}\AgdaSpace{}%
@@ -3636,14 +3626,14 @@ similarly to the way we described above.
 \\[\AgdaEmptyExtraSkip]%
 %
 \>[2]\AgdaFunction{from-div-mod}%
-\>[1956I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[1946I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{*}}\AgdaSpace{}%
 \AgdaGeneralizable{p}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{≈}}\AgdaSpace{}%
 \AgdaGeneralizable{q}\<%
 \\
-\>[.][@{}l@{}]\<[1956I]%
+\>[.][@{}l@{}]\<[1946I]%
 \>[15]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaDatatype{Ix}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSpace{}%
@@ -4358,9 +4348,9 @@ implements the normalisation step.
 \AgdaBound{b}\AgdaSpace{}%
 \AgdaSymbol{=}\AgdaSpace{}%
 \AgdaFunction{printf}%
-\>[2412I]\AgdaString{"if\ (\%s\ \&\&\ \%s)\ then\ \%s\ else\ zero"}\<%
+\>[2402I]\AgdaString{"if\ (\%s\ \&\&\ \%s)\ then\ \%s\ else\ zero"}\<%
 \\
-\>[.][@{}l@{}]\<[2412I]%
+\>[.][@{}l@{}]\<[2402I]%
 \>[21]\AgdaBound{j≥i}\AgdaSpace{}%
 \AgdaBound{j-i<u}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{f}\AgdaSpace{}%

@@ -6,13 +6,11 @@ l5: "strong correctness guarantees" -- like/namely?
 
 l329-342: very nice
 
+WON'T FIX THIS
 l401: "imaps" -- isn't this normally called build or generate. Why stray from that? 
-
 l402:  "sels" -- isn't this just indexing? why not call it that?
 
-l401-402: say in words what imap(s/b) and sel(s/b) are supposed to do.
 
-l411: explain how zero-but gives a conditional.
 
 l501-552: isn't this all standard? is the only point to introduce your notation?
 

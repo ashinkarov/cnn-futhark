@@ -745,7 +745,7 @@ section.
 % the \AB{seed} by $b$, which is the expected answer.  This reduces complexity
 % of the expression form squared to linear.
 % 
-\subsection{Extraction}
+\subsection{Extraction\label{sec:extraction}}
 
 The embedded language \AF{E} serves two purposes.
 Firstly, \AF{E} makes it possible to implement automatic differentiation
@@ -944,9 +944,9 @@ similarly to the way we described above.
     return (fresh-ix (fresh-var c))
 
   
-  bop : Bop -> String
-  bop plus = "F.+"
-  bop mul = "F.*"
+  -- bop : Bop -> String
+  -- bop plus = "F.+"
+  -- bop mul = "F.*"
 
   show-array-type : S → String
   show-array-type [] = "f32"
