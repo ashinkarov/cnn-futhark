@@ -6,8 +6,6 @@ l5: "strong correctness guarantees" -- like/namely?
 
 l329-342: very nice
 
-l375: "use non-trivial dependencies within constructors" -- Please explain.
-
 l401: "imaps" -- isn't this normally called build or generate. Why stray from that? 
 
 l402:  "sels" -- isn't this just indexing? why not call it that?
