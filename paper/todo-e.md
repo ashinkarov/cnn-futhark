@@ -194,11 +194,7 @@ FIXED
 
 Sure, happy to expand.
 
-
-
-
-
-
+FIXED
 > Section 4 The embedded DSL
 > 
 > p.8
@@ -210,6 +206,7 @@ Sure, happy to expand.
 
 Sure, happy to add this.
 
+WON'T FIX THIS
 > The introduction of `unit` as a synonym for shape `[]` seems
 > excessive, and pointless, here, compared to other approaches sketched
 > above for dealing with scalar types as an instance of the fundamental
@@ -229,6 +226,9 @@ constructors, maybe fix a type of reals (or add add it as a parameter),
 or index with something larger than `IS`.  Given that we want to define
 generic constructs in `E` that abstract over shapes `s` and `p` it is not
 obvious to me which type encoding is the best.
+
+
+
 
 > Similarly, why postpone the introduction of syntax for `bin plus` and
 > `bin mul` to p.9 ll.423--4, when they would make more sense to be

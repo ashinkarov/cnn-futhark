@@ -1356,3 +1356,59 @@ keywords = {Type theory, Category theory, Container functors, W-Types, Induction
 abstract = {We introduce the notion of a Martin-Löf category—a locally cartesian closed category with disjoint coproducts and initial algebras of container functors (the categorical analogue of W-types)—and then establish that nested strictly positive inductive and coinductive types, which we call strictly positive types, exist in any Martin-Löf category. Central to our development are the notions of containers and container functors. These provide a new conceptual analysis of data structures and polymorphic functions by exploiting dependent type theory as a convenient way to define constructions in Martin-Löf categories. We also show that morphisms between containers can be full and faithfully interpreted as polymorphic functions (i.e.natural transformations) and that, in the presence of W-types, all strictly positive types (including nested inductive and coinductive types) give rise to containers.}
 }
   
+@inproceedings{intrinsic1,
+author = {Altenkirch, Thorsten and Reus, Bernhard},
+title = {Monadic Presentations of Lambda Terms Using Generalized Inductive Types},
+year = {1999},
+isbn = {3540665366},
+publisher = {Springer-Verlag},
+address = {Berlin, Heidelberg},
+abstract = {We present a definition of untyped λ-terms using a heterogeneous datatype, i.e. an inductively defined operator. This operator can be extended to a Kleisli triple, which is a concise way to verify the substitution laws for λ-calculus. We also observe that repetitions in the definition of the monad as well as in the proofs can be avoided by using well-founded recursion and induction instead of structural induction. We extend the construction to the simply typed λ-calculus using dependent types, and show that this is an instance of a generalization of Kleisli triples. The proofs for the untyped case have been checked using the LEGO system.},
+booktitle = {Proceedings of the 13th International Workshop and 8th Annual Conference of the EACSL on Computer Science Logic},
+pages = {453–468},
+numpages = {16},
+series = {CSL '99}
+}
+
+  
+@article{intrinsic2,
+author = {Allais, Guillaume and Atkey, Robert and Chapman, James and McBride, Conor and McKinna, James},
+title = {A type and scope safe universe of syntaxes with binding: their semantics and proofs},
+year = {2018},
+issue_date = {September 2018},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {2},
+number = {ICFP},
+url = {https://doi.org/10.1145/3236785},
+doi = {10.1145/3236785},
+abstract = {Almost every programming language’s syntax includes a notion of binder and corresponding bound occurrences, along with the accompanying notions of α-equivalence, capture avoiding substitution, typing contexts, runtime environments, and so on. In the past, implementing and reasoning about programming languages required careful handling to maintain the correct behaviour of bound variables. Modern programming languages include features that enable constraints like scope safety to be expressed in types. Nevertheless, the programmer is still forced to write the same boilerplate over again for each new implementation of a scope safe operation (e.g., renaming, substitution, desugaring, printing, etc.), and then again for correctness proofs. We present an expressive universe of syntaxes with binding and demonstrate how to (1) implement scope safe traversals once and for all by generic programming; and (2) how to derive properties of these traversals by generic proving. Our universe description, generic traversals and proofs, and our examples have all been formalised in Agda and are available in the accompanying material. NB. we recommend printing the paper in colour to benefit from syntax highlighting in code fragments.},
+journal = {Proc. ACM Program. Lang.},
+month = jul,
+articleno = {90},
+numpages = {30},
+keywords = {Agda, Fusion, Generic Programming, Logical Relations, Semantics, Simulation, Syntax with Binding}
+}
+
+@inproceedings{intrinsic3,
+author = {Allais, Guillaume and Chapman, James and McBride, Conor and McKinna, James},
+title = {Type-and-scope safe programs and their proofs},
+year = {2017},
+isbn = {9781450347051},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3018610.3018613},
+doi = {10.1145/3018610.3018613},
+abstract = {We abstract the common type-and-scope safe structure from computations on λ-terms that deliver, e.g., renaming, substitution, evaluation, CPS-transformation, and printing with a name supply. By exposing this structure, we can prove generic simulation and fusion lemmas relating operations built this way. This work has been fully formalised in Agda.},
+booktitle = {Proceedings of the 6th ACM SIGPLAN Conference on Certified Programs and Proofs},
+pages = {195–207},
+numpages = {13},
+keywords = {Agda, Generic Programming, Lambda-calculus, Mechanized Meta-Theory, Normalisation by Evaluation, Semantics},
+location = {Paris, France},
+series = {CPP 2017}
+}
+
+  
+
+
+

@@ -55,7 +55,8 @@ module Lang where
 \end{code}
 
 We leverage our dependently-typed setting by making our
-embedded language well-scoped and intrinsically typed (shaped).
+embedded language well-scoped and intrinsically typed (shaped),
+following a long tradition type- and scope-safe definitions~\cite{intrinsic1,intrinsic2,intrinsic3}.
 This is very useful as it eliminates a large class of errors that have to do
 with wrong variables uses and ill-typed expressions.
 Types are given by \AD{IS}: we have arrays of
