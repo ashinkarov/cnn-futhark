@@ -426,10 +426,10 @@ of \AF{E}, to formally prove that our optimisations preserve the meaning
 of programs.  We demonstrate the setting and key optimisations in this section;
 for further details refer to supplementary materials.
 
-Semantics preservation proofs require several properties of reals such
-as presence of neutral elements for addition and multiplication.
+Semantics preservation proofs require several ring/field properties
+of reals such as presence of neutral elements for addition and multiplication.
 Similarly to \AF{⟦\_⟧}, we abstract our proofs over the collection
-of equalities that we call \AD{RealProp} that are defined as follows:
+of properties on reals that we call \AD{RealProp} that are defined as follows:
 \begin{code}[hide]
 module Opt where
   open import Data.Nat as ℕ using (ℕ; zero; suc)
@@ -475,8 +475,9 @@ semantics-preserving \AF{opt}imisation function is given as follows.
   opt e = e , reflᵉ e
 \end{code}
 
-Consider the following examples of the rewrites that we are implementing.
-We omit the proofs for readability, but they are available in the
+Consider the follow examples of the rewrites that we are implementing.
+We omit the proofs for readability, and we omit trivial rules such
+as (\AC{zero} \AF{⊞} $x \rightsquigarrow x$), but they are available in the
 supplementary materials.
 \begin{mathpar}
    \AC{sels}\ zero\ e \rightsquigarrow \AC{zero}

@@ -334,3 +334,15 @@ I will try to find a good balance in the new description.
 > * nor anywhere the idea of 'gradient' per se (nor what its meta- nor
 >   object- level type might be)
 
+* Explicitly state that we only show non-trivial rewrite rules, hopefully
+  resolving:
+
+> p.19 Section 5.2
+> 
+> No explicit link is made between the axiomatisation of units for
+> addition and multiplication, and the corresponding semantic
+> equivalence between 'smart' constructors for addition and
+> multiplication and their vanilla counterparts?
+
+
+

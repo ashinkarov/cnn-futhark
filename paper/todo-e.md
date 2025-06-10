@@ -251,16 +251,6 @@ NOTHING TO FIX HERE
 
 STILL TODO
 
-> p.19 Section 5.2
-> 
-> No explicit link is made between the axiomatisation of units for
-> addition and multiplication, and the corresponding semantic
-> equivalence between 'smart' constructors for addition and
-> multiplication and their vanilla counterparts?
-
-Happy to make this explicit.
-
-
 > p.20
 > 
 > There is some discussion of how to optimise (or rather: how to avoid
