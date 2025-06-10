@@ -130,7 +130,7 @@ forward (float [28,28] I, float [6,5,5] k1,
 \end{lstlisting}
 \end{wrapfigure}
 The running example that we use throughout this paper is the implementation of
-a classical convolutional neural network that recognised hand-written digits.
+a classical convolutional neural network that recognises hand-written digits.
 Consider an implementation of the forward part of the network in the array 
 language SaC~\cite{sac2}
 from~\cite{cnn-array} which is presented in Listing~\ref{fig:sac-code}.
@@ -169,15 +169,15 @@ This is why we represent arrays as functions from indices to values.
 
 Another goal of this development is to guarantee absence of out-of-bound errors,
 meaning that all array indices fall within the shapes of the arrays that
-they are selecting from.  The shape of array describes the extent of each
+they are selecting from.  The shape of an array describes the extent of each
 of its axes.  
 
 Let us consider a 1-dimensional representation of the $n$-element array
-$X^n$.  The shape of such array is a natural number (\AB{n} : \AD{ℕ}),
-positions (indices) into this array can be given by
+$X^n$.  The shape of such array is a natural number (\AB{n} : \AD{ℕ}).
+Positions (indices) into this array are given by
 (\AB{i} : \AD{Fin} \AB{n}), which ensures bounds safety for indexing operations.
 Recall that the type (\AF{Fin} $n$) represents natural numbers bounded by $n$.
-The data of the array is given by the function of type (\AD{Fin} \AB{n} → \AB{X}). 
+The data of the array is given by a function of type (\AD{Fin} \AB{n} → \AB{X}). 
 When generalising to higher dimensions: the shape is not a single natural number,
 but a list of natural numbers (\AB{s} : \AF{S}); positions are lists
 of corresponding \AF{Fin} elements (\AB{i} : \AF{P} \AB{s}); and the
@@ -313,12 +313,12 @@ represents scalars.  Another way to look at \AF{Ar} is through tensor product:
 \AF{Ar} $[]$ $X$ = $X$, and \AF{Ar} $[n_1, \dots, n_k]$ $X$ represents
 components of a tensor $X^{n_1} \otimes \cdots \otimes X^{n_k}$.  
 
-As arrays are functions, selections are function applications and
+As arrays are functions, selection (indexing) is function applications,
 the array constructor is a function definition (\eg{} via $\lambda$-abstraction).
-Note that \AF{Ar} definition could have pattern-matched on the shape,
+Note that the \AF{Ar} definition could have pattern-matched on the shape,
 in which case (\AF{Ar} [] $X$ = $X$) would hold definitionally.
-We chose not to do this as we would need to introduce a constructor
-for array creation, array selection, and we would loose
+We chose not to do this as we would need to introduce constructors
+for array creation and selection, and we would lose
 definitional array fusion (\AF{map} $f$ \AF{∘} \AF{map} $g$ = \AF{map} (f ∘ g))
 which would make further proofs a bit more verbose.
 
@@ -330,10 +330,9 @@ here we only present the parts that are essential for our running example.
 Firstly, we can observe that \AD{Ar} of
 a fixed shape is an applicative functor~\cite{applicative}, so we can trivially derive:
 \AF{K}\ \AB{x} to produce a constant array; \AF{map}\ \AB{f}\ \AB{a}
-to apply \AB{f} to all the elements of \AB{a}; and \AF{zipWith}\ \AB{f}
-\ \AB{a}\ \AB{b} to point-wise apply the binary operation 
+to apply \AB{f} to all the elements of \AB{a}; and \AF{zipWith}\ \AB{f}\ \AB{a}\ \AB{b} to point-wise apply the binary operation 
 \AB{f} to \AB{a} and \AB{b} (note that \AF{zipWith} can be generalised
-to $n$-ary case as well).
+to the $n$-ary case as well).
 \begin{mathpar}
 \codeblock{\begin{code}%
 %
@@ -992,9 +991,9 @@ define the primitives that are needed for the CNN.
 
 \subsection{One-dimensional convolution}
 We start with plus and minus operations for 1-d indices which are
-prerequisites for defining convolution.  Consider definition of plus
+prerequisites for defining convolution.  Consider the definition of plus
 (denoted \AF{⊕}) which adds two bounded indices $i$ and $j$ ---
-we have Agda implementation on the left hand side, and the information
+we have the Agda implementation on the left hand side, and the information
 about bounds on the right hand side.
 \begin{code}[hide]%
 %
@@ -1746,13 +1745,13 @@ nicely to higher ranks.
 
 
 \subsection{Generalisation\label{sec:general-ix-ops}}
-We generalise 1-dimensional slide for arrays of higher ranks.
+We now generalise the 1-dimensional slide for arrays of higher ranks.
 This requires generalising vector shapes $m + n$ and $1 + n$ for the cases
-when $m$ and $n$ for arbitrary shapes.  
+when $m$ and $n$ are arbitrary shapes.  
 We do not define these operations as computations on shapes, because
 we want to maintain the same arguments in the definition of the
-generalised slide here and the corresponding constructor in the
-embedded DSL that we define in Section~\ref{sec:edsl}; and computations
+generalised slide and the corresponding constructor in the
+embedded DSL that we define in Section~\ref{sec:edsl}, and computations
 in the type indices of the DSL constructors do not behave nicely.
 Instead, we introduce relations.  In case of addition, we define a three-way
 relation \AF{\_+\_≈\_}.  That is, the type \AB{p} \AF{+} \AB{q} \AF{≈} \AB{r}
@@ -1762,7 +1761,7 @@ of $p$ and $q$.  A similar relation \AF{suc\_≈\_} is introduced for $1 + n$
 case, and \AF{\_*\_≈\_} witnesses point-wise
 multiplication that will be needed for blocking.  We define these relations
 in two steps.  
-Firstly we defined \AF{Pw₂} and \AF{Pw₃} which lift a relation on
+Firstly we define \AF{Pw₂} and \AF{Pw₃} which lift a relation on
 two (or three) natural numbers into corresponding pointwise relations on
 two (or three) lists of natural numbers:\footnote{
 This could be generalised even further by lifting relations over
@@ -1931,9 +1930,9 @@ Section~\ref{sec:ar-cnn-prim}.
 The second step is to define\footnote{
 Recall that the type of propositional equality \AF{\_≡\_} is ($X$ → $X$ → \AF{Set}).
 In this particular case, $X$ is \AF{ℕ}.}
-the actual relations.  With the help of composition
+the actual relations.  With the help of two composition
 combinators ($f$ \AF{∘} $g$ = λ $x$ → $f$ ($g$ $x$)) and 
-($f$ \AF{∘₂} $g$ = λ $x$ $y$ → $f$ ($g$ $x$ $y$))
+($f$ \AF{∘₂} $g$ = λ $x$ $y$ → $f$ ($g$ $x$ $y$)),
 the definitions are as follows.
 \begin{mathpar}
 \codeblock{\begin{code}%
@@ -2005,7 +2004,7 @@ operation at a time.  However, there is a good point made
 in~\cite{cnn-array} about shifting the shape recursion into index computation.
 % Talk about mental model of runtime where arrays are flat and indices are offsets
 Therefore we define \AF{\_⊕ₚ\_} and \AF{\_⊝ₚ\_} which generalise \AF{\_⊕\_} and
-\AF{\_⊝\_} for higher ranks.  Once again, \AD{Dec} type forces \AF{⊝ₚ} to justify
+\AF{\_⊝\_} for higher ranks.  Once again, the \AD{Dec} type forces \AF{⊝ₚ} to justify
 the cases when the inverse does not exist.
 \begin{mathpar}
 \codeblock{\begin{code}%
@@ -2070,7 +2069,7 @@ the cases when the inverse does not exist.
 \AgdaBound{i}\AgdaSymbol{)}\<%
 \end{code}}
 \end{mathpar}
-The implementations of \AF{⊕ₚ} and \AF{⊝ₚ} simply apply \AF{⊕} and \AF{⊝}.
+The implementations of \AF{⊕ₚ} and \AF{⊝ₚ} (both elided for brevity) simply apply \AF{⊕} and \AF{⊝}.
 In the \AF{⊝} case a little plumbing is required when constructing the
 proof of (non-)existence of the inverse.
 \begin{code}[hide]%
@@ -2793,7 +2792,7 @@ of that type in the embedded DSL in Section~\ref{sec:edsl}.
 
 \paragraph{Remark on indexing} We would like to address a general remark that
 is often made by functional programmers that index-oriented definitions such as
-\AF{slide} and \AF{backslide} should be replaced by some construction that use
+\AF{slide} and \AF{backslide} should be replaced by some construction that uses
 algebraic data types.  While this is of course a matter of taste, here are
 important points that justify our choice. Firstly, array computations that use
 explicit indices are easier to compile into efficient code. At runtime, arrays
@@ -2827,7 +2826,7 @@ Later we are going to abstract over concrete implementation of \AD{ℝ}.
 
 Generalised convolution is given by \AF{conv}, and it is almost identical to its
 1-dimensional counterpart (except it uses \AF{slide} instead of \AF{slide₁}).
-The \AF{mconv} runs $u$ \AF{conv}s (conceptually in parallel) and then it adds a
+The \AF{mconv} runs a batch of $u$ \AF{conv}s (conceptually in parallel) and then it adds a
 corresponding bias from the array $b$ (of shape $u$) to each convolution.
 Note that \AF{conv}/\AF{mconv} are generic in a semiring structure on \AD{ℝ},
 and \AF{conv₁} can be seen as a 1-dimensional version of \AF{conv} in terms
@@ -3047,7 +3046,7 @@ The logistic function computes ${1}/(1 + e^{-x})$ for every element in the array
 \end{mathpar}
 
 \paragraph{Average Pooling}
-One of the steps of the machine learning algorithm is average pooling which
+One of the layers of the CNN is average pooling which
 splits an array into sub-blocks and computes the average for every such
 block.  Implementing this pattern generally is tricky as we have to
 preserve the local neighbourhood within the blocks.  Working with a
@@ -3352,7 +3351,7 @@ With these primitives we implement a forward part of the CNN using
 Listing~\ref{fig:sac-code} as a blueprint.
 The \AB{inp} argument is the image of a hand-written digit, all
 the other arguments are weights, and the function returns the 10-element vector
-with probabilities which digit that is. Note that type annotations in 
+containing a probability for each digit. Note that type annotations in 
 \AK{let}s\footnote{
 We use \AK{let} instead of \AK{where} so that the definition of \AF{forward}
 can be easily translated to the embedded DSL which only has lets.  While Agda's
