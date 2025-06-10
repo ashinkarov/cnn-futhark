@@ -206,29 +206,8 @@ FIXED
 
 Sure, happy to add this.
 
-WON'T FIX THIS
-> The introduction of `unit` as a synonym for shape `[]` seems
-> excessive, and pointless, here, compared to other approaches sketched
-> above for dealing with scalar types as an instance of the fundamental
-> `Ar` type.
 
-While I agree with your observation that `Ar [] X` can be defined as
-`X` in case of shallow embedding, in case of deep embedding it does
-not seem that elegant.  Note that the types used in `E` distinguish
-between arrays and indices of some shape, yet they do not have a notion of a base
-type (scalar).  It is a typical trick of array languages which has some
-beauty in it: all we have is `ar s` and `ix s` where `s` is a shape.
-Things are defined rank-polymorphically: e.g. binary operations accept
-arrays of any matching shape (including scalars); `sum` operates on
-arrays of arrays and scalars, etc.  If we were to add more distinct
-cases in the definition of `IS`, we'd probably have to add even more
-constructors, maybe fix a type of reals (or add add it as a parameter),
-or index with something larger than `IS`.  Given that we want to define
-generic constructs in `E` that abstract over shapes `s` and `p` it is not
-obvious to me which type encoding is the best.
-
-
-
+WILL DO LATER
 > p.9
 > 
 > The definition of `data E` would surely look better (at the cost of
@@ -244,54 +223,6 @@ The same answer as before applies :)
 
 
 
-> It seems a shame that you can't/don't permit a type structure for `E`
-> which supports the `nest`/`unnest` isomorphisms. Perhaps this is now an
-> artefact of extraction towards Futhark, but if so, this merits a bit
-> more discussion, esp. given that you subsequently consider
-> 'normalisation' of `E` programs before extraction, so that you might
-> (and the reader, this one included) consider a richer DSL type
-> structure, with restrictions to 'Futhark-conformant' types a later
-> phase in the extraction pipeline.
-
-I look at this as `nest/unnest` is now accessed through `imap` (and not
-`imaps`).  In the shallow embedding you would write something like
-`unnest λ i → f (nest a i)` whereas now you (conceptually) write
-`imap f a`.  This doesn't have much to do with Futhark extraction,
-as I could turn both nested arrays and arrays of product shapes into
-Futhark expressions as long as ranks are static.  After all, nest/unnest
-isomorphism establishes that there is no difference between nested
-arrays and arrays of product shapes, so we simply chose to add one
-representation in the types of our DSL.  I am more than happy to add
-this discussion in the text.
-
- 
-> p.10
-> 
-> The specifics of the axiomatisation of a `Real` type, with suitable
-> primitives, and their derivatives, seems something which doesn't
-> require this level of detail; or rather, it's a level of detail which
-> could be more economically explained in terms of standard library
-> constructs such as `Ring` or `Semiring`, extended with `logistic`/RelU
-> as an abstract operation... together with its derivative, rather than
-> having to litigate the sharing problems associated with its concrete
-> definition?
-
-Sure, but doesn't relying on stdlib excludes the readers that are not familiar
-with it?  That was my motivation to inline the definitions.  I am happy
-to include generalised explanation into the text.
-
-> In particular, the choice of a unary minus, without a companion
-> definition of binary subtraction, seems to generate unnecessary
-> clutter downstream. Similarly, an explicit `fromℕ` operation, used
-> only at values 0 and 1, rather than the (obvious) additive and
-> multiplicative units from an ambient `(Semi)Ring` structure, etc.
-
-I agree with the general comment.  My idea was to define the smallest
-set of operations on Reals that suffice for giving an interpretation of E.
-As for unary minus, it is just a way to introduce subtraction, as
-`a - b` = `a + (-b)`.  The `fromℕ` is also used in `scaledown` which we
-actually use a few times in the resulting definition of the cnn.  I am
-happy to explain this in the text using the language of Rings/Fields.
 
 > p.11--14, Sections 4.2, 4.3
 > 
@@ -316,10 +247,6 @@ show enough definitions so that further constructions are not ambiguous.
 I will try to find a good balance in the new description.
 
 > p.14
-> The definition of `sqerr` in particular is rendered much harder to
-> read than necessary by poor choice of primitives (as above).
-
-Sure, I can introduce smart constructors to make it more readable.
 
 > The definition of `cnn`, much as `forward` before it, uses the new
 > 'syntactic' (Agda-/meta-level) representations of E-/object-level

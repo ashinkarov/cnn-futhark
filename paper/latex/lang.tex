@@ -688,15 +688,15 @@ have three flavours of them.
 The difference between \AC{imap} and \AC{imapb} (imap blocked)
 follows
 from the previous definitions: the former turns an $s$-shaped array
-of $p$-shaped arrays into a $(s ⊗ p)$-shaped array, whereas \AF{imapb}
+of $p$-shaped arrays into a $(s ⊗ p)$-shaped array, whereas \AC{imapb}
 performs tiling based on the $s * p ≈ q$ equation.  Strictly speaking,
 \AC{imaps} (imap scalar) is not needed, because
 the same functionality can be achieved with \AC{imap}/\AC{sel}.
-However, if \AF{imap} computes a scalar in the body, its resulting shape 
+However, if \AC{imap} computes a scalar in the body, its resulting shape 
 is $s ⊗ \AF{[]}$ which is not definitionally equal to $s$.  Using
 \AC{sel} for selecting a scalar from an $s$-shaped array requires
-casting the shape into $s ⊗ \AF{[]}$.  Hence every scalar imap or
-selection will require transporting over the $s ⊗ \AF{[]} ≡ s$ equality,
+casting the shape into $s ⊗ \AC{[]}$.  Hence every scalar imap or
+selection will require transporting over the $s ⊗ \AC{[]} ≡ s$ equality,
 This significantly clutters equality.  One could quotient the shape
 type by the above equality, but this requires switching to a more
 powerful type theory such as setoid- or cubical type theory.
@@ -715,7 +715,8 @@ the meaning of programs.
 We parametrise our semantics by the type of reals.
 This makes it possible to abstract away from the implementational
 details of numerical encoding which are not relevant here.
-We define an interface to reals and their basic operations as follows.
+We define a minimalist interface to reals and their basic
+operations as follows.
 \begin{mathpar}
 \codeblock{\begin{code}%
 \>[0]\AgdaKeyword{record}\AgdaSpace{}%
@@ -796,13 +797,26 @@ We define an interface to reals and their basic operations as follows.
 \AgdaOperator{\AgdaField{e\textasciicircum{}}}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaOperator{\AgdaField{-}}\AgdaSpace{}%
 \AgdaBound{x}\AgdaSymbol{))}\<%
+\\
+%
+\\[\AgdaEmptyExtraSkip]%
+%
+\>[2]\AgdaFunction{0ᵣ}\AgdaSpace{}%
+\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaField{fromℕ}\AgdaSpace{}%
+\AgdaNumber{0}\<%
+\\
+%
+\>[2]\AgdaFunction{1ᵣ}\AgdaSpace{}%
+\AgdaSymbol{=}\AgdaSpace{}%
+\AgdaField{fromℕ}\AgdaSpace{}%
+\AgdaNumber{1}\<%
 \end{code}}
 \end{mathpar}
-We require a type of reals that we call \AR{R}; basic arithmetic operations
-that include addition, multiplication, division, unary minus, and exponentiation.
-Constants such as zero and one can be defined via \AF{fromℕ} which converts
-natural numbers to \AR{R}.  With arithmetic operations in place, logistics function
-is a derived notion that we define within the same module for convenience.
+We require a type of reals that we call \AR{R}, and we define standard
+operations that define an exponential field structure on \AF{R} as usual.
+We define \AF{fromℕ} to lift natural numbers into \AF{R}.  Also we define
+a derived \AF{logistic} function as well as constants 0 and 1.
 
 \begin{code}[hide]%
 \>[0]\AgdaKeyword{module}\AgdaSpace{}%
@@ -1025,8 +1039,7 @@ in recursive calls when it is passed unchanged.
 \AgdaSymbol{⦄}%
 \>[33]\AgdaSymbol{=}\AgdaSpace{}%
 \AgdaFunction{Ar.K}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaField{fromℕ}\AgdaSpace{}%
-\AgdaNumber{0}\AgdaSymbol{)}\<%
+\AgdaFunction{0ᵣ}\<%
 \\
 %
 \>[2]\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
@@ -1037,8 +1050,7 @@ in recursive calls when it is passed unchanged.
 \AgdaSymbol{⦄}%
 \>[33]\AgdaSymbol{=}\AgdaSpace{}%
 \AgdaFunction{Ar.K}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaField{fromℕ}\AgdaSpace{}%
-\AgdaNumber{1}\AgdaSymbol{)}\<%
+\AgdaFunction{1ᵣ}\<%
 \\
 %
 \>[2]\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
@@ -1177,8 +1189,7 @@ in recursive calls when it is passed unchanged.
 \AgdaSymbol{(}\AgdaFunction{Ar.zipWith}\AgdaSpace{}%
 \AgdaOperator{\AgdaField{\AgdaUnderscore{}+\AgdaUnderscore{}}}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaFunction{Ar.K}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaField{fromℕ}\AgdaSpace{}%
-\AgdaNumber{0}\AgdaSymbol{))}\AgdaSpace{}%
+\AgdaFunction{0ᵣ}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaSymbol{(λ}\AgdaSpace{}%
 \AgdaBound{i}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
@@ -1218,8 +1229,7 @@ in recursive calls when it is passed unchanged.
 \AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{else}}\AgdaSpace{}%
 \AgdaFunction{Ar.K}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaField{fromℕ}\AgdaSpace{}%
-\AgdaNumber{0}\AgdaSymbol{)}\<%
+\AgdaFunction{0ᵣ}\<%
 \\
 %
 \>[2]\AgdaOperator{\AgdaFunction{⟦}}\AgdaSpace{}%
@@ -1263,8 +1273,7 @@ in recursive calls when it is passed unchanged.
 \AgdaBound{e₁}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{⟧}}\AgdaSpace{}%
 \AgdaBound{s}\AgdaSpace{}%
-\AgdaSymbol{(}\AgdaField{fromℕ}\AgdaSpace{}%
-\AgdaNumber{0}\AgdaSymbol{)}\AgdaSpace{}%
+\AgdaFunction{0ᵣ}\AgdaSpace{}%
 \AgdaBound{p}\<%
 \\
 %
@@ -2771,11 +2780,11 @@ for more details.} to define a familiar syntax for let bindings in \AF{E}.
 \begin{code}[hide]%
 %
 \>[2]\AgdaFunction{Sum}%
-\>[1664I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[1665I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{∀}\AgdaSpace{}%
 \AgdaSymbol{\{}\AgdaBound{Γ}\AgdaSymbol{\}}\<%
 \\
-\>[1664I][@{}l@{\AgdaIndent{0}}]%
+\>[1665I][@{}l@{\AgdaIndent{0}}]%
 \>[7]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaFunction{GE}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{Γ}\AgdaSpace{}%
@@ -2821,11 +2830,11 @@ for more details.} to define a familiar syntax for let bindings in \AF{E}.
 \\[\AgdaEmptyExtraSkip]%
 %
 \>[2]\AgdaFunction{Imaps}%
-\>[1700I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[1701I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{∀}\AgdaSpace{}%
 \AgdaSymbol{\{}\AgdaBound{Γ}\AgdaSymbol{\}}\<%
 \\
-\>[.][@{}l@{}]\<[1700I]%
+\>[.][@{}l@{}]\<[1701I]%
 \>[8]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaFunction{GE}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{Γ}\AgdaSpace{}%
@@ -2871,11 +2880,11 @@ for more details.} to define a familiar syntax for let bindings in \AF{E}.
 \\[\AgdaEmptyExtraSkip]%
 %
 \>[2]\AgdaFunction{Imapb}%
-\>[1736I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[1737I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{∀}\AgdaSpace{}%
 \AgdaSymbol{\{}\AgdaBound{Γ}\AgdaSymbol{\}}\<%
 \\
-\>[.][@{}l@{}]\<[1736I]%
+\>[.][@{}l@{}]\<[1737I]%
 \>[8]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{*}}\AgdaSpace{}%
@@ -3295,7 +3304,7 @@ For example, consider the expression:
 %
 \>[2]\AgdaSymbol{\AgdaUnderscore{}}\AgdaSpace{}%
 \AgdaSymbol{=}%
-\>[2003I]\AgdaFunction{Lcon}\AgdaSpace{}%
+\>[2004I]\AgdaFunction{Lcon}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaInductiveConstructor{ar}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaInductiveConstructor{ι}\AgdaSpace{}%
 \AgdaNumber{5}\AgdaSymbol{)}\AgdaSpace{}%
@@ -3312,7 +3321,7 @@ For example, consider the expression:
 \AgdaInductiveConstructor{[]}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaInductiveConstructor{ε}\<%
 \\
-\>[.][@{}l@{}]\<[2003I]%
+\>[.][@{}l@{}]\<[2004I]%
 \>[6]\AgdaSymbol{λ}\AgdaSpace{}%
 \AgdaBound{a}\AgdaSpace{}%
 \AgdaBound{b}\AgdaSpace{}%
@@ -3486,7 +3495,7 @@ rank-polymorphic addition and multiplication.
 %
 \>[2]\AgdaFunction{mconv}\AgdaSpace{}%
 \AgdaSymbol{:}%
-\>[2128I]\AgdaSymbol{⦃}\AgdaSpace{}%
+\>[2129I]\AgdaSymbol{⦃}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{+}}\AgdaSpace{}%
 \AgdaGeneralizable{p}\AgdaSpace{}%
@@ -3509,7 +3518,7 @@ rank-polymorphic addition and multiplication.
 \AgdaOperator{\AgdaFunction{⊗}}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSymbol{)))}\<%
 \\
-\>[.][@{}l@{}]\<[2128I]%
+\>[.][@{}l@{}]\<[2129I]%
 \>[10]\AgdaSymbol{(}\AgdaBound{bᵥ}\AgdaSpace{}%
 \AgdaSymbol{:}\AgdaSpace{}%
 \AgdaDatatype{E}\AgdaSpace{}%
@@ -3712,8 +3721,8 @@ With these primitives, we embed our running example in $E$ as follows:
 %
 \>[2]\AgdaFunction{cnn}\AgdaSpace{}%
 \AgdaSymbol{=}%
-\>[2314I]\AgdaFunction{Lcon}%
-\>[2315I]\AgdaSymbol{(}%
+\>[2315I]\AgdaFunction{Lcon}%
+\>[2316I]\AgdaSymbol{(}%
 \>[16]\AgdaInductiveConstructor{ar}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaNumber{28}\AgdaSpace{}%
 \AgdaOperator{\AgdaInductiveConstructor{∷}}\AgdaSpace{}%
@@ -3730,7 +3739,7 @@ With these primitives, we embed our running example in $E$ as follows:
 \AgdaOperator{\AgdaInductiveConstructor{∷}}\AgdaSpace{}%
 \AgdaInductiveConstructor{[]}\AgdaSymbol{)}\<%
 \\
-\>[2315I][@{}l@{\AgdaIndent{0}}]%
+\>[2316I][@{}l@{\AgdaIndent{0}}]%
 \>[14]\AgdaOperator{\AgdaInductiveConstructor{∷}}\AgdaSpace{}%
 \AgdaInductiveConstructor{ar}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaNumber{6}\AgdaSpace{}%
@@ -3792,12 +3801,12 @@ With these primitives, we embed our running example in $E$ as follows:
 \>[14]\AgdaOperator{\AgdaInductiveConstructor{∷}}\AgdaSpace{}%
 \AgdaInductiveConstructor{[]}\AgdaSymbol{)}\<%
 \\
-\>[.][@{}l@{}]\<[2315I]%
+\>[.][@{}l@{}]\<[2316I]%
 \>[13]\AgdaSymbol{(}\AgdaInductiveConstructor{ar}\AgdaSpace{}%
 \AgdaInductiveConstructor{[]}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaInductiveConstructor{ε}\<%
 \\
-\>[.][@{}l@{}]\<[2314I]%
+\>[.][@{}l@{}]\<[2315I]%
 \>[8]\AgdaSymbol{λ}\AgdaSpace{}%
 \AgdaBound{inp}\AgdaSpace{}%
 \AgdaBound{k₁}\AgdaSpace{}%

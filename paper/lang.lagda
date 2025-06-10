@@ -212,7 +212,8 @@ the meaning of programs.
 We parametrise our semantics by the type of reals.
 This makes it possible to abstract away from the implementational
 details of numerical encoding which are not relevant here.
-We define an interface to reals and their basic operations as follows.
+We define a minimalist interface to reals and their basic
+operations as follows.
 \begin{mathpar}
 \codeblock{\begin{code}
 record Real : Set₁ where
@@ -231,13 +232,15 @@ record Real : Set₁ where
 \begin{code}
   logisticʳ : R → R
   logisticʳ x = fromℕ 1 ÷ (fromℕ 1 + e^ (- x))
+
+  0ᵣ = fromℕ 0
+  1ᵣ = fromℕ 1
 \end{code}}
 \end{mathpar}
-We require a type of reals that we call \AR{R}; basic arithmetic operations
-that include addition, multiplication, division, unary minus, and exponentiation.
-Constants such as zero and one can be defined via \AF{fromℕ} which converts
-natural numbers to \AR{R}.  With arithmetic operations in place, logistics function
-is a derived notion that we define within the same module for convenience.
+We require a type of reals that we call \AR{R}, and we define standard
+operations that define an exponential field structure on \AF{R} as usual.
+We define \AF{fromℕ} to lift natural numbers into \AF{R}.  Also we define
+a derived \AF{logistic} function as well as constants 0 and 1.
 
 \begin{code}[hide]
 module Eval (real : Real) where
@@ -306,18 +309,18 @@ in recursive calls when it is passed unchanged.
 \begin{code}
   ⟦_⟧ : E Γ is → ⦃ Env Γ ⦄ → Val is
   ⟦ var x               ⟧ ⦃ ρ ⦄  = lookup x ρ
-  ⟦ zero                ⟧ ⦃ ρ ⦄  = Ar.K (fromℕ 0)
-  ⟦ one                 ⟧ ⦃ ρ ⦄  = Ar.K (fromℕ 1)
+  ⟦ zero                ⟧ ⦃ ρ ⦄  = Ar.K 0ᵣ
+  ⟦ one                 ⟧ ⦃ ρ ⦄  = Ar.K 1ᵣ
   ⟦ imaps e             ⟧ ⦃ ρ ⦄  = λ i → ⟦ e ⟧ ⦃ ρ , i ⦄ [] 
   ⟦ sels e e₁           ⟧ ⦃ ρ ⦄  = Ar.K (⟦ e ⟧ ⟦ e₁ ⟧)
   ⟦ imap e              ⟧ ⦃ ρ ⦄  = Ar.unnest λ i → ⟦ e ⟧ ⦃ ρ , i ⦄
   ⟦ sel e e₁            ⟧ ⦃ ρ ⦄  = Ar.nest ⟦ e ⟧ ⟦ e₁ ⟧
   ⟦ imapb m e           ⟧ ⦃ ρ ⦄  = Ar.imapb (λ i → ⟦ e ⟧ ⦃ ρ , i ⦄) m
   ⟦ selb m e e₁         ⟧ ⦃ ρ ⦄  = Ar.selb ⟦ e ⟧ m ⟦ e₁ ⟧
-  ⟦ sum e               ⟧ ⦃ ρ ⦄  = Ar.sum (Ar.zipWith _+_) (Ar.K (fromℕ 0)) (λ i → ⟦ e ⟧ ⦃ ρ , i ⦄)
-  ⟦ zero-but i j e      ⟧ ⦃ ρ ⦄  = if ⌊ ⟦ i ⟧ ≟ₚ ⟦ j ⟧ ⌋ then ⟦ e ⟧ else Ar.K (fromℕ 0)
+  ⟦ sum e               ⟧ ⦃ ρ ⦄  = Ar.sum (Ar.zipWith _+_) (Ar.K 0ᵣ) (λ i → ⟦ e ⟧ ⦃ ρ , i ⦄)
+  ⟦ zero-but i j e      ⟧ ⦃ ρ ⦄  = if ⌊ ⟦ i ⟧ ≟ₚ ⟦ j ⟧ ⌋ then ⟦ e ⟧ else Ar.K 0ᵣ
   ⟦ slide e p e₁ s      ⟧ ⦃ ρ ⦄  = Ar.slide ⟦ e ⟧ p ⟦ e₁ ⟧ s
-  ⟦ backslide e e₁ s p  ⟧ ⦃ ρ ⦄  = Ar.backslide ⟦ e ⟧ ⟦ e₁ ⟧ s (fromℕ 0) p
+  ⟦ backslide e e₁ s p  ⟧ ⦃ ρ ⦄  = Ar.backslide ⟦ e ⟧ ⟦ e₁ ⟧ s 0ᵣ p
   ⟦ logistic e          ⟧ ⦃ ρ ⦄  = Ar.map logisticʳ ⟦ e ⟧
   ⟦ e ⊞ e₁              ⟧ ⦃ ρ ⦄  = Ar.zipWith _+_ ⟦ e ⟧ ⟦ e₁ ⟧
   ⟦ e ⊠ e₁              ⟧ ⦃ ρ ⦄  = Ar.zipWith _*_ ⟦ e ⟧ ⟦ e₁ ⟧

@@ -238,12 +238,17 @@ compute the same result on 1-d arrays.  This addresses the following comments:
 > inlined substitution in the typechecked code, and thus potentially a
 > loss of sharing upfront.
 
-* Inlined ⊞, ⊠ definitions, resolving:
+* Inlined ⊞ and ⊠, introduced ⊟, resolving:
 
 > (E)
 > Similarly, why postpone the introduction of syntax for `bin plus` and
 > `bin mul` to p.9 ll.423--4, when they would make more sense to be
 > introduced when the `Bop` type is introduced? 
+>
+> The definition of `sqerr` in particular is rendered much harder to
+> read than necessary by poor choice of primitives (as above).
+
+Sure, I can introduce smart constructors to make it more readable.
 
 As for defining smart constructors, I still can't have x + 0 = x and
 0 + x = x definitionally, which means optimisation on plus is still
@@ -270,3 +275,22 @@ needed, so I'll keep just inlined constructors for simplicity.
 > (and the reader, this one included) consider a richer DSL type
 > structure, with restrictions to 'Futhark-conformant' types a later
 > phase in the extraction pipeline.
+
+* Adjusted introduction of axiomatic reals as suggested by (E):
+
+> The specifics of the axiomatisation of a `Real` type, with suitable
+> primitives, and their derivatives, seems something which doesn't
+> require this level of detail; or rather, it's a level of detail which
+> could be more economically explained in terms of standard library
+> constructs such as `Ring` or `Semiring`, extended with `logistic`/RelU
+> as an abstract operation... together with its derivative, rather than
+> having to litigate the sharing problems associated with its concrete
+> definition?
+>
+> In particular, the choice of a unary minus, without a companion
+> definition of binary subtraction, seems to generate unnecessary
+> clutter downstream. Similarly, an explicit `fromℕ` operation, used
+> only at values 0 and 1, rather than the (obvious) additive and
+> multiplicative units from an ambient `(Semi)Ring` structure, etc.
+
+
