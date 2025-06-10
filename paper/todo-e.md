@@ -246,29 +246,10 @@ NOTHING TO FIX HERE
 
 
 
-> Surprisingly, on p.17 and the definition of the various auxiliary
-> functions as well as the main definition of $\nabla$ (ll.800--825), no
-> mention is made of:
-> 
-> * l.792 that the 'seed' of reverse-mode AD is given by the $\delta$
->   parameter IIUC; so tell the reader!
 
-We have to be really careful with terminology here.  The seed in terms
-of reverse mode AD is given by `s` (stands for `s`eed).  Now, $\delta$
-is the state of the environment (gradient, -isch) that we are updating.
-We have to call `∇` with some initial value of the environment (zero
-for all positions).  I am happy to rewrite this sentence.
 
-> * l.823 the use of the HOAS syntax for `let` in the definition of the
->   derivative of `logistic`, so here we do see the full horror of the
->   de Bruijn calculation
 
-Sure, I can mention this.
-
-> * nor anywhere the idea of 'gradient' per se (nor what its meta- nor
->   object- level type might be)
-
-Sure, I am happy to explain what that is.
+STILL TODO
 
 > p.19 Section 5.2
 > 
@@ -278,6 +259,7 @@ Sure, I am happy to explain what that is.
 > multiplication and their vanilla counterparts?
 
 Happy to make this explicit.
+
 
 > p.20
 > 

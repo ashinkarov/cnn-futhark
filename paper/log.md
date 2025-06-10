@@ -320,3 +320,17 @@ be avoided.  For these particular sections, I was simply trying to
 show enough definitions so that further constructions are not ambiguous.
 I will try to find a good balance in the new description.
 
+* Adjusted explanation of $\nabla$, hopefully resolving:
+
+> Surprisingly, on p.17 and the definition of the various auxiliary
+> functions as well as the main definition of $\nabla$ (ll.800--825), no
+> mention is made of:
+> 
+> * l.792 that the 'seed' of reverse-mode AD is given by the $\delta$
+>   parameter IIUC; so tell the reader!
+> * l.823 the use of the HOAS syntax for `let` in the definition of the
+>   derivative of `logistic`, so here we do see the full horror of the
+>   de Bruijn calculation
+> * nor anywhere the idea of 'gradient' per se (nor what its meta- nor
+>   object- level type might be)
+

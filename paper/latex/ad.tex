@@ -1110,9 +1110,11 @@ Finally, we extend the environment by adding \AC{zero} at the top with
 We define\footnote{Agda does not recognise that the definition of \AF{∇} that
 we give here terminates.  We fix this in the supplementary materials by choosing
 an inductively decreasing invariant.  However we keep this definition in the
-paper for readability.} the function \AF{∇} that takes an expression \AF{E}
-and the seed (initially set to one) and we compute a function that
-updates the environment of partial derivatives (initial environment is \AF{ee-zero}).
+paper for readability.} the function (\AF{∇} $e$ $s$ $\delta$) that takes an
+expression ($e$ : \AF{E} \AB{Γ} (\AC{ar} $s$)), the seed $s$ (initially set
+to one), environment $\delta$ (initially set to \AF{ee-zero}) and we compute
+the gradient of $e$ which is an environment that contains partial derivatives
+for each variable.
 We use two helper functions: (i) \AF{∇Σ} which applies \AF{sum} to all
 the elements of the environment returned by the \AF{∇} call in the empty environment;
 (ii) \AF{∇ₗ} which deals with the derivative of let expressions.  The code is presented
@@ -1617,7 +1619,8 @@ except we propagate the original seed to all the summands.  Addition and
 multiplication rules are straight-forward application of rules of symbolic
 differentiation. The \AC{slide}/\AC{backslide} pair forms a satisfying
 \AF{∇}-symmetry.  Finally, \AC{scaledown}, \AC{minus} and \AC{logistic} follow
-the rules of differentiation.
+the rules of differentiation.  Note that in the definition of derivative
+for logistic we use explicit de Bruin indices and weakening.
 
 \paragraph{Let expressions} The rules for the let case look complicated due to
 encoding, but their essence is easy to understand through the following example.
