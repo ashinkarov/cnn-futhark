@@ -34,6 +34,10 @@ module _ where
   pattern v₇ = there v₆
   pattern v₈ = there v₇
   pattern v₉ = there v₈
+  pattern v₁₀ = there v₉
+  pattern v₁₁ = there v₁₀
+  pattern v₁₂ = there v₁₁
+  pattern v₁₃ = there v₁₂ 
 
   -- We only use this for variable comparison.
   _/_ : (Γ : Ctx) → is ∈ Γ → Ctx

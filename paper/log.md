@@ -293,4 +293,30 @@ needed, so I'll keep just inlined constructors for simplicity.
 > only at values 0 and 1, rather than the (obvious) additive and
 > multiplicative units from an ambient `(Semi)Ring` structure, etc.
 
+* Adjusted section 4.2 mentioning Kripke, and clarifying the
+  purpose of the section.  This resolves:
+
+> (A)
+> l501-552: isn't this all standard? is the only point to introduce your notation?
+>
+> (E)
+> This seems to be an extended exposition of 'standard' (cf. Allais et
+> al. above) constructions associated with de Bruijn representations of
+> binding, but dressed up so that the nature of the Kripke function
+> space semantics for binding forms is made more obscure than necessary:
+> the Kripke idea of quantifying over context extensions in order to
+> give semantics to object-level functions/`let`-bindings in terms of
+> meta-level functions is at the heart of the Allais et
+> al. papers... and goes much further back in the literature on the
+> metamathematics of (representations of) binding. I would dearly love
+> to see in particular 4.3 rewritten so as to make these ideas easier to
+> grasp for the non-expert. As they stand, they're fine but
+> incomprehensible (sic).
+
+I am happy to have another go at this section and refer to Kripke.
+Perhaps I was a bit overprotective while writing the prose as I am often
+criticised for introducing too much theoretical constructions that can
+be avoided.  For these particular sections, I was simply trying to
+show enough definitions so that further constructions are not ambiguous.
+I will try to find a good balance in the new description.
 

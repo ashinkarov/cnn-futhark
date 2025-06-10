@@ -330,7 +330,7 @@ in recursive calls when it is passed unchanged.
 \end{code}
 Mostly, the interpretation is a straightforward mapping to the \AF{Ar} constructors.
 In the \AC{imaps} case we can see how the implicit conversion from what would be a
-shape $s ⊗ \AF{[]}$ into $s$.  In case of \AC{sels} we make a singleton array
+shape $s ⊗ \AC{[]}$ into $s$.  In case of \AC{sels} we make a singleton array
 using \AF{K}. Note that \AC{sum} has explicit summation index like in a mathematical
 $\sum$-notation.  We fix the default value of \AC{backslide} to zero for simplicity.
 For arrays of reals, we can get general \AF{backslide} behaviour through masking.
@@ -368,19 +368,24 @@ other element types.
 
 
 \subsection{Weakening and Substitution}
-We are working with explicit de Bruijn variables (as opposed to HOAS~\cite{hoas}
-approaches), and we need to define the notion of weakening and substitution
-for constructing expressions and optimising them.
-Intrinsic types(shapes) make both definitions challenging.  However, the problem has
-been well-understood, and several approaches have been proposed in the
-literature~\cite{subst}.
+In this section, we recall a standard construction of weakening and
+substitution that will be employed in subsequent sections. We present this
+construction in the style of references \cite{par-sub2,intrinsic1,intrinsic2},
+exposing a minimal set of constructions necessary for the remainder of the
+paper.
 
-The key structure that we use for weakening is an order-preserving embedding
-of contexts given by \AD{\_⊆\_}, which is defined inductively.
-If \AB{Γ} \AD{⊆} \AB{Δ} then all the
-elements of \AB{Γ} can be found in \AB{Δ} in the original order (possibly with some gaps).
-Weakening variables according to some context embedding is given by \AF{wkv} which is
-defined as follows.
+The key structure required is a category of weakenings \cite{ope-cat}, in which
+objects are contexts and morphisms are order-preserving embeddings denoted by
+\AD{\_⊆\_}. Order-preserving embeddings
+give rise to Kripke semantics, where contexts are interpreted as worlds, and
+\AF{⊆} serves as a binary relation on these worlds. Binders can be interpreted
+as Kripke function spaces, leading to an elegant formulation \cite{intrinsic3}
+of normalisation. However, our focus here is solely on weakening and
+substitution.
+
+If \AB{Γ} \AD{⊆} \AB{Δ}, then \AB{Γ} can be embedded into \AB{Δ} in the original
+order (possibly with some gaps).  The action on the variables is given by
+\AF{wkv} as defined below.
 \begin{code}[hide]
 module WkSub where
   open Lang
@@ -401,8 +406,10 @@ module WkSub where
 \end{code}}
 \end{mathpar}
 
-Weakening expressions in \AF{E} according to some context embedding is given by \AF{wk}
-which type is defined below.  Reflexivity of context embeddings is given by \AF{⊆-eq}.
+
+The action on \AF{E} is given by \AF{wk}, which type is defined below.
+Identity of context embeddings is given by \AF{⊆-eq}, and we omit the
+composition that can be defined as well.
 A common case of weakening expressions into the context with one extra variable
 is denoted with \AF{\_↑} and it is defined as follows.
 \begin{mathpar}

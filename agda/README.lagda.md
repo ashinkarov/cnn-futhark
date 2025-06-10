@@ -239,3 +239,4 @@ If you are reading this file in Agda, you can normalise
 `ExtractionDemo.extracted-cnn` to obtain Futhark expression
 for the training phase of our network.
 
+

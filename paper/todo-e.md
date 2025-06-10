@@ -222,32 +222,7 @@ WON'T FIX THIS
 The same answer as before applies :)
 
 
-
-
-> p.11--14, Sections 4.2, 4.3
-> 
-> This seems to be an extended exposition of 'standard' (cf. Allais et
-> al. above) constructions associated with de Bruijn representations of
-> binding, but dressed up so that the nature of the Kripke function
-> space semantics for binding forms is made more obscure than necessary:
-> the Kripke idea of quantifying over context extensions in order to
-> give semantics to object-level functions/`let`-bindings in terms of
-> meta-level functions is at the heart of the Allais et
-> al. papers... and goes much further back in the literature on the
-> metamathematics of (representations of) binding. I would dearly love
-> to see in particular 4.3 rewritten so as to make these ideas easier to
-> grasp for the non-expert. As they stand, they're fine but
-> incomprehensible (sic).
-
-I am happy to have another go at this section and refer to Kripke.
-Perhaps I was a bit overprotective while writing the prose as I am often
-criticised for introducing too much theoretical constructions that can
-be avoided.  For these particular sections, I was simply trying to
-show enough definitions so that further constructions are not ambiguous.
-I will try to find a good balance in the new description.
-
-> p.14
-
+MAYBE LATER
 > The definition of `cnn`, much as `forward` before it, uses the new
 > 'syntactic' (Agda-/meta-level) representations of E-/object-level
 > `let` binders... but it might be useful to offer a side-by-side
@@ -259,13 +234,18 @@ too much attention to the syntactic wrappers.  However, after reading
 the reviews, I actually think that emphasising that wrappers are useful
 might be a good idea.  I am happy to have a go at this.
  
+
+NOTHING TO FIX HERE
 > p.15--19 AD for E
 > 
 > Much of this material seems standard by way of describing
 > (reverse-mode) AD in terms of straight-line programs defining
 > successive partial derivatives in terms of their primals, until the
 > mechanics of implementing this on top of `E` is described.
-> 
+
+
+
+
 > Surprisingly, on p.17 and the definition of the various auxiliary
 > functions as well as the main definition of $\nabla$ (ll.800--825), no
 > mention is made of:
