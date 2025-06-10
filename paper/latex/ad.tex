@@ -1734,22 +1734,20 @@ of equalities that we call \AD{RealProp} that are defined as follows:
 \AgdaSymbol{∀}\AgdaSpace{}%
 \AgdaSymbol{\{}\AgdaBound{x}\AgdaSymbol{\}}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
-\AgdaFunction{fromℕ}\AgdaSpace{}%
-\AgdaNumber{0}\AgdaSpace{}%
+\AgdaFunction{0ᵣ}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{+}}\AgdaSpace{}%
 \AgdaBound{x}%
-\>[37]\AgdaOperator{\AgdaDatatype{≡}}\AgdaSpace{}%
+\>[32]\AgdaOperator{\AgdaDatatype{≡}}\AgdaSpace{}%
 \AgdaBound{x}\AgdaSymbol{;}%
-\>[43]\AgdaField{+-neutʳ}\AgdaSpace{}%
+\>[38]\AgdaField{+-neutʳ}\AgdaSpace{}%
 \AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{∀}\AgdaSpace{}%
 \AgdaSymbol{\{}\AgdaBound{x}\AgdaSymbol{\}}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
 \AgdaBound{x}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{+}}\AgdaSpace{}%
-\AgdaFunction{fromℕ}\AgdaSpace{}%
-\AgdaNumber{0}%
-\>[74]\AgdaOperator{\AgdaDatatype{≡}}\AgdaSpace{}%
+\AgdaFunction{0ᵣ}%
+\>[64]\AgdaOperator{\AgdaDatatype{≡}}\AgdaSpace{}%
 \AgdaBound{x}\<%
 \\
 %
@@ -1758,22 +1756,20 @@ of equalities that we call \AD{RealProp} that are defined as follows:
 \AgdaSymbol{∀}\AgdaSpace{}%
 \AgdaSymbol{\{}\AgdaBound{x}\AgdaSymbol{\}}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
-\AgdaFunction{fromℕ}\AgdaSpace{}%
-\AgdaNumber{1}\AgdaSpace{}%
+\AgdaFunction{1ᵣ}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{*}}\AgdaSpace{}%
 \AgdaBound{x}%
-\>[37]\AgdaOperator{\AgdaDatatype{≡}}\AgdaSpace{}%
+\>[32]\AgdaOperator{\AgdaDatatype{≡}}\AgdaSpace{}%
 \AgdaBound{x}\AgdaSymbol{;}%
-\>[43]\AgdaField{*-neutʳ}\AgdaSpace{}%
+\>[38]\AgdaField{*-neutʳ}\AgdaSpace{}%
 \AgdaSymbol{:}\AgdaSpace{}%
 \AgdaSymbol{∀}\AgdaSpace{}%
 \AgdaSymbol{\{}\AgdaBound{x}\AgdaSymbol{\}}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
 \AgdaBound{x}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{*}}\AgdaSpace{}%
-\AgdaFunction{fromℕ}\AgdaSpace{}%
-\AgdaNumber{1}%
-\>[74]\AgdaOperator{\AgdaDatatype{≡}}\AgdaSpace{}%
+\AgdaFunction{1ᵣ}%
+\>[64]\AgdaOperator{\AgdaDatatype{≡}}\AgdaSpace{}%
 \AgdaBound{x}\<%
 \end{code}
 The meaning of semantics preservation is given by the \AF{\_≈ᵉ\_}
@@ -1884,10 +1880,9 @@ semantics-preserving \AF{opt}imisation function is given as follows.
 \AgdaGeneralizable{Γ}\AgdaSpace{}%
 \AgdaGeneralizable{is}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaSymbol{→}\AgdaSpace{}%
-\AgdaFunction{∃}\AgdaSpace{}%
-\AgdaSymbol{λ}\AgdaSpace{}%
+\AgdaFunction{∃[}\AgdaSpace{}%
 \AgdaBound{e′}\AgdaSpace{}%
-\AgdaSymbol{→}\AgdaSpace{}%
+\AgdaFunction{]}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{e}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{≈ᵉ}}\AgdaSpace{}%
 \AgdaBound{e′}\AgdaSymbol{)}\<%
@@ -3295,10 +3290,10 @@ similarly to the way we described above.
 \AgdaBound{i}\AgdaSpace{}%
 \AgdaBound{e}\AgdaSpace{}%
 \AgdaSymbol{=}%
-\>[1732I]\AgdaFunction{printf}\AgdaSpace{}%
+\>[1727I]\AgdaFunction{printf}\AgdaSpace{}%
 \AgdaString{"(imap\%u\ \%s\ (\textbackslash{}\textbackslash{}\ \%s\ ->\ \%s))"}\<%
 \\
-\>[1732I][@{}l@{\AgdaIndent{0}}]%
+\>[1727I][@{}l@{\AgdaIndent{0}}]%
 \>[19]\AgdaSymbol{(}\AgdaFunction{dim}\AgdaSpace{}%
 \AgdaBound{s}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaFunction{shape-args}\AgdaSpace{}%
@@ -3354,13 +3349,13 @@ similarly to the way we described above.
 \AgdaCatchallClause{\AgdaBound{e}}\AgdaSpace{}%
 \AgdaSymbol{=}\AgdaSpace{}%
 \AgdaFunction{printf}%
-\>[1764I]\AgdaString{"(isum\%u\ \%s\ (\textbackslash{}\textbackslash{}\ \%s\ ->\ \%s))"}\AgdaSpace{}%
+\>[1759I]\AgdaString{"(isum\%u\ \%s\ (\textbackslash{}\textbackslash{}\ \%s\ ->\ \%s))"}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaFunction{dim}\AgdaSpace{}%
 \AgdaBound{s}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaFunction{shape-args}\AgdaSpace{}%
 \AgdaBound{s}\AgdaSymbol{)}\<%
 \\
-\>[.][@{}l@{}]\<[1764I]%
+\>[.][@{}l@{}]\<[1759I]%
 \>[25]\AgdaSymbol{(}\AgdaFunction{ix-join}\AgdaSpace{}%
 \AgdaBound{i}\AgdaSpace{}%
 \AgdaString{"\ "}\AgdaSymbol{)}\AgdaSpace{}%
@@ -3370,7 +3365,7 @@ similarly to the way we described above.
 \\[\AgdaEmptyExtraSkip]%
 %
 \>[2]\AgdaFunction{ix-plus}%
-\>[1772I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[1767I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{+}}\AgdaSpace{}%
 \AgdaGeneralizable{p}\AgdaSpace{}%
@@ -3381,7 +3376,7 @@ similarly to the way we described above.
 \AgdaGeneralizable{p}\AgdaSpace{}%
 \AgdaGeneralizable{u}\AgdaSymbol{)}\<%
 \\
-\>[.][@{}l@{}]\<[1772I]%
+\>[.][@{}l@{}]\<[1767I]%
 \>[10]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{i}\AgdaSpace{}%
 \AgdaSymbol{:}\AgdaSpace{}%
@@ -3475,7 +3470,7 @@ similarly to the way we described above.
 \\[\AgdaEmptyExtraSkip]%
 %
 \>[2]\AgdaFunction{ix-minus}%
-\>[1845I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[1840I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{+}}\AgdaSpace{}%
 \AgdaGeneralizable{p}\AgdaSpace{}%
@@ -3486,7 +3481,7 @@ similarly to the way we described above.
 \AgdaGeneralizable{p}\AgdaSpace{}%
 \AgdaGeneralizable{u}\AgdaSymbol{)}\<%
 \\
-\>[.][@{}l@{}]\<[1845I]%
+\>[.][@{}l@{}]\<[1840I]%
 \>[11]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{i}\AgdaSpace{}%
 \AgdaSymbol{:}\AgdaSpace{}%
@@ -3556,7 +3551,7 @@ similarly to the way we described above.
 \\[\AgdaEmptyExtraSkip]%
 %
 \>[2]\AgdaFunction{to-div-mod}%
-\>[1900I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[1895I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{*}}\AgdaSpace{}%
 \AgdaGeneralizable{p}\AgdaSpace{}%
@@ -3566,7 +3561,7 @@ similarly to the way we described above.
 \AgdaDatatype{Ix}\AgdaSpace{}%
 \AgdaGeneralizable{q}\<%
 \\
-\>[.][@{}l@{}]\<[1900I]%
+\>[.][@{}l@{}]\<[1895I]%
 \>[13]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaDatatype{Ix}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSpace{}%
@@ -3605,14 +3600,14 @@ similarly to the way we described above.
 \\
 %
 \>[4]\AgdaFunction{Prod.map}%
-\>[1933I]\AgdaSymbol{(}\AgdaFunction{printf}\AgdaSpace{}%
+\>[1928I]\AgdaSymbol{(}\AgdaFunction{printf}\AgdaSpace{}%
 \AgdaString{"(\%s\ /\ \%s)"}\AgdaSpace{}%
 \AgdaBound{x}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaFunction{show-nat}\AgdaSpace{}%
 \AgdaBound{n}\AgdaSymbol{)}\AgdaSpace{}%
 \AgdaOperator{\AgdaInductiveConstructor{∷\AgdaUnderscore{}}}\AgdaSymbol{)}\<%
 \\
-\>[.][@{}l@{}]\<[1933I]%
+\>[.][@{}l@{}]\<[1928I]%
 \>[13]\AgdaSymbol{(}\AgdaFunction{printf}\AgdaSpace{}%
 \AgdaString{"(\%s\ \%\%\ \%s)"}\AgdaSpace{}%
 \AgdaBound{x}\AgdaSpace{}%
@@ -3629,14 +3624,14 @@ similarly to the way we described above.
 \\[\AgdaEmptyExtraSkip]%
 %
 \>[2]\AgdaFunction{from-div-mod}%
-\>[1946I]\AgdaSymbol{:}\AgdaSpace{}%
+\>[1941I]\AgdaSymbol{:}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{*}}\AgdaSpace{}%
 \AgdaGeneralizable{p}\AgdaSpace{}%
 \AgdaOperator{\AgdaFunction{≈}}\AgdaSpace{}%
 \AgdaGeneralizable{q}\<%
 \\
-\>[.][@{}l@{}]\<[1946I]%
+\>[.][@{}l@{}]\<[1941I]%
 \>[15]\AgdaSymbol{→}\AgdaSpace{}%
 \AgdaDatatype{Ix}\AgdaSpace{}%
 \AgdaGeneralizable{s}\AgdaSpace{}%
@@ -4351,9 +4346,9 @@ implements the normalisation step.
 \AgdaBound{b}\AgdaSpace{}%
 \AgdaSymbol{=}\AgdaSpace{}%
 \AgdaFunction{printf}%
-\>[2402I]\AgdaString{"if\ (\%s\ \&\&\ \%s)\ then\ \%s\ else\ zero"}\<%
+\>[2397I]\AgdaString{"if\ (\%s\ \&\&\ \%s)\ then\ \%s\ else\ zero"}\<%
 \\
-\>[.][@{}l@{}]\<[2402I]%
+\>[.][@{}l@{}]\<[2397I]%
 \>[21]\AgdaBound{j≥i}\AgdaSpace{}%
 \AgdaBound{j-i<u}\AgdaSpace{}%
 \AgdaSymbol{(}\AgdaBound{f}\AgdaSpace{}%

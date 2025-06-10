@@ -440,8 +440,8 @@ module Opt where
 \begin{code}
   record RealProp (r : Real) : Set where
     open Real r; field
-      +-neutˡ : ∀ {x} → fromℕ 0 + x  ≡ x;  +-neutʳ : ∀ {x} → x + fromℕ 0  ≡ x
-      *-neutˡ : ∀ {x} → fromℕ 1 * x  ≡ x;  *-neutʳ : ∀ {x} → x * fromℕ 1  ≡ x
+      +-neutˡ : ∀ {x} → 0ᵣ + x  ≡ x;  +-neutʳ : ∀ {x} → x + 0ᵣ  ≡ x
+      *-neutˡ : ∀ {x} → 1ᵣ * x  ≡ x;  *-neutʳ : ∀ {x} → x * 1ᵣ  ≡ x
 \end{code}
 The meaning of semantics preservation is given by the \AF{\_≈ᵉ\_}
 relation, which says that two expressions are equivalent if they evaluate
@@ -465,7 +465,7 @@ semantics-preserving \AF{opt}imisation function is given as follows.
   _≈ᵉ_ : E Γ is → E Γ is → Set
   _≈ᵉ_ {Γ} a b = ⦃ ρ : Env Γ ⦄ → ⟦ a ⟧ ≈ᵛ ⟦ b ⟧
   
-  opt : (e : E Γ is) → ∃ λ e′ → (e ≈ᵉ e′)
+  opt : (e : E Γ is) → ∃[ e′ ] (e ≈ᵉ e′)
 \end{code}}
 \end{mathpar}
 \begin{code}[hide]
