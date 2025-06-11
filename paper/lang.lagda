@@ -23,7 +23,7 @@ Once we accept the idea of an embedded language, we may consider to implement
 it through deep embedding which gives us the following two advantages.
 Firstly, AD, extraction and optimisations can be implemented within the
 host language without any compiler modifications.  Secondly, as our host
-language is a theorem prover, our implementations can include safety
+language is a theorem prover, our implementations can include correctness
 guarantees of our choice.  This is the approach we are taking here.
 
 One challenge lies in identifying the primitives for the embedded language,
@@ -38,7 +38,7 @@ to experiment with these choices easily.
 We have chosen sufficiently generic primitives so that many interesting
 functions can be defined within the DSL, yet all the primitives are easily
 implementable in the backend.  Another consideration is the ability to define
-AD within the same DSL, which is useful because we can do higher-order
+AD within the same DSL, which is useful because we can compute higher-order
 derivatives and we can share optimisations between the programs and their
 derivatives.
 \begin{code}[hide]
@@ -58,7 +58,7 @@ We leverage our dependently-typed setting by making our
 embedded language well-scoped and intrinsically typed (shaped),
 following a long tradition type- and scope-safe definitions~\cite{intrinsic1,intrinsic2,intrinsic3}.
 This is very useful as it eliminates a large class of errors that have to do
-with wrong variables uses and ill-typed expressions.
+with uses of wrong variables and ill-typed expressions.
 Types are given by \AD{IS}: we have arrays of
 shape $s$ (denoted by \AC{ar}) and indices of shape $s$
 (denoted by \AC{ix}).  Contexts are given by \AD{Ctx} and they are
@@ -115,7 +115,7 @@ embedded programs.% XXX: more explanation?
 All arrays in our language are assumed to be arrays of reals.  Our contexts
 do not carry array element types, and we distinguish
 singleton arrays of shape \AC{[]} (\emph{scalars}) that will be mapped
-into the type that represents real numbers in the backend \eg{} double.
+into the type that represents real numbers in the backend \eg{} \texttt{double}.
 This means that in the language we do not need to introduce
 \AF{nest}/\AF{unnest} operations, as there is no notion of nested arrays.
 We do this to keep the language minimal as well as facilitate extraction
