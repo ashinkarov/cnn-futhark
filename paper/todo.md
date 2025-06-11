@@ -5,8 +5,6 @@ List of minor remarks suggested by reviewers. Remove the ones that have been don
 WON'T FIX THIS, WE ELABORATE LATER
 l5: "strong correctness guarantees" -- like/namely?
 
-l329-342: very nice
-
 WON'T FIX THIS
 l401: "imaps" -- isn't this normally called build or generate. Why stray from that? 
 l402:  "sels" -- isn't this just indexing? why not call it that?
@@ -17,7 +15,7 @@ l554-694: Interesting! I didn't know this technique. Is this a novel contributio
 DON'T UNDERSTAND, IT IS EXPLAINED ABOVE
 l786-791: please explain a bit more here.
 
-MAYBE
+WON'T CHANGE - WE DISCUSS THIS ELSEWHERE
 l797-830: What is the complexity of the resulting algorithm? Is it as expected from reverse AD?
 
 WON'T FIX, THIS IS USED FOR CONVOLUTION, BUT IT IS NOT AN IMPORTANT POINT
