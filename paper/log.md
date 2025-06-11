@@ -1,5 +1,11 @@
 # Major changes
 
+* We rewrote the introduction to more clearly reflect the context and intent
+  behind our paper, as we also mentioned in our author response.
+
+* We added discussion of Paszke et al. to Related Work as requested in the
+  conditional acceptance message.
+
 * We rewrote the beginning of Section 5, which fixed some unfortunate
 typos, and addressed the following comments of the reviewers:
 
