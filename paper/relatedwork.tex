@@ -28,27 +28,26 @@ PyTorch~\cite{ad-pytorch}, MXNet~\cite{ad-mxnet} and many more.
 Most of these approaches are largely similar to ours (although naturally more
 complete), as they involve a syntactically driven transformation of the program.
 
-While in particular the dedicated frameworks tend to find widespread 
-acceptance by practitioners, both, correctness and performance leave
-two open questions: (i) how is it possible to
-ensure that the AD algorithm is implemented correctly?
-(ii) if the
-language does not perform as expected, what are the
-options to solve this?  Unfortunately, in many cases the answer to
-both questions is unsatisfying.  Most languages do not
-come with formal correctness guarantees, so one has to trust the
-implementers of these tools.  One can run tests as well to gain trust 
-in the implementation but that is far from a 
-formal guarantee.  If one relies
-on the AD provided by a chosen language/framework, and the generated code does not
-perform well, one has to modify the language/framework, as these solutions
-are tightly integrated with the tools. The problem here is that most of of these tools
-have very large and sophisticated implementations typically comprising
-of hundreds of thousands of lines of code.  Note that while our work
-does not give a formal proof that AD implementation is correct (it is
-not clear how to formulate correctness criteria for it), the entire
-implementation of AD is about 20 lines of code, so it is easy to
-understand and modify.
+While in particular the dedicated frameworks tend to find widespread acceptance
+by practitioners, both, correctness and performance leave two open questions:
+(i) how is it possible to ensure that the AD algorithm is implemented correctly?
+(ii) if the language does not perform as expected, what are the options to solve
+this? Unfortunately, in many cases the answer to both questions is unsatisfying.
+Most languages do not come with formal correctness guarantees, so one has to
+trust the implementers of these tools. One can run tests as well to gain trust
+in the implementation but that is far from a formal guarantee. If one relies on
+the AD provided by a chosen language/framework, and the generated code does not
+perform well, one has to modify the language/framework, as these solutions are
+tightly integrated with the tools. The problem here is that most of of these
+tools have very large and sophisticated implementations typically comprising of
+hundreds of thousands of lines of code. Note that while our work does not give a
+formal proof that AD implementation is correct, the entire implementation of AD
+is about 20 lines of code, so it is easy to understand and modify. Formulating
+correctness criteria for AD algorithms is somewhat involved, but has been done
+for implementations where the AD algorithm monitors the program when it runs and
+records a trace of its actions~\cite{de2023verifying}, while our approach is
+based on static program transformation---this is in fact the only viable
+approach when also doing program extraction.
 
 The AD transformations in Dex~\cite{10.1145/3473593} and Jax~\cite{ad-jax} are
 in this respect interesting, as they are based on first \emph{linearising} the

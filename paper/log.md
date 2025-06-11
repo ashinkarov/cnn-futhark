@@ -6,6 +6,9 @@
 * We added discussion of Paszke et al. to Related Work as requested in the
   conditional acceptance message.
 
+* We added a comparison with the de Vilhena, Paulo Emílio, and François Pottier
+  paper on verification of AD, as requested by a reviewer.
+
 * We rewrote the beginning of Section 5, which fixed some unfortunate
 typos, and addressed the following comments of the reviewers:
 
