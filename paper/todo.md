@@ -23,7 +23,8 @@ l797-830: What is the complexity of the resulting algorithm? Is it as expected f
 TODO
 l1122: You may want to include some comparisons here to
 de Vilhena, Paulo Emílio, and François Pottier. "Verifying an Effect-Handler-Based Define-By-Run Reverse-Mode AD Library." Logical Methods in Computer Science 19 (2023).
-TODO
+
+WON'T FIX, THIS IS USED FOR CONVOLUTION, BUT IT IS NOT AN IMPORTANT POINT
 l1197: "certain functions being inverses" -- where do you use this?
 
 ## C
