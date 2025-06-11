@@ -751,12 +751,14 @@ section.
 % 
 \subsection{Extraction\label{sec:extraction}}
 
-The embedded language \AF{E} serves two purposes.
-Firstly, \AF{E} makes it possible to implement automatic differentiation
-within Agda, as we described in the previous section.
-Secondly, programs in \AF{E} can be extracted into
-programming languages that can generate efficient code.  This
-section describes extraction process into Futhark.
+The embedded language \AF{E} serves two purposes. Firstly, \AF{E} makes it
+possible to implement automatic differentiation within Agda, as we described in
+the previous section. Secondly, programs in \AF{E} can be extracted into
+programming languages that can generate efficient code. This section describes
+extraction process into Futhark. Note that our extraction does not guarantee
+correctness of the generated code. This is largely due to expediency---Futhark
+is a simple language with straightforward semantics quite close to Agda, and
+could be modeled using standard techniques.
 
 Futhark is a functional language with automatic memory management and
 a built-in type for arrays.  Futhark provides key array combinators such as

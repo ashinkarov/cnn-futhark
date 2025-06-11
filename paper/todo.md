@@ -60,11 +60,6 @@ WON'T FIX THIS
 
 - l419 why does `scaledown` take an `ℕ` and not an `ℝ`?
 
-TODO
-- l1015 So Futhark code is represented just by a `String`?
-        Why don't you model the relevant parts by some abstract syntax?
-        Can you even prove something about your normalization function when you juggle with monsters like `String → String` to represent a Futhark context?
-
 ## E
 
 Changelog in a separate file.
