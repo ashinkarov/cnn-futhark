@@ -2,6 +2,7 @@ List of minor remarks suggested by reviewers. Remove the ones that have been don
 
 ## A
 
+WON'T FIX THIS, WE ELABORATE LATER
 l5: "strong correctness guarantees" -- like/namely?
 
 l329-342: very nice
