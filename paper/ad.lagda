@@ -15,7 +15,7 @@ module _ where
 
 
 We implement the reverse mode of automatic differentiation for expressions in
-\AF{E}. Our focus on reverse mode is due to its significance in machine
+\AF{E}. Our focus on the reverse mode is due to its significance in machine
 learning and the increased complexity associated with its implementation. We
 begin with a brief introduction to automatic differentiation; for more
 comprehensive explanations, please refer to~\cite{autodiff-survey,
@@ -46,9 +46,9 @@ computing the recursive relation:
 \)
 In our example, we compute \(\frac{\partial y}{\partial w_2}\), followed by
 \(\frac{\partial w_2}{\partial w_1}\), and finally \(\frac{\partial
-w_1}{\partial w_0}\). While the direction appears to make no difference for functions of
+w_1}{\partial w_0}\). While the direction makes no difference for functions of
 a single variable, a significant difference arises for functions of \(n\)
-variables, as we can compute partial derivatives with respect to all inputs
+variables, as reverse mode computes partial derivatives with respect to all inputs
 simultaneously.
 
 \paragraph{Example of Reverse AD}
@@ -83,7 +83,7 @@ computing \(\bar{t}\) for those \(t\) that have successors:
 \)
 
 We conceptually traverse the graph in Fig.~\ref{fig:ad-graph} from the bottom
-to the top (hence the term \emph{reverse} AD) and compute the
+to the top (hence the term \emph{reverse mode}) and compute the
 adjoints for \(\bar{w}_1\), \(\bar{w}_0\), \(\bar{x}\), and \(\bar{y}\). Since
 \(z\) does not have successors, we compute \(\bar{z}\) directly: \(\bar{z} =
 \frac{\partial z}{\partial z} = 1\). It is important to note that \(x\) has two
@@ -101,9 +101,9 @@ adjoints of the temporary variables:
 
 \subsection{AD for \AD{E}}
 
-Opposed to the above description, in the implementation we are not
-going to introduce temporary
-variables for all sub-expressions, instead we rely on existing
+Opposed to the above description, in the implementation we will not
+introduce temporary
+variables for all sub-expressions, but instead rely on existing
 let bindings.  We traverse the expression with the given adjoint and
 we collect partial derivatives for each variable within the context that
 the expression is defined in.  When we compute derivatives for let
@@ -322,7 +322,7 @@ below and the explanation of how it works follow.
 is zero, so nothing needs to be updated in the environment.  Index variables are
 not stored in the environment, so no updates are needed either.  If we differentiate
 the variable $x$ with some seed \AB{s}, we update the $x$-th position in the environment
-by adding \AB{s} to it.
+by incrementing it by \AB{s}.
 
 \paragraph{Imaps} Conceptually, differentiation of \AC{imap}s proceeds as follows:
 for every index $i$ of the imap index-space, we compute a derivative of $i$-th
