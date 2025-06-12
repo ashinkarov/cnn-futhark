@@ -286,7 +286,7 @@ simply didn't have enough resources to do this in this iteration.
 > upfront in such a way that it would not get lost during the main
 > thrust of the paper, concerning the Agda/E/Futhark pipeline.
 
-Sure, happy to stress it more.
+Sure, happy to stress it more. (DONE)
 
 > What can we really learn from the performance study? It seems to be
 > the conclusion that this pipeline approach is morally good enough,

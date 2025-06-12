@@ -57,7 +57,10 @@ easily adjust them to our liking. We also demonstrate that some components can
 be left only partially verified, where the effort of verification is judged
 disproportionate to the benefit. We argue that such a liberating approach is
 feasible in practice, at least for the times of dialectic of correctness and
-performance.
+performance. The overall goals is to demonstrate how to formulate a
+computationally intensive problem in a proof assistant, transform it with
+verification of key safety properties, and then pass it on to the other system
+that can run the algorithm efficiently.
 
 The contributions of this paper are as follows:
 \begin{enumerate}
@@ -65,7 +68,7 @@ The contributions of this paper are as follows:
         the CNN from~\cite{cnn-array} in Agda;
   \item an embedded DSL in Agda which supports AD (reverse mode);
   \item an extraction mechanism for generating Futhark code from the DSL; and
-  \item an experimental evaluation of the generated codes.
+  \item an experimental evaluation of the generated code.
 \end{enumerate}
 
 This paper is written in literate Agda, which guarantees that all the code
