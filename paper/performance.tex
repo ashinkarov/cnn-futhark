@@ -74,6 +74,15 @@ primitives in the DSL, but it would result in a more
 restricted language, which is less interesting from a research
 perspective.
 
+Another option is of course to generate TensorFlow, or some other established
+high performance language, directly. This is in principle viable, as our overall
+approach is not particularly wedded to Futhark. Extraction does become more
+challenging, as \AF{E} is a \emph{pointed} higher-order
+language~\cite{10.1145/3473593}, meaning programs consists of scalar expressions
+nested inside parallel constructs that explicitly index arrays, while the
+TensorFlow programming model uses first-order bulk parallel constructs that
+implicitly operate on entire arrays at a time.
+
 \begin{table}
 \begin{tabular}{crrr}
 \textbf{Size of training set} & \multicolumn{2}{c}{\textbf{Runtime}} & \textbf{Ratio} \\

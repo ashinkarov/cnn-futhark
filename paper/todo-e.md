@@ -302,7 +302,7 @@ Sure, happy to stress it more. (DONE)
 > sure it's out-of-scope for this paper, but some words in this direction
 > might have been... helpful to the authors' cause.
 
-Sure, happy to expand on this.
+Sure, happy to expand on this. (EXPANDED DISCUSSION SLIGHTLY)
 
 > There is also a separate, unanalysed, question: why extract to Futhark?
 > How hard would it be to have a different pipeline/backend, targeting
