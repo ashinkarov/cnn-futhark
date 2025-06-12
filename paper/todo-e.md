@@ -286,7 +286,7 @@ simply didn't have enough resources to do this in this iteration.
 > upfront in such a way that it would not get lost during the main
 > thrust of the paper, concerning the Agda/E/Futhark pipeline.
 
-Sure, happy to stress it more. (DONE)
+DONE
 
 > What can we really learn from the performance study? It seems to be
 > the conclusion that this pipeline approach is morally good enough,
@@ -302,7 +302,7 @@ Sure, happy to stress it more. (DONE)
 > sure it's out-of-scope for this paper, but some words in this direction
 > might have been... helpful to the authors' cause.
 
-Sure, happy to expand on this. (EXPANDED DISCUSSION SLIGHTLY)
+DONE (expanded discussion slightly)
 
 > There is also a separate, unanalysed, question: why extract to Futhark?
 > How hard would it be to have a different pipeline/backend, targeting
@@ -311,14 +311,13 @@ Sure, happy to expand on this. (EXPANDED DISCUSSION SLIGHTLY)
 > in Agda give rise to 'better' back-end computations on other
 > platforms? It would be very interesting to know!
 
-Yes, we should say a bit more than what we said in lines 1114-1115,
-happy to expand on this.
+DONE (expanded discussion slightly)
 
 > p.23--25 Section 7
 > Mention Abbott et al.
 > Mention Allais et al.
 
-Happy to do this!
+DONE (although not in Section 7).
 
 
 > Nevertheless, despite all of the above detailed criticisms, I think
