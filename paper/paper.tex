@@ -1,4 +1,4 @@
-\documentclass[acmsmall,screen,anonymous,review]{acmart}
+\documentclass[acmsmall,screen]{acmart}
 \usepackage{listings}
 \usepackage{pgfplots}
 \usepackage{pgfplotstable}
@@ -181,28 +181,23 @@
 
 \pgfplotstableset{col sep=comma}
 
-\title{Correctness meets Performance: from Agda to Futhark}
 
-\author{Artjoms {\v{S}}inkarovs}
-\email{artjoms.sinkarovs@pm.me}
-\orcid{0000-0003-3292-2985}
-\affiliation{%
-  \institution{University of Southampton}
-  \streetaddress{University of Southampton, University Road}
-  \city{Southampton}
-  \country{UK}
-  \postcode{SO17 1BJ}
-}
-\author{Troels Henriksen}
-\email{athas@sigkill.dk}
-\orcid{0000-0002-1195-9722}
-\affiliation{%
-  \institution{University of Copenhagen}
-  \streetaddress{Universitetsparken 5}
-  \city{Copenhagen}
-  \country{Denmark}
-  \postcode{2100}
-}
+%%% The following is specific to ICFP '25 and the paper
+%%% 'Correctness Meets High Performance in Agda'
+%%% by Artjoms Šinkarovs and Troels Henriksen.
+%%%
+\setcopyright{cc}
+\setcctype{by-sa}
+\acmDOI{10.1145/3747524}
+\acmYear{2025}
+\acmJournal{PACMPL}
+\acmVolume{9}
+\acmNumber{ICFP}
+\acmArticle{255}
+\acmMonth{8}
+\received{2025-02-27}
+\received[accepted]{2025-06-27}
+
 
 %\renewcommand{\shortauthors}%
 %  {A.~{\v{S}}inkarovs, T.~Koopman, and S.~Scholz}
@@ -225,6 +220,26 @@
 
 
 \begin{document}
+
+\title{Correctness meets Performance: from Agda to Futhark}
+
+\author{Artjoms Šinkarovs}
+\orcid{0000-0003-3292-2985}
+\affiliation{%
+  \institution{University of Southampton}
+  \city{Southampton}
+  \country{United Kingdom}
+}
+\email{artjoms.sinkarovs@pm.me}
+
+\author{Troels Henriksen}
+\orcid{0000-0002-1195-9722}
+\affiliation{%
+  \institution{University of Copenhagen}
+  \city{Copenhagen}
+  \country{Denmark}
+}
+\email{athas@sigkill.dk}
 
 \begin{abstract}
 In this paper we demonstrate a technique for developing high performance applications
