@@ -878,22 +878,23 @@ numpages = {7}
        month = "May",
 }
 
-@inproceedings {futhark/sc22ad,
-author = {R. Schenck and O. RÃ¸nning and T. Henriksen and C. E. Oancea},
-booktitle = {2022 SC22: International Conference for High Performance Computing, Networking, Storage and Analysis (SC) (SC)},
-title = {AD for an Array Language with Nested Parallelism},
+
+@inproceedings{futhark/sc22ad,
+author = {Schenck, Robert and R\o{}nning, Ola and Henriksen, Troels and Oancea, Cosmin E.},
+title = {AD for an array language with nested parallelism},
 year = {2022},
-volume = {},
-issn = {2167-4337},
-pages = {829-843},
-abstract = {We present a technique for applying reverse mode automatic differentiation (AD) on a non-recursive second-order functional array language that supports nested parallelism and is primarily aimed at efficient GPU execution. The key idea is to eliminate the need for a tape by relying on redundant execution to bring into each new scope all program variables that may be needed by the differentiated code. Efficient execution is enabled by the observation that perfectly nested scopes do not introduce re-execution and that such perfect nests can be readily produced by application of known compiler transformations. Our technique differentiates loops and bulk-parallel operatorsâ€”e.g., map, reduce(-by-index), scan, and scatterâ€”by specific rewrite rules and aggressively optimizes the resulting nested-parallel code. We report an evaluation that compares with established AD solutions and demonstrates competitive performance on ten common benchmarks from recent applied AD literature.},
-keywords = {automatic differentiation;functional data parallel language;compilers;gpgpu},
-doi = {},
-url = {https://doi.ieeecomputersociety.org/},
-publisher = {IEEE Computer Society},
-address = {Los Alamitos, CA, USA},
-month = {nov}
+isbn = {9784665454445},
+publisher = {IEEE Press},
+abstract = {We present a technique for applying reverse mode automatic differentiation (AD) on a non-recursive second-order functional array language that supports nested parallelism and is primarily aimed at efficient GPU execution.The key idea is to eliminate the need for a tape by relying on redundant execution to bring into each new scope all program variables that may be needed by the differentiated code. Efficient execution is enabled by the observation that perfectly nested scopes do not introduce re-execution and that such perfect nests can be readily produced by application of known compiler transformations. Our technique differentiates loops and bulk-parallel operators---e.g., map, reduce(-by-index), scan, and scatter---by specific rewrite rules and aggressively optimizes the resulting nested-parallel code. We report an evaluation that compares with established AD solutions and demonstrates competitive performance on ten common benchmarks from recent applied AD literature.},
+booktitle = {Proceedings of the International Conference on High Performance Computing, Networking, Storage and Analysis},
+articleno = {58},
+numpages = {15},
+keywords = {functional data parallel language, compilers, automatic differentiation, GPGPU},
+location = {Dallas, Texas},
+series = {SC '22}
 }
+
+  
 
 @article{ad-haskell,
 author = {Krawiec, Faustyna and Peyton Jones, Simon and Krishnaswami, Neel and Ellis, Tom and Eisenberg, Richard A. and Fitzgibbon, Andrew},
@@ -1433,3 +1434,19 @@ isbn="978-3-540-44661-3"
   year={2023},
   publisher={Episciences. org}
 }
+
+@article{data-layouts,
+author = {Šinkarovs, Artjoms and Scholz, Sven-Bodo},
+title = {Type-driven data layouts for improved vectorisation},
+journal = {Concurrency and Computation: Practice and Experience},
+volume = {28},
+number = {7},
+pages = {2092-2119},
+keywords = {vectorisation, data parallelism, hpc},
+doi = {https://doi.org/10.1002/cpe.3501},
+url = {https://onlinelibrary.wiley.com/doi/abs/10.1002/cpe.3501},
+eprint = {https://onlinelibrary.wiley.com/doi/pdf/10.1002/cpe.3501},
+abstract = {Summary Vector instructions of modern CPUs are crucially important for the performance of compute-intensive algorithms. Auto-vectorisation often fails because of an unfortunate choice of data layout by the programmer. This paper proposes a data layout inference for auto-vectorisation that identifies layout transformations that convert single instruction, multiple data-unfavourable layouts of data structures into favourable ones. We present a type system for layout transformations, and we sketch an inference algorithm for it. Finally, we present some initial performance figures for the impact of the inferred layout transformations. They show that non-intuitive layouts that are inferred through our system can have a vast performance impact on compute intensive programs. Copyright © 2015 John Wiley \& Sons, Ltd.},
+year = {2016}
+}
+

@@ -522,7 +522,8 @@ However, in practice this is not a problem, as we assume that weights are
 stored flipped in memory.
 
 We define type synonyms \AF{Vec} and \AF{Ix} which are 1-dimensional versions
-of \AF{Ar} and \AF{P}.
+of \AF{Ar} and \AF{P}.  We introduce the \AF{slide₁} primitive that selects a $(1+n)$-element vector
+from the $(m+n)$-element vector starting at the offset $i$.  
 \begin{mathpar}
 \codeblock{\begin{code}
   Vec : ℕ → Set → Set
@@ -533,16 +534,17 @@ of \AF{Ar} and \AF{P}.
   Ix : ℕ → Set
   Ix m = P (ι m)
 \end{code}}
+\and
+\codeblock{\begin{code}
+  slide₁ : Ix m → Vec (m + n) X → Vec (1 + n) X
+  slide₁ (ι i) v (ι j) = v (ι (i ⊕ j))
+\end{code}}
 \end{mathpar}
-We introduce the \AF{slide₁} primitive that selects a $(1+n)$-element vector
-from the $(m+n)$-element vector starting at the offset $i$.  Then,
+Then,
 following~\cite{cnn-array}, we compute $m$-element array of slides
 and then sum it up.
 \begin{mathpar}
 \codeblock{\begin{code}
-  slide₁ : Ix m → Vec (m + n) X → Vec (1 + n) X
-  slide₁ (ι i) v (ι j) = v (ι (i ⊕ j))
-
   conv₁ : Vec (m + n) ℕ → Vec m ℕ → Vec (1 + n) ℕ
   conv₁ a w = sum₁ (zipWith _+_) (K 0) (λ i → map (w i *_) (slide₁ i a))
 \end{code}}
@@ -878,8 +880,8 @@ are purely for documentation --- Agda infers them automatically and these lines
 can be removed.  Note also that all the \AF{mconv} applications do not require
 explicit proofs as Agda can compute them from the shape information provided
 in types. 
-%\begin{mathpar}
-%\codeblock{
+\begin{mathpar}
+\codeblock{
 \begin{code}
   forward : (inp  :  Ar (28 ∷ 28 ∷ []) ℝ) → (k₁ : Ar (6 ∷ 5 ∷ 5 ∷ []) ℝ)
           → (b₁   :  Ar (6  ∷ []) ℝ)      → (k₂ : Ar (12 ∷ 6 ∷ 5 ∷ 5 ∷ []) ℝ)
@@ -901,6 +903,6 @@ in types.
       r = logistic $ mconv s₂ fc b 
     in r
 \end{code}
-%}
-%\end{mathpar}
+}
+\end{mathpar}
 

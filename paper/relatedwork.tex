@@ -110,8 +110,9 @@ is that indexed streams fix traversal order of the index-space
 of the given array, whereas \AD{Ar} only describes a mapping.
 In fact indexed streams could be used to implement \AF{Ar}
 computations.  It is a little unclear how to handle parallelism
-in indexed streams.  \AF{Ar} expressions can always run parallel,
-and this is one of the reasons why we can map them so easily to GPUs.
+in indexed streams.  \AF{Ar} expressions can always run in parallel,
+we can chose arbitrary data layouts~\cite{data-layouts} at runtime,
+and we can easily map them to GPUs.
 
 
 \paragraph{Type systems}

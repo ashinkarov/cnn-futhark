@@ -91,10 +91,12 @@ and \(y\)
 \end{mathpar}
 
 % TODO: Turn this back into a wrapfigure once we no longer need latexdiff.
-\begin{figure}
+%\begin{figure}
+\begin{wrapfigure}{r}{.6\linewidth}
   \includegraphics{ad-example.pdf}
   \caption{\label{fig:ad-graph}Reverse AD for \(z = \sin(xy+x)\)}
-\end{figure}
+\end{wrapfigure}
+%\end{figure}
 
 The individual steps of the process are depicted in Fig.~\ref{fig:ad-graph},
 where the nodes represent variable definitions, and the edges connect variable
@@ -106,16 +108,17 @@ derivative of \(z\) with respect to \(t\), that is, \(\bar{t} = \frac{\partial
 z}{\partial t}\). We denote by \(\mathtt{succ}\, t\) those variables that
 reference \(t\) in their definitions (the direct neighbours of \(t\) in
 Fig.~\ref{fig:ad-graph}). The chain rule provides the following formula for
-computing \(\bar{t}\) for those \(t\) that have successors:
+computing \(\bar{t}\) \emph{for those} \(t\) that have successors:
 \(
 \bar{t} = \sum_{u \in \mathtt{succ}\, t} \bar{u} \frac{\partial u}{\partial t}.
 \)
+When there are no successors we compute the adjoint directly.  For example:
+\(\bar{z} = \frac{\partial z}{\partial z} = 1\).
 
 We conceptually traverse the graph in Fig.~\ref{fig:ad-graph} from the bottom
 to the top (hence the term \emph{reverse mode}) and compute the
-adjoints for \(\bar{w}_1\), \(\bar{w}_0\), \(\bar{x}\), and \(\bar{y}\). Since
-\(z\) does not have successors, we compute \(\bar{z}\) directly: \(\bar{z} =
-\frac{\partial z}{\partial z} = 1\). It is important to note that \(x\) has two
+adjoints for \(\bar{w}_1\), \(\bar{w}_0\), \(\bar{x}\), and \(\bar{y}\). 
+It is important to note that \(x\) has two
 successors; therefore, \(\bar{x}\) is the sum of \(\bar{x}_l\) and
 \(\bar{x}_r\).
 
@@ -1108,7 +1111,7 @@ Finally, we extend the environment by adding \AC{zero} at the top with
 \end{code}
 
 We define\footnote{Agda does not recognise that the definition of \AF{∇} that
-we give here terminates.  We fix this in the supplementary materials by choosing
+we give here terminates.  We fix this in our implementation by choosing
 an inductively decreasing invariant.  However we keep this definition in the
 paper for readability.} the function (\AF{∇} $e$ $s$ $\delta$) that takes an
 expression ($e$ : \AF{E} \AB{Γ} (\AC{ar} $s$)), the seed $s$ (initially set
@@ -1676,7 +1679,7 @@ prior extraction.  Designing optimisations for a small DSL is much easier
 than for a general-purpose language.  Also, we can leverage semantics
 of \AF{E}, to formally prove that our optimisations preserve the meaning
 of programs.  We demonstrate the setting and key optimisations in this section;
-for further details refer to supplementary materials.
+for further details refer to our implementation.
 
 Semantics preservation proofs require several ring/field properties
 of reals such as presence of neutral elements for addition and multiplication.
@@ -1939,7 +1942,7 @@ semantics-preserving \AF{opt}imisation function is given as follows.
 Consider the follow examples of the rewrites that we are implementing.
 We omit the proofs for readability, and we omit trivial rules such
 as (\AC{zero} \AF{⊞} $x \rightsquigarrow x$), but they are available in the
-supplementary materials.
+our implementation.
 \begin{mathpar}
    \AC{sels}\ zero\ e \rightsquigarrow \AC{zero}
    \and
@@ -4748,7 +4751,7 @@ implements the normalisation step.
 \AgdaBound{b}\AgdaSymbol{))}\<%
 \end{code}
 The rest of the code generator looks very similar, therefore we omit it
-here but the full code is available in the supplementary materials.
+here but the full code is available in our implementation.
 
 
 

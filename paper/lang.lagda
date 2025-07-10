@@ -792,13 +792,12 @@ which must be of the same shape.
   meansqerr r o = Sum λ i → sqerr (sels ⟨ r ⟩ i) (sels ⟨ o ⟩ i) 
 \end{code}
 With these primitives, we embed our running example in $E$ as follows:
-\begin{code}
+\begin{mathpar}
+\codeblock{\begin{code}
   cnn : E _ _
-  cnn = Lcon (  ar (28 ∷ 28 ∷ []) ∷ ar (6 ∷ 5 ∷ 5 ∷ [])
-              ∷ ar (6 ∷ [])       ∷ ar (12 ∷ 6 ∷ 5 ∷ 5 ∷ [])
-              ∷ ar (12 ∷ [])      ∷ ar (10 ∷ 12 ∷ 1 ∷ 4 ∷ 4 ∷ [])
-              ∷ ar (10 ∷ [])      ∷ ar (10 ∷ 1 ∷ 1 ∷ 1 ∷ 1 ∷ []) 
-              ∷ [])
+  cnn = Lcon (  ar (28 ∷ 28 ∷ []) ∷ ar (6 ∷ 5 ∷ 5 ∷ []) ∷ ar (6 ∷ []) ∷ ar (12 ∷ 6 ∷ 5 ∷ 5 ∷ [])
+                ∷ ar (12 ∷ []) ∷ ar (10 ∷ 12 ∷ 1 ∷ 4 ∷ 4 ∷ []) ∷ ar (10 ∷ [])
+                ∷ ar (10 ∷ 1 ∷ 1 ∷ 1 ∷ 1 ∷ []) ∷ [])
              (ar []) ε
         λ inp k₁ b₁ k₂ b₂ fc b target → 
         Let c₁₁ := mconv inp k₁ b₁  In
@@ -811,7 +810,8 @@ With these primitives, we embed our running example in $E$ as follows:
         Let o   := logistic o₁ In
         Let e   := meansqerr target o In
         e
-\end{code}
+\end{code}}
+\end{mathpar}
 Note that with the proposed syntax, the above definition looks very similar
 to the one we defined directly in Agda.  We use more let bindings in this
 definition, which is not an arbitrary choice, and we will come back to this
