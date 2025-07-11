@@ -16,9 +16,9 @@ latex/%.tex : %.lagda
 paper.pdf: $(SRC)
 	TEXINPUTS=./latex:$$TEXINPUTS latexmk -pdf -f -pdflatex='pdflatex -halt-on-error' $<
 
-paper.zip: $(SRC) latex/arrays.tex # paper.bbl acmart.cls
+paper.zip: $(SRC) latex/arrays.tex latex/lang.tex latex/ad.tex latex/agda.sty ad-example.pdf paper.bbl acmart.cls mathpartir.sty ACM-Reference-Format.bst
 	$(RM) paper.zip
-	zip paper.zip $(SRC) latex/model.tex paper.bbl acmart.cls
+	zip paper.zip $(SRC) latex/arrays.tex latex/lang.tex latex/ad.tex latex/agda.sty ad-example.pdf paper.bbl acmart.cls mathpartir.sty ACM-Reference-Format.bst
 
 diff/%.tex: %.tex
 	latexdiff --config PICTUREENV='code|wrapfigure' --graphics-markup=none submitted/$*.tex $*.tex > $@

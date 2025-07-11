@@ -36,9 +36,10 @@
 %%   Grave accent  \`     Left brace    \{     Vertical bar  \|
 %%   Right brace   \}     Tilde         \~}
 
+
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{acmart}
-[2024/12/28 v2.12 Typesetting articles for the Association for Computing Machinery]
+[2025/05/30 v2.14 Typesetting articles for the Association for Computing Machinery]
 \def\@classname{acmart}
 \InputIfFileExists{acmart-preload-hook.tex}{%
   \ClassWarning{\@classname}{%
@@ -864,13 +865,15 @@
   % and https://github.com/borisveytsman/acmart/issues/410
   \ifxetex
     \RequirePackage{unicode-math}
-    \setmathfont[Scale=MatchUppercase]{libertinusmath-regular.otf}
+    \setmathfont[Scale=MatchUppercase]{LibertinusMath-Regular.otf}
+    \setmathfont{latinmodern-math.otf}[range={cal}]
     \RequirePackage[tt=false]{libertine}
     \setmonofont[StylisticSet=3]{inconsolata}
   \else
     \ifluatex
       \RequirePackage{unicode-math}
-      \setmathfont[Scale=MatchUppercase]{libertinusmath-regular.otf}
+      \setmathfont[Scale=MatchUppercase]{LibertinusMath-Regular.otf}
+      \setmathfont{latinmodern-math.otf}[range={cal}]
       \RequirePackage[tt=false]{libertine}
       \setmonofont[StylisticSet=3]{inconsolata}
     \else
@@ -893,7 +896,23 @@
 \@undescribed@imagesfalse
 \newcommand\Description[2][]{\global\@Description@presenttrue\ignorespaces}
 \AtEndDocument{\if@undescribed@images
-  \ClassWarningNoLine{\@classname}{Some images may lack descriptions}\fi}
+  \ClassWarningNoLine{\@classname}{Some images may lack
+    descriptions.\MessageBreak
+  ACM is committed to complying with the upcoming US ADA
+  https://accessiblyapp.com/accessibility-compliance/ada/ and European
+  Accessibility Act
+  (EAA) https://accessiblyapp.com/accessibility-compliance/eaa/
+  regulations by actively working to ensure our publications and
+  application services are accessible to individuals with
+  disabilities, adhering to the WCAG guidelines to provide a seamless
+  experience for all users, and regularly reviewing our accessibility
+  practices to maintain compliance with evolving standards. \MessageBreak
+  To this end, we strongly encourage our authors to provide
+  alternative text and captions for images and multimedia content. It
+  is also important to optimize color contrast for the visually
+  impaired. Taking these important steps when creating your papers
+  will ensure that the widest possible audience can ingest your
+  work.}\fi}
 \AtBeginEnvironment{figure}{\@Description@presentfalse
   \let\@vspace\@vspace@orig
   \let\@vspacer\@vspacer@orig}
@@ -1649,13 +1668,14 @@
     \g@addto@macro\addresses{\email{#1}{#2}}%
   \fi}
 \def\orcid#1{\unskip\ignorespaces%
+  \protected\def\orcidsite{https://orcid.org/}%
   \IfBeginWith{#1}{http}{%
     \expandafter\gdef\csname
         typeset@author\the\num@authors\endcsname##1{%
           \href{#1}{##1}}}{%
     \expandafter\gdef\csname
         typeset@author\the\num@authors\endcsname##1{%
-          \href{https://orcid.org/#1}{##1}}}}
+          \href{\orcidsite#1}{##1}}}}
 \def\authorsaddresses#1{\def\@authorsaddresses{#1}}
 \authorsaddresses{\@mkauthorsaddresses}
 \newcommand\@mktranslatedkeywords[2]{\bgroup
@@ -3584,6 +3604,26 @@
 \AtEndDocument{\ifx\baselinestretch\ACM@origbaselinestretch\else
   \ClassError{\@classname}{An attempt to redefine
     \string\baselinestretch\space detected.  Please do not do this for
+    ACM submissions!}\fi}
+\let\ACM@origsection\section
+\AtEndDocument{\ifx\section\ACM@origsection\else
+  \ClassError{\@classname}{An attempt to redefine
+    \string\section\space detected.  Please do not do this for
+    ACM submissions!}\fi}
+\let\ACM@origsubsection\subsection
+\AtEndDocument{\ifx\subsection\ACM@origsubsection\else
+  \ClassError{\@classname}{An attempt to redefine
+    \string\subsection\space detected.  Please do not do this for
+    ACM submissions!}\fi}
+\let\ACM@origsubsubsection\subsubsection
+\AtEndDocument{\ifx\subsubsection\ACM@origsubsubsection\else
+  \ClassError{\@classname}{An attempt to redefine
+    \string\subsubsection\space detected.  Please do not do this for
+    ACM submissions!}\fi}
+\let\ACM@origparagraph\paragraph
+\AtEndDocument{\ifx\paragraph\ACM@origparagraph\else
+  \ClassError{\@classname}{An attempt to redefine
+    \string\paragraph\space detected.  Please do not do this for
     ACM submissions!}\fi}
 \normalsize\normalfont\frenchspacing
 \endinput
