@@ -84,17 +84,20 @@ TensorFlow programming model uses first-order bulk parallel constructs that
 implicitly operate on entire arrays at a time.
 
 \begin{table}
-\begin{tabular}{crrr}
-\textbf{Size of training set} & \multicolumn{2}{c}{\textbf{Runtime}} & \textbf{Ratio} \\
-& Futhark & TensorFlow & \\
-$10000$ & $0.91s$ & $1.07s$ &  $0.85\times{}$ \\
-$60000$ & $4.93s$ & $2.92s$ &  $1.68\times{}$
-\end{tabular}
 \caption{Training time for various training set sizes, comparing
   Futhark and Tensorflow, running on an A100 GPU. The final column
   shows the speedup of TensorFlow compared to Futhark. We use a batch
   size of $1000$, a training rate of $0.05$, and train for $10$
   epochs.}
+\begin{tabular}{cccr}
+\toprule
+\textbf{Size of training set} & \multicolumn{2}{c}{\textbf{Runtime}} & \textbf{Ratio} \\
+\midrule
+& Futhark & TensorFlow & \\
+$10000$ & $0.91s$ & $1.07s$ &  $0.85\times{}$ \\
+$60000$ & $4.93s$ & $2.92s$ &  $1.68\times{}$ \\
+\bottomrule
+\end{tabular}
 \label{tab:performance}
 \end{table}
 

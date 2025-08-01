@@ -185,7 +185,7 @@ array data is given by function as before.  This approach to defining
 data structure through shapes, positions and a function from positions
 to elements is known as container~\cite{cont1,cont2,ix-containers}.
 Our array type can be defined by means of the
-(\AF{List ℕ} \AF{◃} \AF{All} \AF{Fin}) container.
+(\AF{List ℕ} \AC{◃} \AF{All} \AF{Fin}) container.
 More explicit formal definitions of \AF{S}, \AF{P} and \AF{Ar} are as follows.
 \begin{mathpar}
 \codeblock{\begin{code}%
@@ -989,7 +989,7 @@ applying \AD{sum} over function composition:
 Using the array theory and combinators from the previous section we
 define the primitives that are needed for the CNN.
 
-\subsection{One-dimensional convolution}
+\subsection{One-Dimensional Convolution}
 We start with plus and minus operations for 1-d indices which are
 prerequisites for defining convolution.  Consider the definition of plus
 (denoted \AF{⊕}) which adds two bounded indices $i$ and $j$ ---
@@ -2817,7 +2817,7 @@ complicated recursive expression.
 
 
 
-\subsection{CNN primitives\label{sec:ar-cnn-prim}}
+\subsection{CNN Primitives\label{sec:ar-cnn-prim}}
 Here we implement CNN-specific primitives that are needed for our running example.
 All these primitives operate on arrays of reals.  We use builtin Agda floats in
 the rest of the section that we refer to as \AD{ℝ}.  The only reason for this

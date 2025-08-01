@@ -146,7 +146,7 @@ numerical operations which includes \AC{logistic}, plus,
 multiplication, division by a constant \AC{scaledown}, and unary \AC{minus};
 finally, let bindings for arrays are given by \AC{let′}.
 The definition of the embedded language \AF{E} follows. We also introduce 
-the syntax for infix minus denoted as \AF{⊟}.
+the syntax for infix minus denoted as \AC{⊟} using a pattern synonym.
 %\begin{mathpar}
 %\codeblock{
 \begin{code}
@@ -190,11 +190,11 @@ performs tiling based on the $s * p ≈ q$ equation.  Strictly speaking,
 \AC{imaps} (imap scalar) is not needed, because
 the same functionality can be achieved with \AC{imap}/\AC{sel}.
 However, if \AC{imap} computes a scalar in the body, its resulting shape 
-is $s ⊗ \AF{[]}$ which is not definitionally equal to $s$.  Using
+is $s ⊗ \AC{[]}$ which is not definitionally equal to $s$.  Using
 \AC{sel} for selecting a scalar from an $s$-shaped array requires
 casting the shape into $s ⊗ \AC{[]}$.  Hence every scalar imap or
 selection will require transporting over the $s ⊗ \AC{[]} ≡ s$ equality,
-This significantly clutters equality.  One could quotient the shape
+which introduces significant clutter.  One could quotient the shape
 type by the above equality, but this requires switching to a more
 powerful type theory such as setoid- or cubical type theory.
 
@@ -208,7 +208,7 @@ into \AD{Ar} arrays using combinators that we defined earlier.
 This semantics will be also used to prove that optimisations preserve
 the meaning of programs.
 
-\subsubsection{Reals}
+\paragraph{Reals}
 We parametrise our semantics by the type of reals.
 This makes it possible to abstract away from the implementational
 details of numerical encoding which are not relevant here.
@@ -457,8 +457,8 @@ gives rise to the substitution is a mapping of variables in the context \AB{Δ}
 into expressions in the context \AB{Γ}.
 This is given by \AF{Sub} \AB{Γ} {Δ} and it represents a \AF{Δ}-long
 list of (\AF{E} \AB{Γ})-s where each expression is of a type that corresponds to the
-variable type at the given position of \AF{Δ}.  We define \AF{wks} which weakens
-all the expressions of \AF{Sub} in the following way.
+variable type at the given position of \AF{Δ}.  We define \AF{wks}, which weakens
+all the expressions of \AF{Sub}, in the following way.
 \begin{mathpar}
 \codeblock{\begin{code}
   data Sub (Γ : Ctx) : Ctx → Set where
@@ -472,11 +472,11 @@ all the expressions of \AF{Sub} in the following way.
   wks (s ▹ x) p  = (wks s p) ▹ wk p x
 \end{code}}
 \end{mathpar}
-Using \AF{wks} we define two useful combinators: \AF{sdrop} to lift all
+Using \AF{wks}, we define two useful combinators: \AF{sdrop} to lift all
 expressions in the \AD{Sub} list into a context that is extended by one variable;
 \AF{skeep} to shift the substitution by one variable, keeping the top variable
-as is.  With these combinators we define the identity substitution \AF{sub-id}
-that has no effect when applying it.  Finally, the type of the actual substitution
+as is.  With these combinators, we define the identity substitution \AF{sub-id},
+which has no effect when applying it.  Finally, the type of the actual substitution
 that replaces all the variables in \AF{E} according to some \AF{Sub} list is given
 by \AF{sub}.
 \begin{mathpar}
@@ -527,7 +527,7 @@ by \AF{sub}.
 \end{code}
 As our contexts are not dependent (\eg{} the type of the variables does not
 depend on previous variables) we can define a substitution that swaps two top
-variables in the context.  This substitution is given by \AF{sub-swap} and it
+variables in the context.  This substitution is given by \AF{sub-swap}, and it
 will be used in optimisations.
 \begin{mathpar}
 \codeblock{\begin{code}
@@ -589,13 +589,13 @@ in all cases --- Agda will report an error in case of failure.
 Note that instance resolution is looking for the \emph{unique} solution.
 This is the reason why we could not use \AD{⊆} instead of \AD{Prefix} easily,
 even thought the former is more general than the latter.
-Contexts (\AB{Γ} \AC{▹} \AB{is}) and (\AB{Γ} \AC{▹} \AB{is} \AC{▹} \AB{is}),
+Contexts (\AB{Γ} \AC{▹} \AB{is}) and (\AB{Γ} \AC{▹} \AB{is} \AC{▹} \AB{is})
 are related by \AD{Prefix} in a unique way.  However, these two contexts are
 related by \AD{⊆} in two different ways (by keeping the first or the
 second variable).
 
 We introduce generalised variables \AF{GV} and expressions \AF{GE} that
-are defined in context \AB{Γ} but can be lifted into any context \AB{Δ}, given
+are defined in the context \AB{Γ} but can be lifted into any context \AB{Δ}, given
 that \AB{Γ} is a prefix of \AB{Δ}.  The trick here is that both types define
 a function of two hidden arguments that Agda will be able to fill-in automatically.
 \begin{mathpar}
@@ -610,7 +610,7 @@ a function of two hidden arguments that Agda will be able to fill-in automatical
 \end{code}}
 \end{mathpar}
 We can lift expressions into generalised expressions in two steps: 
-(i) we translate prefixes into \AC{⊆}; (ii) we use weakening that we defined earlier.
+(i) we translate prefixes into \AF{⊆}; (ii) we use weakening that we defined earlier.
 \begin{mathpar}
 \codeblock{\begin{code}
   ⟨_⟩ : E Γ is → GE Γ is
@@ -679,7 +679,7 @@ First of all, we define a helper function \AF{ext} that appends a list of \AF{IS
 at the end of some context \AF{Γ}.
 Secondly, we define \AF{lfun} that for the given list of \AF{IS}-es
 (l = [is₁, \dots, isₙ]), some context \AF{Γ} and some \AF{IS}
-ip computes an Agda function of type (\AF{GE} (\AF{ext} \AF{Γ} l) is₁ →
+ip, computes an Agda function of type (\AF{GE} (\AF{ext} \AF{Γ} l) is₁ →
 \dots → \AF{GE} (\AF{ext} \AF{Γ} l) isₙ → \AD{E} (\AF{ext} Γ l) ip).
 The function \AF{lvar} lifts a variable in some context Γ into
 a generalised expression within the \AF{ext}ended context.
@@ -753,7 +753,7 @@ to achieve similarity between the operations defined below and the
 \AF{Ar} primitives.
 
 Implementation of \AF{conv}, \AF{mconv} and \AF{avgp₂} is a direct
-translation of the respective \AD{Ar} counterparts, the only visible
+translation of the respective \AD{Ar} counterparts.  The only visible
 differences are: lack of \AF{map} combinator and
 rank-polymorphic addition and multiplication.
 \begin{code}[hide]

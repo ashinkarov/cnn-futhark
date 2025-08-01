@@ -117,8 +117,8 @@ Technically, if some expression \AF{E} is defined in some context \AB{Γ},
 we need a structure that stores all the partial derivatives with respect
 to the variables in \AB{Γ}.  Each partial
 derivative is an expression \AF{E} in context \AF{Γ}.  We call this
-structure an \emph{environment}, and is a \AB{Γ}-long list of expressions
-in context \AB{Γ} and it is given by \AF{Env}.
+structure an \emph{environment}; it is given by \AF{Env}, and it is
+a \AB{Γ}-long list of expressions in \AB{Γ}.
 This  construction is
 similar to our parallel substitution \AF{Sub}, except we ignore the values of index
 types --- they never contribute to the computation of derivatives, so we do not need to
@@ -388,14 +388,14 @@ In the environment that preserves the $x$-bound expression we compute:
    \AF{∇}\ ((a + a)x)\ 1\ (\AC{let}\ x = a^2\ \AC{in}\ \langle 0, 0 \rangle)
    = \AC{let}\ x = a^2\ \AC{in}\ \langle x+x, a+a \rangle
 \]
-This exactly the call we do in the \AC{let′} case of \AF{∇}.
+This is exactly the call we do in the \AC{let′} case of \AF{∇}.
 The next step applies the chain rule, computing the derivative of the
 $x$-bound expression using the result of the previous computation as seed:
 \[ 
    \AF{∇}\ a^2\ (a+a)\ (\AC{let}\ x = a^2\ \AC{in}\ \langle x+x \rangle)
    = \AC{let}\ x = a^2\ \AC{in}\ \langle x+x + a(a+a) + a(a+a) \rangle
 \]
-which gives the expected result $6a^2$ (we were differentiating $2a^3$ written
+This gives the expected result $6a^2$ (we were differentiating $2a^3$ written
 in a funny way).  However, direct use of $(a+a)$ as a seed in the last step
 inlines the computation of the $(a+a)$ expression.  Instead, we can share 
 this computation by defining a new let-binding and rearranging the call to
@@ -409,7 +409,7 @@ this computation by defining a new let-binding and rearranging the call to
    \AC{let}\ y = a+a\ \AC{in}\
    \langle x+x + ya + ya \rangle
 \]
-this is exactly what \AF{∇ₗ} is doing.  It traverses under the let chain
+This is exactly what \AF{∇ₗ} is doing: it traverses under the let chain
 and it shares the seed by introducing a new variable.
 
 
@@ -478,9 +478,9 @@ semantics-preserving \AF{opt}imisation function is given as follows.
   opt e = e , reflᵉ e
 \end{code}
 
-Consider the follow examples of the rewrites that we are implementing.
+Consider the following examples of rewrites that we are implementing.
 We omit the proofs for readability, and we omit trivial rules such
-as (\AC{zero} \AF{⊞} $x \rightsquigarrow x$), but they are available in the
+as (\AC{zero} \AF{⊞} $x \rightsquigarrow x$), but they are available in
 our implementation.
 \begin{mathpar}
    \AC{sels}\ zero\ e \rightsquigarrow \AC{zero}
@@ -517,9 +517,9 @@ are not immediately obvious:
    \rightsquigarrow 
    \AF{sub}\ e\ (\AF{sub-id}\ \AC{▹}\ \AC{var}\ j)
 \end{align*}
-which tell us that if we are summing-up comparisons of indices that
+If we are summing-up comparisons of indices that
 happen to be variables, we can check whether either of the variables
-is \AC{v₀} (the index of \AC{sum}), and if this is the case we can
+is \AC{v₀} (the index of \AC{sum}), and if this is the case, we can
 avoid comparison or summation. This is the crucial optimisation that
 handles the one-hot arrays produced when differentiating selections.
 
@@ -530,13 +530,13 @@ straight-forward.
 
 
 Additionally to rewrites described above, we implemented a pass that
-identifies whether let bodies re-define expressions that are bound to
-the let variable.  If this is the case, then the expression is substituted
-by that variable.  The main reason for this is the derivative rule for
+identifies whether let bodies re-define expressions that are already bound to
+let variables.  If this is the case, then the expression is substituted
+by the corresponding variable.  The main reason for this is the derivative for
 \AC{logistic} $e$, which recomputes \AC{logistic} $e$.  While
 this is correct mathematically, this creates code duplication in cases
-\AC{logistic} $e$ is already bound to some variable.  Instead of reusing
-the variable the rule will recomputes the entire expression.
+when \AC{logistic} $e$ is already bound to some variable.  Instead of reusing
+the variable, \AF{∇} recomputes the entire expression.
 As it is difficult to tell whether the call to logistic has been bound
 somewhere before, we implement a generally useful deduplication pass that
 solves this problem.
